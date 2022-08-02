@@ -22,15 +22,16 @@ const TYPE_PERSONALIZATION = "personalization:decisions";
 const TYPE_LOCATION_HINT = "locationHint:result";
 
 const COOKIE_NAME_AEP_EDGE_CLUSTER = "cluster";
+const COOKIE_NAME_VALIDATION_TOKEN = "validation_token";
 
 const EXP_EDGE_BASE_PATH_PROD = "ee";
 const EXP_EDGE_BASE_PATH_STAGE = "ee-pre-prd";
 
 const CLUSTER_HINT_EDGE = "EdgeNetwork";
 const CLUSTER_HINT_AAM = "AAM";
-const CLUSTER_HINT_TARGET = "Targer";
+const CLUSTER_HINT_TARGET = "Target";
 
-let DEFAULT_REQUEST_HEADERS = {
+const DEFAULT_REQUEST_HEADERS = {
   accept: "*/*",
   "accept-language": "en-US,en;q=0.9",
   "cache-control": "no-cache",
@@ -42,6 +43,8 @@ let DEFAULT_REQUEST_HEADERS = {
   "sec-gpc": "1",
   "Referrer-Policy": "strict-origin-when-cross-origin",
 };
+
+const HEADER_AEP_VALIDATION_TOKEN = "X-Adobe-AEP-Validation-Token";
 
 const AEP_EDGE_DOMAIN = "edge.adobedc.net";
 
@@ -106,13 +109,15 @@ function extractEdgeCluster([responseHeaders, responseBody], aepEdgeCluster) {
 
 /**
  *
- * @param {string} edgeConfigId
+ * @param {string} dataStreamId
  * @param {string} aepEdgeCluster cluster hint
+ * @param debugValidationSession validation session id (created by debugger browser extension)
  * @param {string} edgeBasePath
  */
 function createAepEdgeClient(
-  edgeConfigId,
+  dataStreamId,
   aepEdgeCluster = "",
+  debugValidationSession = undefined,
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD
 ) {
   function interact(requestBody, requestHeaders = {}) {
@@ -123,7 +128,7 @@ function createAepEdgeClient(
       edgeBasePath,
       aepEdgeCluster,
       "v2",
-      `interact?dataStreamId=${edgeConfigId}&requestId=${requestId}`,
+      `interact?dataStreamId=${dataStreamId}&requestId=${requestId}`,
     ]
       .filter(isNotBlank)
       .join("/");
@@ -132,6 +137,10 @@ function createAepEdgeClient(
       ...DEFAULT_REQUEST_HEADERS,
       ...requestHeaders,
     };
+
+    if (debugValidationSession) {
+      headers[HEADER_AEP_VALIDATION_TOKEN] = debugValidationSession;
+    }
 
     return fetch(requestUrl, {
       headers,
@@ -188,6 +197,13 @@ function createAepEdgeClient(
 function getAepCookieName(organizationId, name) {
   return [AEP_COOKIE_PREFIX, organizationId.replace("@", "_"), name].join("_");
 }
+function getDebugSessionCookie(organizationId, req) {
+  const cookieName = getAepCookieName(
+    organizationId,
+    COOKIE_NAME_VALIDATION_TOKEN
+  );
+  return req.cookies[cookieName];
+}
 
 function getAepEdgeClusterCookie(organizationId, req) {
   const cookieName = getAepCookieName(
@@ -223,6 +239,7 @@ function getResponseHandles(aepEdgeResult) {
 
 module.exports = {
   getAepCookieName,
+  getDebugSessionCookie,
   getAepEdgeClusterCookie,
   createAepEdgeClient,
   AEP_COOKIE_PREFIX,
