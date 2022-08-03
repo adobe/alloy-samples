@@ -41,8 +41,13 @@ const {
 } = require("aep-edge-samples-common/cookies");
 const { sendResponse } = require("aep-edge-samples-common/utils");
 
-const { EDGE_CONFIG_ID, ORGANIZATION_ID, demoDecisionScopeName, FPID, PORT } =
-  process.env;
+const {
+  EDGE_CONFIG_ID_WITH_ANALYTICS,
+  ORGANIZATION_ID,
+  demoDecisionScopeName,
+  FPID,
+  PORT,
+} = process.env;
 
 // Initialize the Express app
 const app = express();
@@ -73,7 +78,7 @@ function prepareTemplateVariables(handles, personalizationOfferItems = []) {
 // Setup the root route Express app request handler for GET requests
 app.get("/", async (req, res) => {
   const aepEdgeClient = createAepEdgeClient(
-    EDGE_CONFIG_ID,
+    EDGE_CONFIG_ID_WITH_ANALYTICS,
     getAepEdgeClusterCookie(ORGANIZATION_ID, req)
   );
 

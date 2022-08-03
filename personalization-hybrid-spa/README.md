@@ -198,6 +198,10 @@ Requests to Adobe Experience Platform API are required to get propositions and s
 | interact request to get propositions           | application server calling the Adobe Experience Platform API |
 | interact request to send display notifications | Web SDK                                                      |
 
+### Analytics
+
+Special attention must be paid when implementing hybrid mode so that hits are not counted twice.  Please review the [strategy for Analytics](../AnalyticsStrategy.md) used in this sample.
+
 ### Flow Diagram
 
 ```mermaid

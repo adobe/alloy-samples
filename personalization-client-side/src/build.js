@@ -14,8 +14,12 @@ const path = require("path");
 const Handlebars = require("handlebars");
 
 require("dotenv").config({ path: path.resolve(process.cwd(), "..", ".env") });
-const { EDGE_CONFIG_ID, ORGANIZATION_ID, FPID, demoDecisionScopeName } =
-  process.env;
+const {
+  EDGE_CONFIG_ID_WITH_ANALYTICS,
+  ORGANIZATION_ID,
+  FPID,
+  demoDecisionScopeName,
+} = process.env;
 
 const template = fs.readFileSync(
   path.resolve(path.join(__dirname, "index.handlebars")),
@@ -25,7 +29,7 @@ const template = fs.readFileSync(
 const renderTemplate = Handlebars.compile(template);
 
 const html = renderTemplate({
-  edgeConfigId: EDGE_CONFIG_ID,
+  edgeConfigId: EDGE_CONFIG_ID_WITH_ANALYTICS,
   orgId: ORGANIZATION_ID,
   FPID,
   demoDecisionScopeName,
