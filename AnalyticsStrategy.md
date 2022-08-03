@@ -18,7 +18,7 @@ sequenceDiagram
   participant Browser
   participant Alloy
   participant API as Adobe Experience Platform API
-  participant Analytics Upstream
+  participant Analytics
   autonumber
   App server->>API: Interact request (datastream 1, no analytics)
   API->>App server: Return propositions
