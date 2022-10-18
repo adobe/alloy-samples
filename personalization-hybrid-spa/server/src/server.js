@@ -67,13 +67,6 @@ function prepareTemplateVariables({ response = {} }) {
     applyResponseParam: JSON.stringify(
       {
         renderDecisions: true,
-        xdm: {
-          web: {
-            webPageDetails: {
-              viewName: "home",
-            },
-          },
-        },
         responseHeaders: headers,
         responseBody: {
           ...body,
