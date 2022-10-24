@@ -56,7 +56,10 @@ const app = express();
 app.use(cookieParser());
 app.use(express.static(path.resolve(__dirname, "..", "public")));
 
-function prepareTemplateVariables({ response = {} }) {
+function prepareTemplateVariables(
+  { response = {} },
+  defaultTemplateVariables = {}
+) {
   const { headers = {}, body = { handle: [] } } = response;
 
   return {
@@ -75,6 +78,7 @@ function prepareTemplateVariables({ response = {} }) {
       null,
       2
     ),
+    ...defaultTemplateVariables,
   };
 }
 
@@ -87,33 +91,46 @@ app.get("/", async (req, res) => {
   );
 
   const aepEdgeCookies = getAepEdgeCookies(req);
-
-  const aepEdgeResult = await requestAepEdgePersonalization(
-    aepEdgeClient,
-    req,
-    [demoDecisionScopeName],
-    isString(FPID) && FPID.length > 0
-      ? {
-          FPID: [createIdentityPayload(FPID)],
-        }
-      : {},
-    aepEdgeCookies
-  );
-
-  const template = loadHandlebarsTemplate("index");
-
-  const templateVariables = prepareTemplateVariables(aepEdgeResult);
-
-  const context = {
-    req,
-    res,
-    template,
-    templateVariables,
-    aepEdgeResult,
+  let template = loadHandlebarsTemplate("index");
+  let templateVariables = {
+    pageTitle: "Target Hybrid Sample",
   };
 
-  saveAepEdgeCookies(ORGANIZATION_ID, context);
-  sendResponse(context);
+  try {
+    const aepEdgeResult = await requestAepEdgePersonalization(
+      aepEdgeClient,
+      req,
+      [demoDecisionScopeName],
+      isString(FPID) && FPID.length > 0
+        ? {
+            FPID: [createIdentityPayload(FPID)],
+          }
+        : {},
+      aepEdgeCookies
+    );
+
+    templateVariables = prepareTemplateVariables(
+      aepEdgeResult,
+      templateVariables
+    );
+    saveAepEdgeCookies(ORGANIZATION_ID, { req, res, aepEdgeResult });
+    sendResponse({
+      req,
+      res,
+      template,
+      templateVariables,
+      aepEdgeResult,
+    });
+  } catch (e) {
+    template = loadHandlebarsTemplate("error");
+    templateVariables.error = e.message;
+    sendResponse({
+      req,
+      res,
+      template,
+      templateVariables,
+    });
+  }
 });
 
 // Startup the Express server listener

@@ -51,7 +51,7 @@
           }
         } : {}
       }
-    ).then(applyPersonalization(demoDecisionScopeName));
+    ).then(applyPersonalization(demoDecisionScopeName)).catch(displayError);
   </script>
 </head>
 <body>
@@ -75,7 +75,7 @@
     </div><!--/.nav-collapse -->
   </div>
 </nav>
-<div class="container">
+<div id="main-container" class="container">
   <div class="page-header">
     <h1>Hello World!</h1>
   </div>

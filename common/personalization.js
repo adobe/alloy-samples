@@ -65,6 +65,14 @@ function requestAepEdgePersonalization(
 function sendDisplayEvent(aepEdgeClient, req, propositions, cookieEntries) {
   const address = getAddress(req);
 
+  if (
+    !propositions ||
+    !Array.isArray(propositions) ||
+    propositions.length === 0
+  ) {
+    return;
+  }
+
   aepEdgeClient.interact(
     {
       event: {

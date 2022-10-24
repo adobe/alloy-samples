@@ -56,10 +56,15 @@ const app = express();
 app.use(cookieParser());
 app.use(express.static(path.resolve(__dirname, "..", "public")));
 
-function prepareTemplateVariables(handles, personalizationOfferItems = []) {
+function prepareTemplateVariables(
+  handles,
+  personalizationOfferItems = [],
+  defaultTemplateVariables = {}
+) {
   const templateVariables = {
     heroImageName: "demo-marketing-offer1-default.png",
     buttonActions: [],
+    ...defaultTemplateVariables,
   };
 
   if (personalizationOfferItems.length > 0) {
@@ -84,42 +89,59 @@ app.get("/", async (req, res) => {
 
   const aepEdgeCookies = getAepEdgeCookies(req);
 
-  const aepEdgeResult = await requestAepEdgePersonalization(
-    aepEdgeClient,
-    req,
-    [demoDecisionScopeName],
-    isString(FPID) && FPID.length > 0
-      ? {
-          FPID: [createIdentityPayload(FPID)],
-        }
-      : {},
-    aepEdgeCookies
-  );
-
-  const template = loadHandlebarsTemplate("index");
-
-  const personalizationOffer = getPersonalizationOffer(
-    aepEdgeResult,
-    demoDecisionScopeName
-  );
-
-  sendDisplayEvent(aepEdgeClient, req, [personalizationOffer], aepEdgeCookies);
-
-  const templateVariables = prepareTemplateVariables(
-    getResponseHandles(aepEdgeResult),
-    personalizationOffer.items
-  );
-
-  const context = {
-    req,
-    res,
-    template,
-    templateVariables,
-    aepEdgeResult,
+  let template = loadHandlebarsTemplate("index");
+  let templateVariables = {
+    pageTitle: "Target server-side sample",
   };
 
-  saveAepEdgeCookies(ORGANIZATION_ID, context);
-  sendResponse(context);
+  try {
+    const aepEdgeResult = await requestAepEdgePersonalization(
+      aepEdgeClient,
+      req,
+      [demoDecisionScopeName],
+      isString(FPID) && FPID.length > 0
+        ? {
+            FPID: [createIdentityPayload(FPID)],
+          }
+        : {},
+      aepEdgeCookies
+    );
+
+    const personalizationOffer = getPersonalizationOffer(
+      aepEdgeResult,
+      demoDecisionScopeName
+    );
+
+    sendDisplayEvent(
+      aepEdgeClient,
+      req,
+      [personalizationOffer].filter((offer) => Object.keys(offer) > 0),
+      aepEdgeCookies
+    );
+
+    templateVariables = prepareTemplateVariables(
+      getResponseHandles(aepEdgeResult),
+      personalizationOffer.items,
+      templateVariables
+    );
+    saveAepEdgeCookies(ORGANIZATION_ID, { req, res, aepEdgeResult });
+    sendResponse({
+      req,
+      res,
+      template,
+      templateVariables,
+      aepEdgeResult,
+    });
+  } catch (e) {
+    template = loadHandlebarsTemplate("error");
+    templateVariables.error = e.message;
+    sendResponse({
+      req,
+      res,
+      template,
+      templateVariables,
+    });
+  }
 });
 
 // Startup the Express server listener

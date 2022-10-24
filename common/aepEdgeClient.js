@@ -56,6 +56,31 @@ const SCHEMAS_PERSONALIZATION = [
   "https://ns.adobe.com/personalization/dom-action",
 ];
 
+const NO_CONTENT = 204;
+
+function checkForErrors(response) {
+  const [statusCode, responseHeaders, responseBody] = response;
+
+  if (
+    statusCode < 200 ||
+    statusCode >= 300 ||
+    (!responseBody && statusCode !== NO_CONTENT) ||
+    (responseBody && !Array.isArray(responseBody.handle))
+  ) {
+    const bodyToLog = responseBody ? JSON.stringify(responseBody, null, 2) : "";
+    const messageSuffix = bodyToLog
+      ? `response body:\n${bodyToLog}`
+      : `no response body.`;
+    return Promise.reject(
+      new Error(
+        `The server responded with a status code ${statusCode} and ${messageSuffix}`
+      )
+    );
+  }
+
+  return Promise.resolve(response);
+}
+
 function convertHeadersToSimpleJson(res) {
   const headersPromise = new Promise((resolve) => {
     const result = {};
@@ -65,11 +90,11 @@ function convertHeadersToSimpleJson(res) {
     resolve(result);
   });
 
-  return Promise.all([headersPromise, res.json()]);
+  return Promise.all([Promise.resolve(res.status), headersPromise, res.json()]);
 }
 
 function prepareAepResponse(requestHeaders, requestBody) {
-  return ([responseHeaders, responseBody]) => ({
+  return ([statusCode, responseHeaders, responseBody]) => ({
     request: {
       headers: requestHeaders,
       body: requestBody,
@@ -88,7 +113,10 @@ function logResult(message) {
   };
 }
 
-function extractEdgeCluster([responseHeaders, responseBody], aepEdgeCluster) {
+function extractEdgeCluster(
+  [statusCode, responseHeaders, responseBody],
+  aepEdgeCluster
+) {
   const locationHintHandle = responseBody.handle.find(
     (item) => item.type === TYPE_LOCATION_HINT
   );
@@ -148,12 +176,17 @@ function createAepEdgeClient(
       method: "POST",
     })
       .then(convertHeadersToSimpleJson)
+      .then(checkForErrors)
       .then((response) => {
         aepEdgeCluster = extractEdgeCluster(response, aepEdgeCluster);
         return response;
       })
       .then(prepareAepResponse(headers, requestBody))
-      .then(logResult(`AEP EDGE REQUEST: ${requestUrl}`));
+      .then(logResult(`AEP EDGE REQUEST: ${requestUrl}`))
+      .catch((err) => {
+        console.error(err.message);
+        throw err;
+      });
   }
 
   function getPropositions({
@@ -197,6 +230,7 @@ function createAepEdgeClient(
 function getAepCookieName(organizationId, name) {
   return [AEP_COOKIE_PREFIX, organizationId.replace("@", "_"), name].join("_");
 }
+
 function getDebugSessionCookie(organizationId, req) {
   const cookieName = getAepCookieName(
     organizationId,
