@@ -82,3 +82,15 @@ function applyPersonalization(decisionScopeName) {
     }
   };
 }
+
+function displayError(err) {
+  const containerElement = document.getElementById("main-container");
+  if (!containerElement) {
+    return;
+  }
+
+  containerElement.innerHTML = `<div id="error-detail" class="page-header">
+                                      <h3>&#128565; There was an error</h3>
+                                      <div class="alert alert-danger" role="alert">${err.message}</div>
+                                    </div>`;
+}

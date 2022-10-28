@@ -35,37 +35,11 @@
   </nav>
   <div class="container">
     <div class="page-header">
-      <h1>Hello World!</h1>
-    </div>
-    <img id="target-offer" src="img/{{heroImageName}}" width="640" alt="target offer" class="img-responsive img-rounded target-offer" />
-    <p id="paragraph-text-1" class="lead">
-      This is a sample web page. It leverages the <a
-      href="https://experienceleague.adobe.com/docs/experience-platform/edge/home.html">Adobe Experience Platform Web
-      SDK</a> and <a
-      href="https://experienceleague.adobe.com/docs/experience-platform/edge-network-server-api/overview.html">APIs</a>
-      to render personalization content.
-    </p>
-    <p id="paragraph-text-2">
-      Vestibulum cursus tristique risus, volutpat lobortis quam fermentum dapibus. Sed lacus augue, vulputate a placerat
-      vel, fringilla sed velit. In aliquet odio ut efficitur gravida. Vivamus volutpat hendrerit nisl ut rutrum. Donec
-      id nunc dolor. Pellentesque lectus mi, consequat sit amet elit vitae, laoreet euismod est. Cras placerat ex
-      ligula, nec malesuada dolor feugiat ut. Ut condimentum ante turpis, a iaculis massa cursus vitae. Sed sed felis
-      quam. Sed hendrerit, nisl vel viverra viverra, nisi mauris laoreet tortor, ut blandit lectus lacus ut tellus.
-      Integer ante sapien, tincidunt ut erat id, volutpat finibus urna. Aliquam rhoncus tellus vitae facilisis varius.
-    </p>
-
-    <div id="some-buttons">
-      {{#each buttonActions}}
-        <button id="action-button-{{id}}" data-id="{{id}}" data-content="{{content}}" type="button" class="btn btn-primary">{{text}}</button>
-      {{/each}}
+      <h3>&#128565; There was an error</h3>
+      <div class="alert alert-danger" role="alert">
+        {{error}}
+      </div>
     </div>
   </div>
-  <script>
-    document.querySelectorAll("#some-buttons > button").forEach(element => {
-      element.addEventListener("click", evt => {
-        alert(evt.target.getAttribute("data-content"));
-      });
-    });
-  </script>
 </body>
 </html>
