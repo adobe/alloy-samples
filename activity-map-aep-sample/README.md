@@ -30,7 +30,10 @@ If it is defined, Web SDK calls this function after it processes the link click 
     ...
     }
 ```
+Note: the Web SDK if not instructed not to do so, will trigger an event for every tracked link click interaction at the time it happens, to capture that link click event in AEP Platform.
 
+
+## Using custom code to send the Activity Map data with next page view event (AppMeasurements way)
 ## Running the sample
 
 <small> Prerequisite: [install node and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).</small>
