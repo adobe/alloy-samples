@@ -14,6 +14,8 @@ This repository contains code samples for the Adobe Experience Platform Web SDK.
 - [Personalization via Hybrid implementation](personalization-hybrid) - fetch personalization offers server side and render them client side using [alloy](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html?lang=en) without additional client-side edge requests.
 - [Personalization via Hybrid implementation and Single-page app (SPA)](personalization-hybrid-spa) - fetch personalization offers server side and render them in a single-page app (SPA) client side using [alloy](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html?lang=en) without additional client-side edge requests.
 
+### Data Collection
+- [Activity Map](activity-map-aep-sample) - use Activity Map feature with Web SDK
 
 ## Contributing
 
