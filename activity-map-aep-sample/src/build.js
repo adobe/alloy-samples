@@ -50,6 +50,6 @@ const renderPage = (pages) => {
 try {
   renderPage(pages);
 } catch (error) {
-  console.log("error building pages from templates", error);
+  console.log("Error building pages from templates", error);
 }
 

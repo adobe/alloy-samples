@@ -16,7 +16,7 @@ function onBeforeLinkClickSend(options) {
   console.log("options onBeforeLinkClickSend", options);
   const { xdm } = options;
   // here we filter the link clicks that we want to be tracked
-  return xdm.web.webInteraction.name !== "About";
+  return !(xdm.web.webInteraction.name === "Internal non - tracked link" || xdm.web.webInteraction.region === "navbar");
 
 }
 
