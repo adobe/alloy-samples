@@ -81,18 +81,16 @@
 
   <h1>
     We have here an example where using the onBeforeLinkClickSend and onBeforeEventSend callbacks we filter the link
-    click
-    interactions that we want to track and we store the last interaction to send it in the next page view event.
-    Similar to the AppMeasurements approach.</h1>
+    click interactions that we want to track. We store the last interaction to send it in the next page view event.
+    </h1>
     <div id="some-links">
       <p>
       <h3> Non tracked links </h3>
       In onBeforeLinkClickSend callback we can instruct the Web SDK to filter the link clicks that we want to track.
       The following link is one of those that we don't want to be tracked. Press on it to see that no interact call is
-      triggered,
-      neither local storage is updated with its metadata.
+      triggered, neither local storage is updated with its metadata.
       </p>
-      <li><a href="/index.html">Internal non - tracked link</a></li>
+      <li class="doNotTrack"><a href="/index.html">Internal non - tracked link</a></li>
       <h3> Tracked internal links </h3>
 
       <p>
@@ -105,7 +103,7 @@
       <li><a href="/secondPage.html">Internal tracked link</a></li>
       <h3> Tracked exit links </h3>
       <p>
-        This is an exit link, same as using AppMeasurements, Web SDK will trigger a collect call before leaving
+        This is an exit link, Web SDK will trigger a collect call before leaving
         the context of the page with link metadata in xdm.web.webInteraction.
       </p>
       <li><a href="https://experienceleague.adobe.com/">Exit link</a></li>

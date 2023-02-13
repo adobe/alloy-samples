@@ -13,11 +13,10 @@ governing permissions and limitations under the License.
 const ALLOY_LAST_INTERACTION = "AlloyLastInteraction";
 
 function onBeforeLinkClickSend(options) {
-  console.log("options onBeforeLinkClickSend", options);
-  const { xdm } = options;
+  console.log("options onBeforeLinkClickSend", options.clickedElement);
+  const { xdm, clickedElement } = options;
   // here we filter the link clicks that we want to be tracked
-  return !(xdm.web.webInteraction.name === "Internal non - tracked link" || xdm.web.webInteraction.region === "navbar");
-
+  return !(clickedElement.parentElement.classList.contains("doNotTrack") || xdm.web.webInteraction.region === "navbar");
 }
 
 function onBeforeEventSend(options) {
