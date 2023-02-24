@@ -39,7 +39,7 @@ NOTE: by default Web SDK will trigger an event for every tracked link click inte
 
 ## Use custom code to send the Activity Map data with next page-view event
 
-With AppMeasurements the Activity Map context data for exit links was sent imediatelly, while for the other link types the Activity Map context data was cached and sent with the next page view hit.
+With AppMeasurements the Activity Map context data for exit links was sent immediately, while for the other link types the Activity Map context data was cached and sent with the next page view hit.
 Using Web SDK the link click interactions generates a link click event(and an interact call) that will send data to the Edge.
 
 If your implementation needs to cache the link click interactions(except exit links) and send them with next page view event, this can be accomplished using the `onBeforeEventSend` callback function.
