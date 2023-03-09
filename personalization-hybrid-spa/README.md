@@ -14,7 +14,7 @@ Here is what the page looks like before and after personalization content is ren
 |-----------------------------------------------------------------|------------------------------------------------------------------------|
 | <img src="../.assets/spa-plain.png" alt="drawing" width="800"/> | <img src="../.assets/spa-personalized.png" alt="drawing" width="800"/> |
 
-
+Keep in mind that personalization content can come from any Adobe source such as [Journey Optimizer](https://experienceleague.adobe.com/docs/journey-optimizer/using/ajo-home.html?lang=en) or [Target](https://experienceleague.adobe.com/docs/target.html).  Target is the source of personalization content used in this sample, but the implementation described here will work for all personalization solutions Adobe offers.
 
 ## Running the sample
 
@@ -229,3 +229,8 @@ sequenceDiagram
 ## Beyond the sample
 
 This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in offers from your own AEP configuration.  To do so, just open the `.env` file at the root of this repository and modify the variables.  Restart the sample app, and you're ready to experiment using your own personalization content.
+
+### Further Reading
+
+- Adobe Tech Blog: [Hybrid Personalization in the Adobe Experience Platform Web SDK](https://blog.developer.adobe.com/hybrid-personalization-in-the-adobe-experience-platform-web-sdk-6a1bb674bf41)
+- SDK Documentation: [Hybrid personalization using Web SDK and Edge Network Server API](https://experienceleague.adobe.com/docs/experience-platform/edge/personalization/hybrid-personalization.html?lang=en)
