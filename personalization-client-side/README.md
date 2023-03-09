@@ -12,8 +12,9 @@ Here is what the page looks like before and after personalization content is ren
 |-------------------------------------------------------------|-------------------------------------------------------------------|
 | <img src="../.assets/plain.png" alt="drawing" width="800"/> | <img src="../.assets/with-offers.png" alt="drawing" width="800"/> |
 
-Please review the [summary of personalization content](../TargetActivities.md) for this sample. 
+Please review the [summary of personalization content](../TargetActivities.md) for this sample.
 
+Keep in mind that personalization content can come from any Adobe source such as [Journey Optimizer](https://experienceleague.adobe.com/docs/journey-optimizer/using/ajo-home.html?lang=en) or [Target](https://experienceleague.adobe.com/docs/target.html).  Target is the source of personalization content used in this sample, but the implementation described here will work for all personalization solutions Adobe offers.  
 
 ## Running the sample
 
