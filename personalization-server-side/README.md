@@ -55,6 +55,7 @@ fetch(
     body: JSON.stringify({
       event: {
         xdm: {
+          eventType: "decisioning.propositionFetch",
           web: {
             webPageDetails: {
               URL: "https://localhost/",
