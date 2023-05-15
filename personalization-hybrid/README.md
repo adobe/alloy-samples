@@ -2,19 +2,19 @@
 
 ## Overview
 
-This sample demonstrates using Adobe Experience Platform to get personalization content from Adobe Target.  The web page changes based on the personalization content returned.
+This sample demonstrates using Adobe Experience Platform to get personalization content from Adobe Target. The web page changes based on the personalization content returned.
 
 This sample retrieves personalization content server-side using the [Adobe Experience Platform APIs](https://developer.adobe.com/experience-platform-apis/) and renders it on the client-side using [Adobe Experience Platform Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) using the `applyResponse` command.
 
 Here is what the page looks like before and after personalization content is rendered.
 
 | without personalization                                     | with personalization                                              |
-|-------------------------------------------------------------|-------------------------------------------------------------------|
+| ----------------------------------------------------------- | ----------------------------------------------------------------- |
 | <img src="../.assets/plain.png" alt="drawing" width="800"/> | <img src="../.assets/with-offers.png" alt="drawing" width="800"/> |
 
 Please review the [summary of personalization content](../TargetActivities.md) for this sample.
 
-Keep in mind that personalization content can come from any Adobe source such as [Journey Optimizer](https://experienceleague.adobe.com/docs/journey-optimizer/using/ajo-home.html?lang=en) or [Target](https://experienceleague.adobe.com/docs/target.html).  Target is the source of personalization content used in this sample, but the implementation described here will work for all personalization solutions Adobe offers.
+Keep in mind that personalization content can come from any Adobe source such as [Journey Optimizer](https://experienceleague.adobe.com/docs/journey-optimizer/using/ajo-home.html?lang=en) or [Target](https://experienceleague.adobe.com/docs/target.html). Target is the source of personalization content used in this sample, but the implementation described here will work for all personalization solutions Adobe offers.
 
 ## Running the sample
 
@@ -22,17 +22,19 @@ Keep in mind that personalization content can come from any Adobe source such as
 
 To run this sample:
 
-1. Clone the repository to your local machine.
-2. Open a terminal and change directory to this sample's folder.
-3. Run `npm install`
-4. Run `npm start`
-5. Open a web browser to [http://localhost](http://localhost)
+1. [Setup local SSL certificates for https](../LocalSSLCertificateSetup.md).
+2. Clone the repository to your local machine.
+3. Open a terminal and change directory to this sample's folder.
+4. Run `npm install`
+5. Run `npm start`
+6. Open a web browser to [https://localhost](https://localhost)
 
 ## How it works
 
 1. [Express](https://expressjs.com/) is used for a lean server-side implementation. To handle basic server requests and routing.
 2. The web page is requested and any cookies previously stored by the browser prefixed with `kndctr_` are included.
-3. When the page is requested from the app server, an event is sent to the [interactive data collection endpoint](https://experienceleague.adobe.com/docs/experience-platform/edge-network-server-api/data-collection/interactive-data-collection.html?lang=en) to fetch personalization content.  This sample app makes use of some helper methods to simplify building and sending requests to the API (see [aepEdgeClient.js](../common/aepEdgeClient.js)).  But the request is simply a `POST` with a payload that contains an event and query.  The cookies (if available) from the prior step are included with the request in the `meta>state>entries` array.
+3. When the page is requested from the app server, an event is sent to the [interactive data collection endpoint](https://experienceleague.adobe.com/docs/experience-platform/edge-network-server-api/data-collection/interactive-data-collection.html?lang=en) to fetch personalization content. This sample app makes use of some helper methods to simplify building and sending requests to the API (see [aepEdgeClient.js](../common/aepEdgeClient.js)). But the request is simply a `POST` with a payload that contains an event and query. The cookies (if available) from the prior step are included with the request in the `meta>state>entries` array.
+
 ```javascript
 fetch(
   "https://edge.adobedc.net/ee/v2/interact?dataStreamId=abc&requestId=123",
@@ -48,14 +50,14 @@ fetch(
       "sec-fetch-site": "cross-site",
       "sec-gpc": "1",
       "Referrer-Policy": "strict-origin-when-cross-origin",
-      Referer: "http://localhost/",
+      Referer: "https://localhost/",
     },
     body: JSON.stringify({
       event: {
         xdm: {
           web: {
             webPageDetails: {
-              URL: "http://localhost/",
+              URL: "https://localhost/",
             },
             webReferrer: {
               URL: "",
@@ -95,13 +97,13 @@ fetch(
           cookiesEnabled: true,
           entries: [
             {
-              "key": "kndctr_XXX_AdobeOrg_identity",
-              "value": "abc123"
+              key: "kndctr_XXX_AdobeOrg_identity",
+              value: "abc123",
             },
             {
-              "key": "kndctr_XXX_AdobeOrg_cluster",
-              "value": "or2"
-            }
+              key: "kndctr_XXX_AdobeOrg_cluster",
+              value: "or2",
+            },
           ],
         },
       },
@@ -150,7 +152,7 @@ alloy("applyResponse", {
         },
         {
           "payload": [
-            {...}, 
+            {...},
             {...}
           ],
           "type": "personalization:decisions",
@@ -166,7 +168,6 @@ alloy("applyResponse", {
 6. Alloy renders page load Visual Experience Composer (VEC) offers automatically because the `renderDecisions` flag is set to true.
 7. Form-based JSON offers are manually applied by the sample implementation code (in the [`applyPersonalization`](./public/script.js) method) to update the DOM based on the offer.
 8. For form-based activities, display events must manually be sent to indicate when the offer has been displayed. This is done via the `sendEvent` command.
-
 
 ```javascript
 function sendDisplayEvent(decision) {
@@ -194,26 +195,26 @@ function sendDisplayEvent(decision) {
 ## Key Observations
 
 ### Cookies
-Cookies are used to persist user identity and cluster information.  When using a hybrid implementation, the application server must handle the storing and sending of these cookies during the request lifecycle.
+
+Cookies are used to persist user identity and cluster information. When using a hybrid implementation, the application server must handle the storing and sending of these cookies during the request lifecycle.
 
 | Cookie                   | Purpose                                                                    | Stored by          | Sent by            |
-|--------------------------|----------------------------------------------------------------------------|--------------------|--------------------|
+| ------------------------ | -------------------------------------------------------------------------- | ------------------ | ------------------ |
 | kndctr_AdobeOrg_identity | Contains user identity details                                             | application server | application server |
 | kndctr_AdobeOrg_cluster  | Indicates which experience edge cluster should be used to fulfill requests | application server | application server |
 
-
 ### Request placement
 
-Requests to Adobe Experience Platform API are required to get propositions and send a display notification.  When using a client-side implementation, the Web SDK makes these requests when the `sendEvent` command is used.
+Requests to Adobe Experience Platform API are required to get propositions and send a display notification. When using a client-side implementation, the Web SDK makes these requests when the `sendEvent` command is used.
 
 | Request                                        | Made by                                                      |
-|------------------------------------------------|--------------------------------------------------------------|
+| ---------------------------------------------- | ------------------------------------------------------------ |
 | interact request to get propositions           | application server calling the Adobe Experience Platform API |
 | interact request to send display notifications | Web SDK                                                      |
 
 ### Analytics
 
-Special attention must be paid when implementing hybrid mode so that hits are not counted twice.  Please review the [strategy for Analytics](../AnalyticsStrategy.md) used in this sample.
+Special attention must be paid when implementing hybrid mode so that hits are not counted twice. Please review the [strategy for Analytics](../AnalyticsStrategy.md) used in this sample.
 
 ### Flow Diagram
 
@@ -239,7 +240,7 @@ sequenceDiagram
 
 ## Beyond the sample
 
-This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in offers from your own AEP configuration.  To do so, just open the `.env` file at the root of this repository and modify the variables.  Restart the sample app, and you're ready to experiment using your own personalization content.
+This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in offers from your own AEP configuration. To do so, just open the `.env` file at the root of this repository and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
 
 ### Further Reading
 

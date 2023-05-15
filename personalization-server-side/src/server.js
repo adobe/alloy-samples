@@ -40,21 +40,24 @@ const {
   getAepEdgeCookies,
 } = require("aep-edge-samples-common/cookies");
 const { sendResponse } = require("aep-edge-samples-common/utils");
+const fs = require("fs");
+const http = require("http");
+const https = require("https");
 
 const {
   EDGE_CONFIG_ID_WITH_ANALYTICS,
   ORGANIZATION_ID,
   demoDecisionScopeName,
   FPID,
-  PORT,
 } = process.env;
 
 // Initialize the Express app
-const app = express();
+const httpApp = express();
+const httpsApp = express();
 
 // Setup cookie parsing middleware and static file serving from the /public directory
-app.use(cookieParser());
-app.use(express.static(path.resolve(__dirname, "..", "public")));
+httpsApp.use(cookieParser());
+httpsApp.use(express.static(path.resolve(__dirname, "..", "public")));
 
 function prepareTemplateVariables(
   handles,
@@ -81,7 +84,7 @@ function prepareTemplateVariables(
 }
 
 // Setup the root route Express app request handler for GET requests
-app.get("/", async (req, res) => {
+httpsApp.get("/", async (req, res) => {
   const aepEdgeClient = createAepEdgeClient(
     EDGE_CONFIG_ID_WITH_ANALYTICS,
     getAepEdgeClusterCookie(ORGANIZATION_ID, req)
@@ -145,7 +148,24 @@ app.get("/", async (req, res) => {
 });
 
 // Startup the Express server listener
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}...`));
+const httpsOptions = {
+  key: fs.readFileSync("./key.pem"),
+  cert: fs.readFileSync("./cert.pem"),
+};
+
+https.createServer(httpsOptions, httpsApp).listen(443, () => {
+  console.log(`https server started`);
+});
+
+http.createServer(httpApp).listen(80, () => {
+  console.log(`http server started`);
+  httpApp.all("*", (req, res) => {
+    return res.redirect(
+      301,
+      ["https://", req.headers.host, req.originalUrl].join("")
+    );
+  });
+});
 
 // Stop the server on any app warnings
 process.on("warning", (e) => {

@@ -3,19 +3,22 @@
  * @param  {Array} state
  * @param  {Object} action
  */
-const LatestProductsReducer = (state = {fetching: false, data: []}, action) => {
+const LatestProductsReducer = (
+  state = { fetching: false, data: [] },
+  action
+) => {
   switch (action.type) {
-    case 'REQUEST_LATEST_PRODUCTS':
+    case "REQUEST_LATEST_PRODUCTS":
       return Object.assign({}, state, {
         fetching: true,
-        data: []
+        data: [],
       });
       break;
 
-    case 'RECEIVE_LATEST_PRODUCTS':
+    case "RECEIVE_LATEST_PRODUCTS":
       return Object.assign({}, state, {
         fetching: false,
-        data: action.payload
+        data: action.payload,
       });
       break;
     default:
@@ -23,4 +26,4 @@ const LatestProductsReducer = (state = {fetching: false, data: []}, action) => {
   }
 };
 
-export default LatestProductsReducer
+export default LatestProductsReducer;

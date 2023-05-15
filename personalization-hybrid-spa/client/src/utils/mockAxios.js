@@ -16,14 +16,14 @@ export default {
         key = Date.now();
       entityCollection[Date.now()] = data;
       localStorage.setItem(entity, JSON.stringify(entityCollection));
-      resolve({data: {name: key}});
+      resolve({ data: { name: key } });
     });
   },
 
   get: (entity) => {
     return new Promise((resolve) => {
       var entityCollection = JSON.parse(localStorage.getItem(entity)) || {};
-      resolve({data: entityCollection});
+      resolve({ data: entityCollection });
     });
   },
 
@@ -32,14 +32,14 @@ export default {
       var entityCollection = JSON.parse(localStorage.getItem(entity)) || {};
       delete entityCollection[key];
       localStorage.setItem(entity, JSON.stringify(entityCollection));
-      resolve({data: null});
+      resolve({ data: null });
     });
   },
 
   deleteAll: (entity) => {
     return new Promise((resolve) => {
       localStorage.removeItem(entity);
-      resolve({data: null});
+      resolve({ data: null });
     });
-  }
+  },
 };

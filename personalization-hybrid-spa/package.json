@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "webpack --mode=development",
     "build": "webpack --mode=production",
-    "postinstall": "cd ../common && npm i",
+    "postinstall": "cd ../common && npm i && cd .. && npm i",
+    "prestart": "node ../create-ssl-cert.js",
     "start": "node server/src/server.js"
   },
   "repository": {

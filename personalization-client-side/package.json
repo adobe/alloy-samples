@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "postinstall": "cd .. && npm i",
     "build": "node src/build.js",
-    "prestart": "npm run build",
-    "start": "http-server public -p 80"
+    "prestart": "node ../create-ssl-cert.js && npm run build",
+    "start": "http-server public -p 443 --ssl -C ./cert.pem -K ./key.pem"
   },
   "repository": {
     "type": "git",

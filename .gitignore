@@ -103,3 +103,5 @@ dist
 .DS_Store
 
 alloy.js
+key.pem
+cert.pem
