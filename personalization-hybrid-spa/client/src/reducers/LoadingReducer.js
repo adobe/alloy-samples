@@ -3,21 +3,20 @@
  * @param  {Array} state
  * @param  {Object} action
  */
-const LoadingReducer = (state = {isVisible: false}, action) => {
-
+const LoadingReducer = (state = { isVisible: false }, action) => {
   switch (action.type) {
-    case 'SHOW_LOADING':
+    case "SHOW_LOADING":
       return Object.assign({}, state, {
-        isVisible: true
+        isVisible: true,
       });
       break;
-    case 'HIDE_LOADING':
+    case "HIDE_LOADING":
       return Object.assign({}, state, {
-        isVisible: false
+        isVisible: false,
       });
       break;
     default:
-      return state
+      return state;
   }
 };
-export default LoadingReducer
+export default LoadingReducer;

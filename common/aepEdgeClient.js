@@ -9,7 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const { uuid } = require("@adobe/target-tools");
+const { v4: uuidv4 } = require("uuid");
 const fetch = require("node-fetch");
 const { isNotBlank } = require("@adobe/target-tools");
 
@@ -149,7 +149,7 @@ function createAepEdgeClient(
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD
 ) {
   function interact(requestBody, requestHeaders = {}) {
-    const requestId = uuid();
+    const requestId = uuidv4();
 
     const requestUrl = [
       `https://${AEP_EDGE_DOMAIN}`,

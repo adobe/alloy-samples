@@ -3,22 +3,25 @@
  * @param  {Object} state
  * @param  {Object} action
  */
-const AboutReducer = (state = {fetching: false, data: {title: '', content: ''}}, action) => {
+const AboutReducer = (
+  state = { fetching: false, data: { title: "", content: "" } },
+  action
+) => {
   switch (action.type) {
-    case 'REQUEST_ABOUT':
+    case "REQUEST_ABOUT":
       return Object.assign({}, state, {
         fetching: true,
-        data: {title: '', content: ''}
+        data: { title: "", content: "" },
       });
       break;
-    case 'RECEIVE_ABOUT':
+    case "RECEIVE_ABOUT":
       return Object.assign({}, state, {
         fetching: false,
-        data: action.payload
+        data: action.payload,
       });
       break;
     default:
-      return state
+      return state;
   }
 };
-export default AboutReducer
+export default AboutReducer;

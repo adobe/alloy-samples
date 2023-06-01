@@ -34,6 +34,7 @@ function requestAepEdgePersonalization(
   return aepEdgeClient.getPropositions({
     decisionScopes: [PAGE_WIDE_SCOPE, ...decisionScopes],
     xdm: {
+      eventType: "decisioning.propositionFetch",
       web: {
         webPageDetails: { URL: address },
         webReferrer: { URL: "" },

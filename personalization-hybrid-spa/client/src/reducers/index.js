@@ -9,15 +9,15 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-import { combineReducers } from 'redux'
-import AboutReducer from './AboutReducer'
-import ProductsReducer from './ProductsReducer'
-import LatestProductsReducer from './LatestProductsReducer'
-import ProductReducer from './ProductReducer'
-import LoadingReducer from './LoadingReducer'
-import CartReducer from './CartReducer'
-import WishlistReducer from './WishlistReducer'
-import { routerReducer } from 'react-router-redux'
+import { combineReducers } from "redux";
+import AboutReducer from "./AboutReducer";
+import ProductsReducer from "./ProductsReducer";
+import LatestProductsReducer from "./LatestProductsReducer";
+import ProductReducer from "./ProductReducer";
+import LoadingReducer from "./LoadingReducer";
+import CartReducer from "./CartReducer";
+import WishlistReducer from "./WishlistReducer";
+import { routerReducer } from "react-router-redux";
 
 /**
  * Combine Reducers In One Object
@@ -30,5 +30,5 @@ export default combineReducers({
   LoadingReducer,
   CartReducer,
   WishlistReducer,
-  routing: routerReducer
-})
+  routing: routerReducer,
+});

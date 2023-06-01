@@ -3,22 +3,22 @@
  * @param  {Array} state
  * @param  {Object} action
  */
-const ProductsReducer = (state = {fetching: false, data: []}, action) => {
+const ProductsReducer = (state = { fetching: false, data: [] }, action) => {
   switch (action.type) {
-    case 'REQUEST_PRODUCTS':
+    case "REQUEST_PRODUCTS":
       return Object.assign({}, state, {
         fetching: true,
-        data: []
+        data: [],
       });
       break;
-    case 'RECEIVE_PRODUCTS':
+    case "RECEIVE_PRODUCTS":
       return Object.assign({}, state, {
         fetching: false,
-        data: action.payload
+        data: action.payload,
       });
       break;
     default:
-      return state
+      return state;
   }
 };
-export default ProductsReducer
+export default ProductsReducer;

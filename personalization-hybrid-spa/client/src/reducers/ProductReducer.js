@@ -3,31 +3,31 @@
  * @param  {Array} state
  * @param  {Object} action
  */
-const ProductReducer = (state = {fetching: false, data: {}}, action) => {
+const ProductReducer = (state = { fetching: false, data: {} }, action) => {
   switch (action.type) {
-    case 'REQUEST_PRODUCT':
+    case "REQUEST_PRODUCT":
       return Object.assign({}, state, {
         fetching: true,
-        data: {}
+        data: {},
       });
       break;
-    case 'RECEIVE_PRODUCT':
+    case "RECEIVE_PRODUCT":
       let filtered = action.payload.filter((product) => {
-        return product.id == action.id
+        return product.id == action.id;
       });
       return Object.assign({}, state, {
         fetching: false,
-        data: filtered[0]
+        data: filtered[0],
       });
       break;
-    case 'CLEAR_PRODUCT':
+    case "CLEAR_PRODUCT":
       return Object.assign({}, state, {
         fetching: false,
-        data: {}
+        data: {},
       });
       break;
     default:
-      return state
+      return state;
   }
 };
-export default ProductReducer
+export default ProductReducer;
