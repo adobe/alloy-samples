@@ -18,6 +18,7 @@ const { getAddress } = require("./utils");
  * @param aepEdgeClient instance of aepEdgeClient
  * @param req request object
  * @param decisionScopes array of decision scopes to retrieve (global page-wide scope included by default)
+ * @param surfaces array of surfaces
  * @param identityMap object with identities
  * @param cookieEntries
  * @returns {Promise<*>}
@@ -27,12 +28,14 @@ function requestAepEdgePersonalization(
   req,
   decisionScopes = [],
   identityMap = {},
-  cookieEntries = []
+  cookieEntries = [],
+  surfaces = []
 ) {
   const address = getAddress(req);
 
   return aepEdgeClient.getPropositions({
     decisionScopes: [PAGE_WIDE_SCOPE, ...decisionScopes],
+    surfaces: [...surfaces],
     xdm: {
       eventType: "decisioning.propositionFetch",
       web: {
@@ -134,9 +137,18 @@ function getPersonalizationOffer(aepEdgeResult, decisionScopeName) {
   );
 }
 
+function getPersonalizationExperience(aepEdgeResult, surfaceUri) {
+  return (
+    getPersonalizationPayloads(aepEdgeResult).find(
+      (payload) => payload.scope === surfaceUri
+    ) || {}
+  );
+}
+
 module.exports = {
   requestAepEdgePersonalization,
   getPersonalizationPayloads,
   getPersonalizationOffer,
+  getPersonalizationExperience,
   sendDisplayEvent,
 };

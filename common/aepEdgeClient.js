@@ -139,12 +139,14 @@ function extractEdgeCluster(
  *
  * @param {string} dataStreamId
  * @param {string} aepEdgeCluster cluster hint
+ * @param {string} edgeDomain edge domain
  * @param debugValidationSession validation session id (created by debugger browser extension)
  * @param {string} edgeBasePath
  */
 function createAepEdgeClient(
   dataStreamId,
   aepEdgeCluster = "",
+  edgeDomain = AEP_EDGE_DOMAIN,
   debugValidationSession = undefined,
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD
 ) {
@@ -152,7 +154,7 @@ function createAepEdgeClient(
     const requestId = uuidv4();
 
     const requestUrl = [
-      `https://${AEP_EDGE_DOMAIN}`,
+      `https://${edgeDomain}`,
       edgeBasePath,
       aepEdgeCluster,
       "v2",
@@ -191,6 +193,7 @@ function createAepEdgeClient(
 
   function getPropositions({
     decisionScopes = [PAGE_WIDE_SCOPE],
+    surfaces = [],
     xdm = {},
     data = {},
     meta = {},
@@ -211,6 +214,7 @@ function createAepEdgeClient(
         personalization: {
           schemas: SCHEMAS_PERSONALIZATION,
           decisionScopes,
+          surfaces,
         },
       },
       meta: {
