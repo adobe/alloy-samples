@@ -165,6 +165,9 @@ function sendDisplayEvent(aepEdgeClient, req, propositions, cookieEntries) {
 6. Visual Experience Composer (VEC) experiences are ignored since the Web SDK is required to render them.
 7. When the HTML response is returned, the identity and cluster cookies are set on the response by the application server.
 
+## Personalization Payloads
+Please refer to the sample personalization payloads in the [Personalization Payloads](../PersonalizationPayloads.md) file
+
 ## Key Observations
 
 ### Cookies

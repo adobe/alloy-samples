@@ -25,8 +25,8 @@ function createIdentityPayload(
   };
 }
 
-function sendDisplayEvent(decision) {
-  const { id, scope, scopeDetails = {} } = decision;
+function sendDisplayEvent(proposition) {
+  const { id, scope, scopeDetails = {} } = proposition;
 
   alloy("sendEvent", {
     xdm: {
@@ -40,34 +40,65 @@ function sendDisplayEvent(decision) {
               scopeDetails: scopeDetails,
             },
           ],
+          propositionEventType: {
+            display: 1
+          },
         },
       },
     },
   });
 }
 
-function updateButtons(buttonActions) {
+function sendClickEvent(text, proposition) {
+  const { id, scope, scopeDetails = {} } = proposition;
+
+  alloy("sendEvent", {
+    xdm: {
+      eventType: "decisioning.propositionInteract",
+      _experience: {
+        decisioning: {
+          propositions: [
+            {
+              id: id,
+              scope: scope,
+              scopeDetails: scopeDetails,
+            },
+          ],
+          propositionEventType: {
+            interact: 1
+          },
+          propositionAction: {
+            label: text
+          },
+        },
+      },
+    },
+  });
+}
+
+function updateButtons(buttonActions, proposition) {
   buttonActions.forEach((buttonAction) => {
     const { id, text, content } = buttonAction;
 
     const element = document.getElementById(`action-button-${id}`);
     element.innerText = text;
 
-    element.addEventListener("click", () => alert(content));
+    element.addEventListener("click", () => sendClickEvent(text, proposition));
   });
 }
 
 function applyPersonalization(surfaceName) {
   return function (result) {
-    const { propositions = [], decisions = [] } = result;
-    // send display event for the surface
-    decisions.forEach((decision) => sendDisplayEvent(decision));
+    const { propositions = []} = result;
 
     const proposition = propositions.filter((p) =>
       p.scope.endsWith(surfaceName)
     )[0];
 
     if (proposition) {
+      // send display event for the surface
+      sendDisplayEvent(proposition)
+
       const element = document.querySelector("img.ajo-decision");
 
       const {
@@ -75,7 +106,7 @@ function applyPersonalization(surfaceName) {
         heroImageName = "demo-marketing-decision1-default.png",
       } = proposition.items[0].data.content;
 
-      updateButtons(buttonActions);
+      updateButtons(buttonActions, proposition);
 
       element.src = `img/${heroImageName}`;
     }

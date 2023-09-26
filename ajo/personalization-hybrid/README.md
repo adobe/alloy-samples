@@ -31,7 +31,21 @@ To run this sample:
 
 ## How it works
 
-1. [Express](https://expressjs.com/) is used for a lean server-side implementation. To handle basic server requests and routing.
+1.  [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file under ajo.
+
+```javascript
+<script src="https://cdn1.adoberesources.net/alloy/2.18.0/alloy.min.js" async></script>
+alloy("configure", {
+  defaultConsent: "in",
+  edgeDomain: "{{edgeDomain}}",
+  edgeConfigId: "{{edgeConfigId}}",
+  orgId:"{{orgId}}",
+  debugEnabled: false,
+  thirdPartyCookiesEnabled: false
+});
+```
+
+2. [Express](https://expressjs.com/) is used for a lean server-side implementation. To handle basic server requests and routing.
 2. The web page is requested and any cookies previously stored by the browser prefixed with `kndctr_` are included.
 3. When the page is requested from the app server, an event is sent to the [interactive data collection endpoint](https://experienceleague.adobe.com/docs/experience-platform/edge-network-server-api/data-collection/interactive-data-collection.html?lang=en) to fetch personalization content. This sample app makes use of some helper methods to simplify building and sending requests to the API (see [aepEdgeClient.js](../../common/aepEdgeClient.js)). But the request is simply a `POST` with a payload that contains an event and query. The cookies (if available) from the prior step are included with the request in the `meta>state>entries` array.
 
@@ -192,6 +206,40 @@ function sendDisplayEvent(decision) {
   });
 }
 ```
+
+6. For code based experience campaigns, click interaction events must manually be sent to indicate when an element has been clicked. This is done via the `sendEvent` command.
+
+```javascript
+function sendClickEvent(text, proposition) {
+  const { id, scope, scopeDetails = {} } = proposition;
+
+  alloy("sendEvent", {
+    xdm: {
+      eventType: "decisioning.propositionInteract",
+      _experience: {
+        decisioning: {
+          propositions: [
+            {
+              id: id,
+              scope: scope,
+              scopeDetails: scopeDetails,
+            },
+          ],
+          propositionEventType: {
+            interact: 1
+          },
+          propositionAction: {
+            label: text
+          },
+        },
+      },
+    },
+  });
+}
+```
+
+## Personalization Payloads
+Please refer to the sample personalization payloads in the [Personalization Payloads](../PersonalizationPayloads.md) file
 
 ## Key Observations
 

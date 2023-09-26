@@ -31,7 +31,20 @@ To run this sample:
 
 ## How it works
 
-1. [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included on the page.
+1. [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file under ajo.
+
+```javascript
+<script src="https://cdn1.adoberesources.net/alloy/2.18.0/alloy.min.js" async></script>
+alloy("configure", {
+  defaultConsent: "in",
+  edgeDomain: "{{edgeDomain}}",
+  edgeConfigId: "{{edgeConfigId}}",
+  orgId:"{{orgId}}",
+  debugEnabled: false,
+  thirdPartyCookiesEnabled: false
+});
+```
+
 2. The `sendEvent` command is used to fetch personalization content.
 
 ```javascript
@@ -48,8 +61,8 @@ alloy("sendEvent", {
 5. For code based experience campaigns, display events must manually be sent to indicate when the content has been displayed. This is done via the `sendEvent` command.
 
 ```javascript
-function sendDisplayEvent(decision) {
-  const { id, scope, scopeDetails = {} } = decision;
+function sendDisplayEvent(proposition) {
+  const { id, scope, scopeDetails = {} } = proposition;
 
   alloy("sendEvent", {
     xdm: {
@@ -63,12 +76,49 @@ function sendDisplayEvent(decision) {
               scopeDetails: scopeDetails,
             },
           ],
+          propositionEventType: {
+            display: 1
+          },
         },
       },
     },
   });
 }
 ```
+
+6. For code based experience campaigns, click interaction events must manually be sent to indicate when an element has been clicked. This is done via the `sendEvent` command.
+
+```javascript
+function sendClickEvent(text, proposition) {
+  const { id, scope, scopeDetails = {} } = proposition;
+
+  alloy("sendEvent", {
+    xdm: {
+      eventType: "decisioning.propositionInteract",
+      _experience: {
+        decisioning: {
+          propositions: [
+            {
+              id: id,
+              scope: scope,
+              scopeDetails: scopeDetails,
+            },
+          ],
+          propositionEventType: {
+            interact: 1
+          },
+          propositionAction: {
+            label: text
+          },
+        },
+      },
+    },
+  });
+}
+```
+
+## Personalization Payloads
+Please refer to the sample personalization payloads in the [Personalization Payloads](../PersonalizationPayloads.md) file
 
 ## Key Observations
 
