@@ -31,7 +31,7 @@ To run this sample:
 
 ## How it works
 
-1.  [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file under ajo.
+1.  [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file within the `ajo` folder.
 
 ```javascript
 <script src="https://cdn1.adoberesources.net/alloy/2.18.0/alloy.min.js" async></script>
@@ -207,10 +207,10 @@ function sendDisplayEvent(decision) {
 }
 ```
 
-6. For code based experience campaigns, click interaction events must manually be sent to indicate when an element has been clicked. This is done via the `sendEvent` command.
+6. For code based experience campaigns, interaction events must manually be sent to indicate when a user has interacted with the content. This is done via the `sendEvent` command.
 
 ```javascript
-function sendClickEvent(text, proposition) {
+function sendInteractEvent(label, proposition) {
   const { id, scope, scopeDetails = {} } = proposition;
 
   alloy("sendEvent", {
@@ -229,7 +229,7 @@ function sendClickEvent(text, proposition) {
             interact: 1
           },
           propositionAction: {
-            label: text
+            label: label
           },
         },
       },
@@ -237,9 +237,6 @@ function sendClickEvent(text, proposition) {
   });
 }
 ```
-
-## Personalization Payloads
-Please refer to the sample personalization payloads in the [Personalization Payloads](../PersonalizationPayloads.md) file
 
 ## Key Observations
 
@@ -285,11 +282,14 @@ sequenceDiagram
   Browser->>Alloy: applyResponse({...});
   Alloy->>DOM: Render propositions
   Alloy->>API: Send display notification(s)
+  Alloy->>API: Send interact notification(s)
 ```
+
+Please refer to [Sample Adobe Experience Platform Edge Network Personalization Payloads](../PersonalizationPayloads.md) for examples of the Edge Network API request and responses in the steps 3, 4, 9 and 10 of the flow.
 
 ## Beyond the sample
 
-This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file under ajo and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
+This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file within the `ajo` folder and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
 
 ### Further Reading
 

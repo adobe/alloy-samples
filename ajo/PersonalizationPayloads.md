@@ -1,11 +1,20 @@
-## Personalization Payloads
+## Sample Adobe Experience Platform Edge Network Personalization Payloads
 
-### Proposition Fetch
+The `Personalization Payloads` in this section illustrates the Edge Network request/response payloads sent 
+as part of the interaction flow in the provided samples.
+The interactions with the Edge Network using Adobe Experience Platform APIs are depicted in the 
+[Personalization Client Side Flow Diagram](personalization-client-side/README.md#flow-diagram),
+[Personalization Server Side Flow Diagram](personalization-server-side/README.md#flow-diagram) and
+[Personalization Hybrid Flow Diagram](personalization-hybrid/README.md#flow-diagram)
+
+### Interact Request - Fetch Personalization Content
 
 ```http request
-curl --location 'https://edge.adobedc.net/ee/v1/interact?configId=0814ac07-ffeb-44c4-8633-85301d5e721c' \
---header 'Content-Type: application/json' \
---data '{
+POST https://edge.adobedc.net/ee/v1/interact?
+    configId=0814ac07-ffeb-44c4-8633-85301d5e721c
+Content-Type: application/json
+
+{
   "meta": {
     "configOverrides": {},
     "state": {
@@ -80,10 +89,10 @@ curl --location 'https://edge.adobedc.net/ee/v1/interact?configId=0814ac07-ffeb-
       ]
     }
   }
-}'
+}
 ```
 
-### Proposition Response
+### Return Propositions - Personalization Content
 
 ```json
 {
@@ -193,12 +202,14 @@ curl --location 'https://edge.adobedc.net/ee/v1/interact?configId=0814ac07-ffeb-
 }
 ```
 
-### Proposition Display
+### Send Display Notification(s)
 
 ```http request
-curl --location 'https://edge.adobedc.net/ee/v1/interact?configId=0814ac07-ffeb-44c4-8633-85301d5e721c' \
---header 'Content-Type: application/json' \
---data '{
+POST https://edge.adobedc.net/ee/v1/interact?
+    configId=0814ac07-ffeb-44c4-8633-85301d5e721c
+Content-Type: application/json
+
+{
   "meta": {
     "configOverrides": {},
     "state": {
@@ -289,15 +300,17 @@ curl --location 'https://edge.adobedc.net/ee/v1/interact?configId=0814ac07-ffeb-
       ]
     }
   }
-}'
+}
 ```
 
-### Proposition Click
+### Send Interact Notification(s)
 
 ```http request
-curl --location 'https://edge.adobedc.net/ee/v1/interact?configId=0814ac07-ffeb-44c4-8633-85301d5e721c' \
---header 'Content-Type: application/json' \
---data '{
+POST https://edge.adobedc.net/ee/v1/interact?
+    configId=0814ac07-ffeb-44c4-8633-85301d5e721c
+Content-Type: application/json
+
+{
   "meta": {
     "configOverrides": {},
     "state": {
@@ -391,6 +404,6 @@ curl --location 'https://edge.adobedc.net/ee/v1/interact?configId=0814ac07-ffeb-
       ]
     }
   }
-}'
+}
 ```
 

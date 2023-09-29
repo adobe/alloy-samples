@@ -49,7 +49,7 @@ function sendDisplayEvent(proposition) {
   });
 }
 
-function sendClickEvent(label, proposition) {
+function sendInteractEvent(label, proposition) {
   const { id, scope, scopeDetails = {} } = proposition;
 
   alloy("sendEvent", {
@@ -68,7 +68,7 @@ function sendClickEvent(label, proposition) {
             interact: 1
           },
           propositionAction: {
-            "label": label
+            label: label
           },
         },
       },
@@ -83,7 +83,7 @@ function updateButtons(buttonActions, proposition) {
     const element = document.getElementById(`action-button-${id}`);
     element.innerText = text;
 
-    element.addEventListener("click", () => sendClickEvent(text, proposition));
+    element.addEventListener("click", () => sendInteractEvent(text, proposition));
   });
 }
 
