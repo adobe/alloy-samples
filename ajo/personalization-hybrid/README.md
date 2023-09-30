@@ -31,7 +31,21 @@ To run this sample:
 
 ## How it works
 
-1. [Express](https://expressjs.com/) is used for a lean server-side implementation. To handle basic server requests and routing.
+1.  [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file within the `ajo` folder.
+
+```javascript
+<script src="https://cdn1.adoberesources.net/alloy/2.18.0/alloy.min.js" async></script>
+alloy("configure", {
+  defaultConsent: "in",
+  edgeDomain: "{{edgeDomain}}",
+  edgeConfigId: "{{edgeConfigId}}",
+  orgId:"{{orgId}}",
+  debugEnabled: false,
+  thirdPartyCookiesEnabled: false
+});
+```
+
+2. [Express](https://expressjs.com/) is used for a lean server-side implementation. To handle basic server requests and routing.
 2. The web page is requested and any cookies previously stored by the browser prefixed with `kndctr_` are included.
 3. When the page is requested from the app server, an event is sent to the [interactive data collection endpoint](https://experienceleague.adobe.com/docs/experience-platform/edge-network-server-api/data-collection/interactive-data-collection.html?lang=en) to fetch personalization content. This sample app makes use of some helper methods to simplify building and sending requests to the API (see [aepEdgeClient.js](../../common/aepEdgeClient.js)). But the request is simply a `POST` with a payload that contains an event and query. The cookies (if available) from the prior step are included with the request in the `meta>state>entries` array.
 
@@ -193,6 +207,37 @@ function sendDisplayEvent(decision) {
 }
 ```
 
+6. For code based experience campaigns, interaction events must manually be sent to indicate when a user has interacted with the content. This is done via the `sendEvent` command.
+
+```javascript
+function sendInteractEvent(label, proposition) {
+  const { id, scope, scopeDetails = {} } = proposition;
+
+  alloy("sendEvent", {
+    xdm: {
+      eventType: "decisioning.propositionInteract",
+      _experience: {
+        decisioning: {
+          propositions: [
+            {
+              id: id,
+              scope: scope,
+              scopeDetails: scopeDetails,
+            },
+          ],
+          propositionEventType: {
+            interact: 1
+          },
+          propositionAction: {
+            label: label
+          },
+        },
+      },
+    },
+  });
+}
+```
+
 ## Key Observations
 
 ### Cookies
@@ -237,11 +282,14 @@ sequenceDiagram
   Browser->>Alloy: applyResponse({...});
   Alloy->>DOM: Render propositions
   Alloy->>API: Send display notification(s)
+  Alloy->>API: Send interact notification(s)
 ```
+
+Please refer to [Sample Adobe Experience Platform Edge Network Personalization Payloads](../PersonalizationPayloads.md) for examples of the Edge Network API request and responses in the steps 3, 4, 9 and 10 of the flow.
 
 ## Beyond the sample
 
-This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file under ajo and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
+This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file within the `ajo` folder and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
 
 ### Further Reading
 

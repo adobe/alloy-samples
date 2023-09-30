@@ -205,6 +205,8 @@ sequenceDiagram
   Browser->>DOM: Render HTML
 ```
 
+Please refer to [Sample Adobe Experience Platform Edge Network Personalization Payloads](../PersonalizationPayloads.md) for examples of the Edge Network API request and responses in the steps 3, 4 and 5 of the flow.
+
 ## Beyond the sample
 
-This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file under ajo and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
+This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file within the `ajo` folder and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
