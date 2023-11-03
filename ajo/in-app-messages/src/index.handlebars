@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>In App Messages For Web</title>
+  <script  src="https://cdn1.adoberesources.net/alloy/2.19.0/alloy.min.js" async></script>
+</head>
+<body>
+<script>
+  !function(e,a,n,t){
+    if (a) return;
+    var i=e.head;if(i){
+      var o=e.createElement("style");
+      o.id="alloy-prehiding",o.innerText=n,i.appendChild(o),
+        setTimeout(function(){o.parentNode&&o.parentNode.removeChild(o)},t)}}
+  (document, document.location.href.indexOf("adobe_authoring_enabled") !== -1, "body { opacity: 0 !important }", 3000);
+
+
+  !function(n,o){o.forEach(function(o){n[o]||((n.__alloyNS=n.__alloyNS||
+    []).push(o),n[o]=function(){var u=arguments;return new Promise(
+    function(i,l){n[o].q.push([i,l,u])})},n[o].q=[])})}
+  (window,["alloy"]);
+
+  alloy("configure", {
+    defaultConsent: "in",
+    edgeDomain: "{{edgeDomain}}",
+    datastreamId: "8cefc5ca-1c2a-479f-88f2-3d42cc302514",
+    orgId: "906E3A095DC834230A495FD6@AdobeOrg",
+    debugEnabled: true,
+    personalizationStorageEnabled: true,
+  });
+
+  let customTraitKey = "";
+  let customTraitValue = "";
+  const setCustomTraitKey = (value) => {
+    customTraitKey = value;
+  }
+
+  const setCustomTraitValue = (value) => {
+    customTraitValue = value;
+  }
+  let disableRuleset = true;
+  const renderDecisions = (useEvaluateRulesetsCommand = false) => {
+    const context ={}
+
+    if (customTraitKey.length !== 0 && customTraitValue.length !== 0) {
+      context[customTraitKey] = customTraitValue;
+    }
+    if (useEvaluateRulesetsCommand) {
+      alloy("evaluateRulesets", {
+        renderDecisions: true,
+        personalization: {
+          decisionContext: context
+        }
+      });
+      return;
+    }
+
+    alloy("sendEvent", {
+      renderDecisions: true,
+      personalization: {
+        surfaces: ["#hello"],
+        decisionContext: context
+      }
+    }).then(() => {
+      disableRuleset = false;
+    });
+  };
+
+</script>
+<div>
+  <h1>In App Messages For Web</h1>
+  <div>
+    <div style="margin-bottom: 20px;">
+      <h3>Custom Trait</h3>
+      <span style="margin-right: 20px;">
+                    <label for="input-custom-trait-key">Key</label>
+                    <input id="input-custom-trait-key" type="text" value="{{customTraitKey}}" oninput="setCustomTraitKey(this.value)">
+                </span>
+      <span style="margin-right: 20px;">
+                    <label for="input-custom-trait-value">Value</label>
+                    <input id="input-custom-trait-value" type="text" value="{{customTraitValue}}" oninput="setCustomTraitValue(this.value)">
+                </span>
+    </div>
+    <button onclick="renderDecisions()">sendEvent</button>
+    {{#if this.disableRuleset}}
+      <button onclick="renderDecisions(true)" disabled>evaluateRulesets</button>
+    {{else}}
+      <button onclick="renderDecisions(true)">evaluateRulesets</button>
+    {{/if}}
+  </div>
+</div>
+</body>
+</html>
