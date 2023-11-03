@@ -30,6 +30,6 @@ fs.writeFile(
   html,
   (err) => {
     if (err) console.log(err);
-    console.log("File written succesfully");
+    console.log("File written successfully");
   }
 );

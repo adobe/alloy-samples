@@ -31,6 +31,13 @@
 
   let customTraitKey = "";
   let customTraitValue = "";
+  window.onload = function() {
+    document.getElementById("input-custom-trait-key1").value = "holiday";
+    document.getElementById("input-custom-trait-value1").value = "thanksgiving";
+    document.getElementById("input-custom-trait-key2").value = "winter";
+    document.getElementById("input-custom-trait-value2").value = "season";
+  }
+
   const setCustomTraitKey = (value) => {
     customTraitKey = value;
   }
@@ -38,32 +45,26 @@
   const setCustomTraitValue = (value) => {
     customTraitValue = value;
   }
-  let disableRuleset = true;
-  const renderDecisions = (useEvaluateRulesetsCommand = false) => {
-    const context ={}
 
-    if (customTraitKey.length !== 0 && customTraitValue.length !== 0) {
-      context[customTraitKey] = customTraitValue;
-    }
-    if (useEvaluateRulesetsCommand) {
-      alloy("evaluateRulesets", {
-        renderDecisions: true,
-        personalization: {
-          decisionContext: context
-        }
-      });
-      return;
-    }
-
+  const renderDecisionsOnLoad = (withEvaluateRulesetCommand = false) => {
     alloy("sendEvent", {
       renderDecisions: true,
       personalization: {
-        surfaces: ["#hello"],
-        decisionContext: context
+        decisionContext: {
+          "holiday": "thanksgiving"
+        }
       }
-    }).then(() => {
-      disableRuleset = false;
     });
+    if(withEvaluateRulesetCommand) {
+      alloy("evaluateRulesets", {
+        renderDecisions: true,
+        personalization: {
+          decisionContext: {
+            customTraitKey: customTraitValue
+          }
+        }
+      })
+    }
   };
 
 </script>
@@ -71,22 +72,32 @@
   <h1>In App Messages For Web</h1>
   <div>
     <div style="margin-bottom: 20px;">
-      <h3>Custom Trait</h3>
+      <h3>Option 1: Enter Custom Trait for the Trigger Send Data to the platform </h3>
       <span style="margin-right: 20px;">
-                    <label for="input-custom-trait-key">Key</label>
-                    <input id="input-custom-trait-key" type="text" value="{{customTraitKey}}" oninput="setCustomTraitKey(this.value)">
+                    <label for="input-custom-trait-key1">Key</label>
+                    <input id="input-custom-trait-key1" type="text" value="{{customTraitKey}}" oninput="setCustomTraitKey(this.value)">
                 </span>
       <span style="margin-right: 20px;">
-                    <label for="input-custom-trait-value">Value</label>
-                    <input id="input-custom-trait-value" type="text" value="{{customTraitValue}}" oninput="setCustomTraitValue(this.value)">
+                    <label for="input-custom-trait-value1">Value</label>
+                    <input id="input-custom-trait-value1" type="text" value="{{customTraitValue}}" oninput="setCustomTraitValue(this.value)">
                 </span>
     </div>
-    <button onclick="renderDecisions()">sendEvent</button>
-    {{#if this.disableRuleset}}
-      <button onclick="renderDecisions(true)" disabled>evaluateRulesets</button>
-    {{else}}
-      <button onclick="renderDecisions(true)">evaluateRulesets</button>
-    {{/if}}
+    <button onclick="renderDecisionsOnLoad()">sendEvent</button>
+  </div>
+  <div>
+    <div style="margin-bottom: 20px;">
+      <h3>Option 2: Enter Custom Trait for the Manual Trigger  </h3>
+      <span style="margin-right: 20px;">
+                    <label for="input-custom-trait-key2">Key</label>
+                    <input id="input-custom-trait-key2" type="text" value="{{customTraitKey}}" oninput="setCustomTraitKey(this.value)">
+                </span>
+      <span style="margin-right: 20px;">
+                    <label for="input-custom-trait-value2">Value</label>
+                    <input id="input-custom-trait-value2" type="text" value="{{customTraitValue}}" oninput="setCustomTraitValue(this.value)">
+                </span>
+    </div>
+    <h4>Click on Send Event first so that rulesets gets loaded in the memory</h4>
+    <button id="applyBtn" onclick="renderDecisionsOnLoad(true)">evaluateRulesets</button>
   </div>
 </div>
 </body>
