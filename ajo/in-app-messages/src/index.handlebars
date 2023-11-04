@@ -29,41 +29,53 @@
     personalizationStorageEnabled: true,
   });
 
-  let customTraitKey = "";
-  let customTraitValue = "";
-  window.onload = function() {
-    document.getElementById("input-custom-trait-key1").value = "holiday";
-    document.getElementById("input-custom-trait-value1").value = "thanksgiving";
-    document.getElementById("input-custom-trait-key2").value = "winter";
-    document.getElementById("input-custom-trait-value2").value = "season";
+  let customTraitKey1 = "";
+  let customTraitValue1 = "";
+  let customTraitKey2 = "";
+  let customTraitValue2 = "";
+
+  const setCustomTraitKey1 = (value) => {
+    customTraitKey1 = value;
   }
 
-  const setCustomTraitKey = (value) => {
-    customTraitKey = value;
+  const setCustomTraitValue1 = (value) => {
+    customTraitValue1 = value;
   }
 
-  const setCustomTraitValue = (value) => {
-    customTraitValue = value;
+  const setCustomTraitKey2 = (value) => {
+    customTraitKey2 = value;
   }
+
+  const setCustomTraitValue2 = (value) => {
+    customTraitValue2 = value;
+  }
+
 
   const renderDecisionsOnLoad = (withEvaluateRulesetCommand = false) => {
-    alloy("sendEvent", {
-      renderDecisions: true,
-      personalization: {
-        decisionContext: {
-          "holiday": "thanksgiving"
-        }
-      }
-    });
     if(withEvaluateRulesetCommand) {
+      const context2 = {};
+
+      if (customTraitKey2.length !== 0 && customTraitValue2.length !== 0) {
+        context2[customTraitKey2] = customTraitValue2;
+      }
       alloy("evaluateRulesets", {
         renderDecisions: true,
         personalization: {
-          decisionContext: {
-            customTraitKey: customTraitValue
-          }
+          decisionContext: context2
         }
       })
+    } else {
+      const context1 = {};
+
+      if (customTraitKey1.length !== 0 && customTraitValue1.length !== 0) {
+        context1[customTraitKey1] = customTraitValue1;
+      }
+      alloy("sendEvent", {
+        renderDecisions: true,
+        personalization: {
+          decisionContext: context1
+        }
+      });
     }
   };
 
@@ -75,11 +87,11 @@
       <h3>Option 1: Enter Custom Trait for the Trigger Send Data to the platform </h3>
       <span style="margin-right: 20px;">
                     <label for="input-custom-trait-key1">Key</label>
-                    <input id="input-custom-trait-key1" type="text" value="{{customTraitKey}}" oninput="setCustomTraitKey(this.value)">
+                    <input id="input-custom-trait-key1" type="text" value="{{customTraitKey1}}" oninput="setCustomTraitKey1(this.value)">
                 </span>
       <span style="margin-right: 20px;">
                     <label for="input-custom-trait-value1">Value</label>
-                    <input id="input-custom-trait-value1" type="text" value="{{customTraitValue}}" oninput="setCustomTraitValue(this.value)">
+                    <input id="input-custom-trait-value1" type="text" value="{{customTraitValue1}}" oninput="setCustomTraitValue1(this.value)">
                 </span>
     </div>
     <button onclick="renderDecisionsOnLoad()">sendEvent</button>
@@ -89,11 +101,11 @@
       <h3>Option 2: Enter Custom Trait for the Manual Trigger  </h3>
       <span style="margin-right: 20px;">
                     <label for="input-custom-trait-key2">Key</label>
-                    <input id="input-custom-trait-key2" type="text" value="{{customTraitKey}}" oninput="setCustomTraitKey(this.value)">
+                    <input id="input-custom-trait-key2" type="text" value="{{customTraitKey2}}" oninput="setCustomTraitKey2(this.value)">
                 </span>
       <span style="margin-right: 20px;">
                     <label for="input-custom-trait-value2">Value</label>
-                    <input id="input-custom-trait-value2" type="text" value="{{customTraitValue}}" oninput="setCustomTraitValue(this.value)">
+                    <input id="input-custom-trait-value2" type="text" value="{{customTraitValue2}}" oninput="setCustomTraitValue2(this.value)">
                 </span>
     </div>
     <h4>Click on Send Event first so that rulesets gets loaded in the memory</h4>
