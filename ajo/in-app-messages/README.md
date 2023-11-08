@@ -1,22 +1,27 @@
 # In-App Messages
-Web In-App Messaging is a feature that gives in-app capabilities to web marketers, 
-allowing them to create seamless and highly personalized user experiences on websites using modal-overlay type messages. With this new feature, they can engage with web customers, driving user engagement, retention, and conversions.
+Web In-App Messaging is a feature that gives marketers the ability to deliver personalized messages to web users. 
+Allowing marketers them to display personalized messages on websites using modal-overlay type messages.
+With this new feature, marketers can engage with web customers, driving user engagement, retention, and conversions.
+
 
 ## Overview
 
 This sample demonstrates using Adobe Experience Platform to get personalization message content from AJO.
-
 This sample uses the [Adobe Experience Platform Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) to get display in-app content.
 
-Similar sample can be found on Alloy Sandbox In-app Messages [here](https://alloyio.com/inAppMessages)
+## Getting Started
+
+1. Author in-app message content in Adobe Journey Optimizer.
+2. Configure the sample to use your Adobe Journey Optimizer orgid,  datastreamId and surfaceUrl. Sample configuration is in the .env file.
+3. Run the sample.
 
 ## How it works
 
+There are two ways to display in-app message content from Adobe Journey Optimizer.
+
 [Alloy](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included on the page.
-1. `sendEvent` command  : If the renderDecisions property is set to true, the DecisioningEngine component will evaluate it's known rules.
-   This means that after a konductor response is received, the rules will be evaluated and personalization rendered.
-    An optional property called decisionContext can be provided to supply the context object the decisioning engine will use when evaluating the rulesets.
-    example : 
+1. On page load the sendEvent command is used to fetch in-app message content.
+   example :
 
 ```alloy("sendEvent", {
   renderDecisions: true,
@@ -29,7 +34,7 @@ Similar sample can be found on Alloy Sandbox In-app Messages [here](https://allo
 });
 ```
 
-2.`evaluateRulesets` command: You can manually trigger the rulesets evaluation by calling the evaluateRulesets command.
+2. Manually trigger the rulesets evaluation using `evaluateRulesets` command.
    example : 
 
 ```alloy("evaluateRulesets", {
