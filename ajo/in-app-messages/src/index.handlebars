@@ -2,6 +2,16 @@
 <html>
 <head>
   <title>In App Messages For Web</title>
+  <meta charset="UTF-8">
+  <title>AJO client-side sample</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="icon" href="https://wwwimages2.adobe.com/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="script.js"></script>
   <script  src="https://cdn1.adoberesources.net/alloy/2.19.0/alloy.min.js" async></script>
 </head>
 <body>
@@ -24,92 +34,76 @@
     defaultConsent: "in",
     edgeDomain: "{{edgeDomain}}",
     datastreamId: "8cefc5ca-1c2a-479f-88f2-3d42cc302514",
-    orgId: "906E3A095DC834230A495FD6@AdobeOrg",
+    orgId: "{{orgId}}",
     debugEnabled: true,
     personalizationStorageEnabled: true,
-  });
-
-  let customTraitKey1 = "";
-  let customTraitValue1 = "";
-  let customTraitKey2 = "";
-  let customTraitValue2 = "";
-
-  const setCustomTraitKey1 = (value) => {
-    customTraitKey1 = value;
-  }
-
-  const setCustomTraitValue1 = (value) => {
-    customTraitValue1 = value;
-  }
-
-  const setCustomTraitKey2 = (value) => {
-    customTraitKey2 = value;
-  }
-
-  const setCustomTraitValue2 = (value) => {
-    customTraitValue2 = value;
-  }
-
-
-  const renderDecisionsOnLoad = (withEvaluateRulesetCommand = false) => {
-    if(withEvaluateRulesetCommand) {
-      const context2 = {};
-
-      if (customTraitKey2.length !== 0 && customTraitValue2.length !== 0) {
-        context2[customTraitKey2] = customTraitValue2;
+  }).then(
+    alloy("sendEvent", {
+      renderDecisions: true,
+      personalization: {
+        decisionContext: {
+          "user": "alloy-sample"
+        }
       }
+    })
+  );
+
+  const renderDecisionsManually = (buttonNumber) => {
       alloy("evaluateRulesets", {
         renderDecisions: true,
         personalization: {
-          decisionContext: context2
+          decisionContext: {
+            "user": buttonNumber
+          }
         }
       })
-    } else {
-      const context1 = {};
-
-      if (customTraitKey1.length !== 0 && customTraitValue1.length !== 0) {
-        context1[customTraitKey1] = customTraitValue1;
-      }
-      alloy("sendEvent", {
-        renderDecisions: true,
-        personalization: {
-          decisionContext: context1
-        }
-      });
-    }
   };
 
 </script>
-<div>
-  <h1>In App Messages For Web</h1>
-  <div>
-    <div style="margin-bottom: 20px;">
-      <h3>Option 1: Enter Custom Trait for the Trigger Send Data to the platform </h3>
-      <span style="margin-right: 20px;">
-                    <label for="input-custom-trait-key1">Key</label>
-                    <input id="input-custom-trait-key1" type="text" value="{{customTraitKey1}}" oninput="setCustomTraitKey1(this.value)">
-                </span>
-      <span style="margin-right: 20px;">
-                    <label for="input-custom-trait-value1">Value</label>
-                    <input id="input-custom-trait-value1" type="text" value="{{customTraitValue1}}" oninput="setCustomTraitValue1(this.value)">
-                </span>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Web Site</a>
     </div>
-    <button onclick="renderDecisionsOnLoad()">sendEvent</button>
+    <div id="navbar" class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div><!--/.nav-collapse -->
   </div>
-  <div>
-    <div style="margin-bottom: 20px;">
-      <h3>Option 2: Enter Custom Trait for the Manual Trigger  </h3>
-      <span style="margin-right: 20px;">
-                    <label for="input-custom-trait-key2">Key</label>
-                    <input id="input-custom-trait-key2" type="text" value="{{customTraitKey2}}" oninput="setCustomTraitKey2(this.value)">
-                </span>
-      <span style="margin-right: 20px;">
-                    <label for="input-custom-trait-value2">Value</label>
-                    <input id="input-custom-trait-value2" type="text" value="{{customTraitValue2}}" oninput="setCustomTraitValue2(this.value)">
-                </span>
-    </div>
-    <h4>Click on Send Event first so that rulesets gets loaded in the memory</h4>
-    <button id="applyBtn" onclick="renderDecisionsOnLoad(true)">evaluateRulesets</button>
+</nav>
+<div id="main-container" class="container">
+  <div class="page-header">
+    <h1>Hello World!</h1>
+  </div>
+  <img id="ajo-decision" src="img/demo-marketing-decision1-default.png" width="640" alt="ajo decision" class="img-responsive img-rounded ajo-decision" />
+  <p id="paragraph-text-1" class="lead">
+    This is a sample web page. It leverages the <a
+    href="https://experienceleague.adobe.com/docs/experience-platform/edge/home.html">Adobe Experience Platform Web
+    SDK</a> and <a
+    href="https://experienceleague.adobe.com/docs/experience-platform/edge-network-server-api/overview.html">APIs</a>
+    to render personalization content.
+  </p>
+  <p id="paragraph-text-2">
+    Vestibulum cursus tristique risus, volutpat lobortis quam fermentum dapibus. Sed lacus augue, vulputate a placerat
+    vel, fringilla sed velit. In aliquet odio ut efficitur gravida. Vivamus volutpat hendrerit nisl ut rutrum. Donec
+    id nunc dolor. Pellentesque lectus mi, consequat sit amet elit vitae, laoreet euismod est. Cras placerat ex
+    ligula, nec malesuada dolor feugiat ut. Ut condimentum ante turpis, a iaculis massa cursus vitae. Sed sed felis
+    quam. Sed hendrerit, nisl vel viverra viverra, nisi mauris laoreet tortor, ut blandit lectus lacus ut tellus.
+    Integer ante sapien, tincidunt ut erat id, volutpat finibus urna. Aliquam rhoncus tellus vitae facilisis varius.
+  </p>
+  <div id="some-buttons">
+    <button id="action-button-1" data-id="1" type="button" class="btn btn-primary" onclick="renderDecisionsManually('one')">One</button>
+    <button id="action-button-2" data-id="2" type="button" class="btn btn-success" onclick="renderDecisionsManually('two')">Two</button>
+    <button id="action-button-3" data-id="3" type="button" class="btn btn-info" onclick="renderDecisionsManually('three')">Three</button>
   </div>
 </div>
 </body>
