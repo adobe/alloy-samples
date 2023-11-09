@@ -33,28 +33,29 @@ There are two ways to display in-app message content from Adobe Journey Optimize
 1. On page load the sendEvent command is used to fetch in-app message content.
    example :
 
-`alloy("sendEvent", {
+```js 
+  alloy("sendEvent", {
   renderDecisions: true,
-  personalization {
-   decisionContext: {
-      "user": "alloy-sample"
-   }
+  personalization:{
+    surfaces: ['#welcome']
   }
-});`
+});
+```
 
 
 2. Manually trigger the rulesets evaluation using `evaluateRulesets` command.
    example : 
-
- `alloy("evaluateRulesets", {
+   
+ ```js
+  alloy("evaluateRulesets", {
   renderDecisions: true,
-   personalization {
+   personalization: {
      decisionContext: { 
-     "user": "button1"
+     "userAction": "buy_now"
      }
    }
 });
-`
+```
 
 
 ## Key Observations
