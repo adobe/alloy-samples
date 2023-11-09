@@ -15,6 +15,17 @@ This sample uses the [Adobe Experience Platform Web SDK](https://experienceleagu
 2. Configure the sample to use your Adobe Journey Optimizer orgid,  datastreamId and surfaceUrl. Sample configuration is in the .env file.
 3. Run the sample.
 
+## Running the sample
+Prerequisite: [install node and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
+
+To run this sample:
+1. [Setup local SSL certificates for https](https://github.com/adobe/alloy-samples/blob/main/LocalSSLCertificateSetup.md)
+2. Clone the repository to your local machine.
+3. Open a terminal and change directory to this sample's folder.
+4. Run `npm install`
+5. Run `npm start`
+6. Open a web browser to https://localhost
+
 ## How it works
 
 There are two ways to display in-app message content from Adobe Journey Optimizer.
@@ -23,7 +34,7 @@ There are two ways to display in-app message content from Adobe Journey Optimize
 1. On page load the sendEvent command is used to fetch in-app message content.
    example :
 
-```alloy("sendEvent", {
+`alloy("sendEvent", {
   renderDecisions: true,
   personalization {
    decisionContext: {
@@ -31,16 +42,16 @@ There are two ways to display in-app message content from Adobe Journey Optimize
     action: "50off"
    }
   }
-});
-```
+});`
+
 
 2. Manually trigger the rulesets evaluation using `evaluateRulesets` command.
    example : 
 
-```alloy("evaluateRulesets", {
+ `alloy("evaluateRulesets", {
   renderDecisions: true,
    personalization {
      decisionContext: { color: "orange", action: "50off" }
    }
 });
-```
+`
