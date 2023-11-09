@@ -6,8 +6,7 @@ With this new feature, marketers can engage with web customers, driving user eng
 
 ## Overview
 
-This sample demonstrates using Adobe Experience Platform to get personalization message content from AJO.
-This sample uses the [Adobe Experience Platform Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) to get display in-app content.
+This sample is using [Adobe Experience Platform Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) to display in-app messages.
 
 This is how an in-app message looks like:
 <img src="../../.assets/in-app-message1.png" width="800"/>
