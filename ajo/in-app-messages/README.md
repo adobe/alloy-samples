@@ -1,8 +1,5 @@
 # In-App Messages
-Web In-App Messaging is a feature that gives marketers the ability to deliver personalized messages to web users. 
-Allowing marketers them to display personalized messages on websites using modal-overlay type messages.
-With this new feature, marketers can engage with web customers, driving user engagement, retention, and conversions.
-
+Web In-App Messaging is a feature that empowers marketers with the ability to deliver personalized messages to web users. It allows them to display personalized messages on websites using modal-overlay type messages. With this new feature, marketers can effectively engage with web customers, driving user engagement, retention, and conversions.
 
 ## Overview
 
