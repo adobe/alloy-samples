@@ -38,8 +38,7 @@ There are two ways to display in-app message content from Adobe Journey Optimize
   renderDecisions: true,
   personalization {
    decisionContext: {
-    color: "orange",
-    action: "50off"
+      "user": "alloy-sample"
    }
   }
 });`
@@ -51,14 +50,29 @@ There are two ways to display in-app message content from Adobe Journey Optimize
  `alloy("evaluateRulesets", {
   renderDecisions: true,
    personalization {
-     decisionContext: { color: "orange", action: "50off" }
+     decisionContext: { 
+     "user": "button1"
+     }
    }
 });
 `
+
+
 ## Key Observations
 ### personalizationStorageEnabled
 Additionally, you can set `personalizationStorageEnabled` to true for the storage of the personalization content in the browser local storage.
 This will allow historical rule evaluation, for example show message only once or n number of times.
+
+### when `personalizationStorageEnabled` set to true
+in the sample example, _button1_ will trigger the rulesets evaluation using `evaluateRulesets` command.
+this will display the in-app message only once as the trigger is set to show the message only once.
+
+_button2_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message two times.
+
+_button3_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message every time.
+
+### when `personalizationStorageEnabled` set to false
+in the sample example, all the buttons will show the message every time without taking into account the trigger seeting.
 
 ## Beyond the sample
 
