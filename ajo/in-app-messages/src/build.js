@@ -8,6 +8,7 @@ const {
   EDGE_CONFIG_ID_WITH_ANALYTICS,
   ORGANIZATION_ID,
   demoSurfaceName,
+  DATASTREAM_ID
 } = process.env;
 
 const template = fs.readFileSync(
@@ -22,6 +23,7 @@ const html = renderTemplate({
   edgeConfigId: EDGE_CONFIG_ID_WITH_ANALYTICS,
   orgId: ORGANIZATION_ID,
   demoSurfaceName,
+  datastreamId: DATASTREAM_ID
 });
 
 // Write to build folder. Copy the built file and deploy
