@@ -55,3 +55,6 @@ There are two ways to display in-app message content from Adobe Journey Optimize
    }
 });
 `
+
+Additionally, you can set `personalizationStorageEnabled` to true for the storage of the personalization content in the browser local storage.
+This will allow historical rule evaluation, for example show message only once or n number of times.
