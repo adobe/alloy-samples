@@ -65,11 +65,13 @@ There are two ways to display in-app message content from Adobe Journey Optimize
 Additionally, you can set `personalizationStorageEnabled` to true for the storage of the personalization content in the browser local storage. This will allow historical rule evaluation, for example, show the message only once or n number of times.
 
 #### when `personalizationStorageEnabled` set to true
-In the sample example, _button1_ will trigger the rulesets evaluation using evaluateRulesets command. This will display the in-app message only once as the trigger is set to show the message only once.
+In the sample example
 
-_button2_ will trigger the rulesets evaluation using evaluateRulesets command and show the in-app message two times.
+* _button1_ will trigger the rulesets evaluation using `evaluateRulesets` command. This will display the in-app message only once as the trigger is set to show the message only once.
 
-_button3_ will trigger the rulesets evaluation using evaluateRulesets command and show the in-app message every time.
+* _button2_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message two times.
+
+* _button3_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message every time.
 
 #### when `personalizationStorageEnabled` set to false
 
