@@ -59,21 +59,18 @@ There are two ways to display in-app message content from Adobe Journey Optimize
 
 
 ## Key Observations
-### personalizationStorageEnabled
-Additionally, you can set `personalizationStorageEnabled` to true for the storage of the personalization content in the browser local storage.
-This will allow historical rule evaluation, for example show message only once or n number of times.
+Additionally, you can set `personalizationStorageEnabled` to true for the storage of the personalization content in the browser local storage. This will allow historical rule evaluation, for example, show the message only once or n number of times.
 
-### when `personalizationStorageEnabled` set to true
-in the sample example, _button1_ will trigger the rulesets evaluation using `evaluateRulesets` command.
-this will display the in-app message only once as the trigger is set to show the message only once.
+#### when `personalizationStorageEnabled` set to true
+In the sample example, _button1_ will trigger the rulesets evaluation using evaluateRulesets command. This will display the in-app message only once as the trigger is set to show the message only once.
 
-_button2_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message two times.
+_button2_ will trigger the rulesets evaluation using evaluateRulesets command and show the in-app message two times.
 
-_button3_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message every time.
+_button3_ will trigger the rulesets evaluation using evaluateRulesets command and show the in-app message every time.
 
-### when `personalizationStorageEnabled` set to false
-in the sample example, all the buttons will show the message every time without taking into account the trigger seeting.
+#### when `personalizationStorageEnabled` set to false
 
+In the sample example, all the buttons will show the message every time without taking into account the trigger rule setting.
 ## Beyond the sample
 
 This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file within the `ajo` folder and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
