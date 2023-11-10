@@ -5,9 +5,6 @@ Web In-App Messaging is a feature that empowers marketers with the ability to de
 
 This sample is using [Adobe Experience Platform Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) to display in-app messages.
 
-This is how an in-app message looks like:
-<img src="../../.assets/in-app-message1.png" width="800"/>
-
 ## Getting Started
 
 1. Author in-app message content in Adobe Journey Optimizer.
@@ -57,22 +54,22 @@ There are two ways to display in-app message content from Adobe Journey Optimize
 });
 ```
 
+This is how an in-app message looks like:
+
+| on page load with sendEvent                                | manual trigger with  evaluateRulesets                                  |
+|-------------------------------------------------------------------|------------------------------------------------------------|
+| <img src="../../.assets/in-app-message-custom.png"  width="800"/> | <img src="../../.assets/in-app-message1.png" width="800"/> |
+
 
 ## Key Observations
-Additionally, you can set `personalizationStorageEnabled` to true for the storage of the personalization content in the browser local storage. This will allow historical rule evaluation, for example, show the message only once or n number of times.
+####  `personalizationStorageEnabled` set to true
+In the sample example we want in-app-message on page load to appear only 3 times.
+In order to support that we set `personalizationStorageEnabled` to true for the storage of the personalization content in the browser local storage. 
+This will allow historical rule evaluation, for example, show the message only once or n number of times.
 
-#### when `personalizationStorageEnabled` set to true
-In the sample example
+####  `personalizationStorageEnabled` set to false
+in that case message will appear every time.
 
-* _button1_ will trigger the rulesets evaluation using `evaluateRulesets` command. This will display the in-app message only once as the trigger is set to show the message only once.
-
-* _button2_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message two times.
-
-* _button3_ will trigger the rulesets evaluation using `evaluateRulesets` command and show the in-app message every time.
-
-#### when `personalizationStorageEnabled` set to false
-
-In the sample example, all the buttons will show the message every time without taking into account the trigger rule setting.
 ## Beyond the sample
 
 This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file within the `ajo` folder and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
