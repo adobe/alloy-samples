@@ -40,22 +40,25 @@
     alloy("sendEvent", {
       renderDecisions: true,
       personalization: {
-        decisionContext: {
-          "user": "alloy-sample"
-        }
+        surfaces: ['#welcome']
       }
     })
   );
 
-  const renderDecisionsManually = (buttonNumber) => {
+  const renderDecisionsManually = () => {
       alloy("evaluateRulesets", {
         renderDecisions: true,
         personalization: {
           decisionContext: {
-            "user": buttonNumber
+            "userAction": "buy_now"
           }
         }
       })
+  };
+
+  const clearLocalStorage = () => {
+    localStorage.clear();
+    location.reload();
   };
 
 </script>
@@ -100,9 +103,8 @@
     Integer ante sapien, tincidunt ut erat id, volutpat finibus urna. Aliquam rhoncus tellus vitae facilisis varius.
   </p>
   <div id="some-buttons">
-    <button id="action-button-1" data-id="1" type="button" class="btn btn-primary" onclick="renderDecisionsManually('one')">One</button>
-    <button id="action-button-2" data-id="2" type="button" class="btn btn-success" onclick="renderDecisionsManually('two')">Two</button>
-    <button id="action-button-3" data-id="3" type="button" class="btn btn-info" onclick="renderDecisionsManually('three')">Three</button>
+    <button id="action-button-1" data-id="1" type="button" class="btn btn-primary" onclick="renderDecisionsManually()">Buy Now!</button>
+    <button id="action-button-2" data-id="2" type="button" class="btn btn-success" onclick="clearLocalStorage()">Reset</button>
   </div>
 </div>
 </body>
