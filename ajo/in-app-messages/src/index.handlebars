@@ -40,7 +40,10 @@
     alloy("sendEvent", {
       renderDecisions: true,
       personalization: {
-        surfaces: ['#welcome']
+        surfaces: ['#welcome'],
+        decisionContext: {
+          "sampleTrait": "someValue"
+        }
       }
     })
   );
