@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Activity Map sample</title>
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <link href="https://wwwimages2.adobe.com/favicon.ico" rel="icon" type="image/x-icon">
+  <link href="style.css" rel="stylesheet">
+  <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
+        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" rel="stylesheet">
+  <script crossorigin="anonymous"
+          integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+          src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>
+  <script crossorigin="anonymous"
+          integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+          src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"></script>
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <script src="script.js"></script>
+
+  <script>
+    !function (n, o) {
+      o.forEach(function (o) {
+        n[o] || ((n.__alloyNS = n.__alloyNS ||
+          []).push(o), n[o] = function () {
+          var u = arguments;
+          return new Promise(
+            function (i, l) {
+              n[o].q.push([i, l, u])
+            })
+        }, n[o].q = [])
+      })
+    }
+    (window, ["alloy"]);
+  </script>
+  <script async src="alloy.min.js"></script>
+
+  <script>
+    alloy("configure", {
+      "edgeConfigId": "0a106b4d-1937-4196-a64d-4a324e972459",
+      "orgId": "97D1F3F459CE0AD80A495CBE@AdobeOrg",
+      "onBeforeEventSend": onBeforeEventSend,
+      "onBeforeLinkClickSend": onBeforeLinkClickSend
+    });
+
+    alloy("sendEvent", {
+      "xdm": {
+        "eventType": "page-view"
+      }
+    });
+  </script>
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top" id="menu">
+  <div class="container">
+    <div class="navbar-header">
+      <button aria-controls="navbar" aria-expanded="false" class="navbar-toggle collapsed" data-target="#navbar"
+              data-toggle="collapse" type="button">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Web Site</a>
+    </div>
+    <div class="collapse navbar-collapse" id="navbar">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div>
+</nav>
+<div class="container" id="main-container">
+  <div class="page-header">
+    <h1>Hello World!</h1>
+  </div>
+  <h1 class="lead" id="paragraph-text-1">
+    This page shows how different type of link clicks are handled by the WEB SDK.
+  </h1>
+
+  <h1>
+    We have here an example where using the onBeforeLinkClickSend and onBeforeEventSend callbacks we filter the link
+    click
+    interactions that we want to track and we store the last interaction to send it in the next page view event.
+    Similar to the AppMeasurements approach.</h1>
+    <div id="some-links">
+      <p>
+      <h3> Non tracked links </h3>
+      In onBeforeLinkClickSend callback we can instruct the Web SDK to filter the link clicks that we want to track.
+      The following link is one of those that we don't want to be tracked. Press on it to see that no interact call is
+      triggered,
+      neither local storage is updated with its metadata.
+      </p>
+      <li><a href="/index.html">Internal non - tracked link</a></li>
+      <h3> Tracked internal links </h3>
+
+      <p>
+        This is a link that will be tracked, since it is an internal link, when clicking on it it's metadata is stored
+        in local storage
+        (can be saved in cookie too), and no interact call is triggered. At the next page-view event, we will augment
+        xdm.web.webReferrer
+        with this link metadata. So that activity map reports capture this interaction.
+      </p>
+      <li><a href="/secondPage.html">Internal tracked link</a></li>
+      <h3> Tracked exit links </h3>
+      <p>
+        This is an exit link, same as using AppMeasurements, Web SDK will trigger a collect call before leaving
+        the context of the page with link metadata in xdm.web.webInteraction.
+      </p>
+      <li><a href="https://experienceleague.adobe.com/">Exit link</a></li>
+      <h3> Tracked download links </h3>
+      <p>
+        This is a download link, in this example we store in localStorage the interaction metadata and attach it in the
+        next page-view event.
+      </p>
+      <li><a href="download.zip" target="_blank">Download link</a></li>
+      </ul>
+    </div>
+</div>
+</body>
+</html>
