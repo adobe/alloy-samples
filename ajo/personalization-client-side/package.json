@@ -1,0 +1,24 @@
+{
+  "name": "ajo-decisions-client-side-aep-sample",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "postinstall": "cd ../.. && npm i",
+    "build": "node src/build.js",
+    "prestart": "node ../../create-ssl-cert.js && npm run build",
+    "start": "http-server public -p 443 --ssl -C ./cert.pem -K ./key.pem"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:adobe/target-nodejs-sdk-samples.git"
+  },
+  "author": "Adobe Systems Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "handlebars": "^4.7.7"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
