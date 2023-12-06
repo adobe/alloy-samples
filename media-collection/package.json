@@ -1,0 +1,24 @@
+{
+  "name": "media-collection-sample",
+  "version": "1.0.0",
+  "description": "A sample project to demo Media Collection implementation using Web SDK.",
+  "scripts": {
+    "postinstall": "cd .. && npm i",
+    "build": "node src/build.js",
+    "prestart": "node ../create-ssl-cert.js && npm run build",
+    "start": "http-server public -p 443 --ssl -C ./cert.pem -K ./key.pem"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:adobe/alloy-samples"
+  },
+  "author": "Adobe Systems Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "handlebars": "^4.7.7"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

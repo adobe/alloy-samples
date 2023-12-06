@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Media Collection Sample</title>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <link href="https://wwwimages2.adobe.com/favicon.ico" rel="icon" type="image/x-icon">
+    <link href="style.css" rel="stylesheet">
+    <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
+          integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" rel="stylesheet">
+    <script crossorigin="anonymous"
+            integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>
+    <script crossorigin="anonymous"
+            integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+            src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"></script>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <script src="media-automatic-session-handling.js"></script>
+    <script src="media-non-automatic-session-handling.js"></script>
+    <script src="migration-strategy.js"></script>
+    <script>
+      !function (n, o) {
+        o.forEach(function (o) {
+          n[o] || ((n.__alloyNS = n.__alloyNS ||
+            []).push(o), n[o] = function () {
+            var u = arguments;
+            return new Promise(
+              function (i, l) {
+                n[o].q.push([i, l, u])
+              })
+          }, n[o].q = [])
+        })
+      }
+      (window, ["alloy"]);
+
+      alloy("configure", {
+        "edgeConfigId": "{{edgeConfigId}}",
+        "orgId": "{{orgId}}",
+        "mediaCollection": {
+          "channel": "test-channel",
+          "playerName": "test-name-for-web-implementation"
+        }
+      });
+    </script>
+    <script src="alloy.js"></script>
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button aria-controls="navbar" aria-expanded="false" class="navbar-toggle collapsed" data-target="#navbar"
+                    data-toggle="collapse" type="button">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Web Site</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="/">Standalone library</a></li>
+                <li><a href="./index-launch.html">Launch</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container" id="main-container">
+    <div class="page-header" style="padding-top: 10px;">
+        <h1>Media Collection with automatic session handling </h1>
+    </div>
+    <video controls id="media-movie" muted preload width="600">
+        <source
+                src="video/clickbaby.mp4"
+                type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+        />
+    </video>
+    <div class="page-header" style="padding-top: 10px;">
+        <h1>Media Collection with non-automatic session handling </h1>
+    </div>
+    <video controls id="second-media-movie" muted preload width="600">
+        <source
+                src="video/clickbaby.mp4"
+                type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+        />
+    </video>
+
+    <div class="page-header" style="padding-top: 10px;">
+        <h1>Media Analytics in a migration use case</h1>
+    </div>
+    <video controls id="third-media-movie" muted preload width="600">
+        <source
+                src="video/clickbaby.mp4"
+                type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+        />
+    </video>
+</div>
+</body>
+</html>
