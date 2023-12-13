@@ -72,5 +72,5 @@ in that case, the message will appear every time.
 
 This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform.
 For example, you can  author in-app message content in Adobe Journey Optimizer and configure the sample to use your Adobe Journey Optimizer orgid,  datastreamId and surfaceUrl.
-To do this, open the `.env` file within the `ajo` folder and modify the variables. Add appropriate decisionContext  in the index. Handlebars file to satisfy the rulesets.
+To do this, open the `.env` file within the `ajo` folder and modify the variables. Add appropriate decisionContext  in the index.handlebars file to satisfy the rulesets.
 Restart the sample app, and you're ready to experiment using your own personalization content.
