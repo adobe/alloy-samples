@@ -24,12 +24,28 @@ const html = renderTemplate({
   demoSurfaceName,
 });
 
-// Write to build folder. Copy the built file and deploy
 fs.writeFile(
   path.join(__dirname, "..", "public", "index.html"),
   html,
   (err) => {
     if (err) console.log(err);
     console.log("File written successfully");
+  }
+);
+
+const signUpTemplate = fs.readFileSync(
+  path.resolve(path.join(__dirname, "sign-up.handlebars")),
+  "utf-8"
+);
+const renderSignUpTemplate = Handlebars.compile(signUpTemplate);
+
+const signUpHtml = renderSignUpTemplate({ });
+
+fs.writeFile(
+  path.join(__dirname, "..", "public", "sign-up.html"),
+  signUpHtml,
+  (err) => {
+    if (err) console.log(err);
+    console.log("sign-up.handlebars written successfully");
   }
 );
