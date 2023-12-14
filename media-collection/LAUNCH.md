@@ -1,6 +1,6 @@
 # Overview
 
-Customers that are using Launch to implement Adobe solutions, have the possibility to implement Media on their websites.
+Customers that are using Adobe Tags to implement Adobe solutions, can implement Media using Web SDK Tags Extension..
 
 # Configuration
 

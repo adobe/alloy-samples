@@ -10,37 +10,6 @@
   <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script>
-    // https://experienceleague.adobe.com/docs/experience-platform/edge/personalization/manage-flicker.html?lang=en
-    !function(e,a,n,t){
-      if (a) return;
-      var i=e.head;if(i){
-        var o=e.createElement("style");
-        o.id="alloy-prehiding",o.innerText=n,i.appendChild(o),
-          setTimeout(function(){o.parentNode&&o.parentNode.removeChild(o)},t)}}
-    (document, document.location.href.indexOf("adobe_authoring_enabled") !== -1, "body { opacity: 0 !important }", 3000);
-
-
-    !function(n,o){o.forEach(function(o){n[o]||((n.__alloyNS=n.__alloyNS||
-      []).push(o),n[o]=function(){var u=arguments;return new Promise(
-      function(i,l){n[o].q.push([i,l,u])})},n[o].q=[])})}
-    (window,["alloy"]);
-
-    alloy("configure", {
-      "edgeConfigId": "27dae196-8c75-4eed-82d1-3895616f85d6",
-      "orgId":"97D1F3F459CE0AD80A495CBE@AdobeOrg"
-    });
-    alloy("sendEvent",
-      {
-        "type": "decisioning.propositionFetch",
-        "renderDecisions": true,
-        "personalization": {
-          "sendDisplayNotifications": false
-        }
-      }
-    );
-  </script>
-  <script src="alloy.js"></script>
 </head>
 <body>
 <nav class="navbar navbar-inverse navbar-fixed-top">
