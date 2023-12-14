@@ -4,7 +4,7 @@
 
 This sample demonstrates how Media Collection can be implemented using:
 - [Standalone library](./STANDALONE.md)
-- [Launch Platform](./LAUNCH.md)
+- [Tags Platform](./TAGS_IMPL.md)
 
 ## Running the sample
 
