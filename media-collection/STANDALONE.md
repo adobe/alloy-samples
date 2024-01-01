@@ -29,7 +29,7 @@ There are few ways to implement Media Edge Data Collection:
 
 When using `automatic` setup for Media Edge Data Collection, WEB SDK will take care of session ID handling and keeping track of
 player stater. In order to be able to successfully use this setup WEB SDK needs to know a few details when dealing with
-player events. To make sure that all this can be successfully wired WB SDK exposes a new command named `createMediaSession`.
+player events. To make sure that all this can be successfully wired WEB SDK exposes a new command named `createMediaSession`.
 
 ```javascript
  alloy("createMediaSession", {
@@ -81,7 +81,7 @@ of different details and ensure that all these details are sent in subsequent Me
 ## Send a Media Collection Event
 
 In order send a Media Collection event a Media session ID is required. The Media session ID is retrieved by using the
-`createMediaSession` command and ir will be used in all the events send to the Edge.
+`createMediaSession` command and it will be used in all the events send to the Edge.
 
 ### Sending Media Events for an automatic Media Session
 
