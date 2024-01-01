@@ -158,7 +158,6 @@ const createAddSampleEventsBasedOnPlayhead = videoPlayer => {
 };
 document.addEventListener("DOMContentLoaded", async function(event) {
   const { playerSettings, videoPlayer } = createVideoPlayer("media-movie");
-  console.log("here");
   var sessionPromise;
   videoPlayer.addEventListener("playing", function() {
     console.log("player", videoPlayer );
@@ -244,18 +243,14 @@ document.addEventListener("DOMContentLoaded", async function(event) {
     console.log("seeked", videoPlayer);
   });
   videoPlayer.addEventListener("pause", function() {
-    // console.log("pause", videoPlayer, session);
-    // session.then(result => {
     window.alloy("sendMediaEvent", {
       playerId: "episode-1",
       xdm: {
         eventType: "media.pauseStart"
       }
     });
-    // });
   });
   videoPlayer.addEventListener("ended", function() {
-    // session.then(result => {
     window
       .alloy("sendMediaEvent", {
         playerId: "episode-1",

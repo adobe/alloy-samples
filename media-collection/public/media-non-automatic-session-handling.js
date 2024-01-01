@@ -52,6 +52,7 @@ const createSecondSampleEventsBasedOnPlayhead = ({
 
     if (playhead > 21 && playhead < 22) {
       window.alloy("sendMediaEvent", {
+        xdm: {
         eventType: "media.adBreakStart",
         mediaCollection: {
           advertisingPodDetails: {
@@ -62,7 +63,7 @@ const createSecondSampleEventsBasedOnPlayhead = ({
           sessionID: sessionId,
           playhead: parseInt(playhead, 10)
         }
-      });
+      }});
       window.alloy("sendMediaEvent", {
         xdm: {
           eventType: "media.adStart",

@@ -46,6 +46,6 @@ const buildFile = (variables, filename) => {
 };
 
 buildFile(variables, "index");
-buildFile(variables, "index-launch");
+buildFile(variables, "index-tags-impl");
 
 
