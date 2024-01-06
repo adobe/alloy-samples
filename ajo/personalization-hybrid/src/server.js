@@ -30,6 +30,7 @@ const {
   TYPE_STATE_STORE,
   getAepEdgeClusterCookie,
   getDebugSessionCookie,
+  TYPE_PERSONALIZATION,
 } = require("aep-edge-samples-common");
 const {
   requestAepEdgePersonalization,
@@ -66,6 +67,15 @@ function prepareTemplateVariables(
 ) {
   const { headers = {}, body = { handle: [] } } = response;
 
+  const res =   response.body.handle.filter(
+    (item) => item.type === TYPE_PERSONALIZATION
+  )
+  const res2 = res[0].payload.filter(
+    (p) => p.scope === "web://localhost/#sample-json-content"
+  )
+  const payloadFiltered = Object.assign({}, res[0], { payload: res2 });
+
+
   return {
     surface: demoSurfaceUri.concat(demoSurfaceName),
     edgeDomain: AEP_EDGE_DOMAIN,
@@ -77,7 +87,7 @@ function prepareTemplateVariables(
         responseHeaders: headers,
         responseBody: {
           ...body,
-          handle: body.handle.filter((item) => item.type !== TYPE_STATE_STORE),
+          handle: [payloadFiltered],
         },
       },
       null,
