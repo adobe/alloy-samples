@@ -46,6 +46,13 @@ function sendDisplayEvent(proposition) {
         },
       },
     },
+    data: {
+      "__adobe": {
+        "ajo": {
+          "in-app-response-format": 2
+        }
+      }
+    }
   });
 }
 
@@ -73,6 +80,13 @@ function sendInteractEvent(label, proposition) {
         },
       },
     },
+    data: {
+      "__adobe": {
+        "ajo": {
+          "in-app-response-format": 2
+        }
+      }
+    }
   });
 }
 
@@ -100,11 +114,11 @@ function applyPersonalization(surfaceName) {
       sendDisplayEvent(proposition)
 
       const element = document.querySelector("img.ajo-decision");
-
+      const sanitizedInputData = JSON.parse(proposition.items[0].data);
       const {
         buttonActions = [],
         heroImageName = "demo-marketing-decision1-default.png",
-      } = proposition.items[0].data.content;
+      } = sanitizedInputData.content;
 
       updateButtons(buttonActions, proposition);
 

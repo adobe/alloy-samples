@@ -10,6 +10,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const path = require("path");
+const createDOMPurify = require("dompurify");
+const { JSDOM } = require("jsdom");
+const DOMPurify = createDOMPurify(new JSDOM("").window);
 
 require("dotenv").config({ path: path.resolve(process.cwd(), "..", ".env") });
 
@@ -66,15 +69,18 @@ function prepareTemplateVariables(
   defaultTemplateVariables = {}
 ) {
   const { headers = {}, body = { handle: [] } } = response;
-
   const res =   response.body.handle.filter(
     (item) => item.type === TYPE_PERSONALIZATION
   )
-  const res2 = res[0].payload.filter(
-    (p) => p.scope === "web://localhost/#sample-json-content"
-  )
-  const payloadFiltered = Object.assign({}, res[0], { payload: res2 });
+  const sanitizedPayload = res[0].payload.map((item) => ({
+    ...item,
+    items: item.items.map((subItem) => ({
+      ...subItem,
+      data: subItem.data ? sanitizeData(subItem.data) : null,
+    })),
+  }));
 
+  const payloadFiltered = Object.assign({}, { payload: sanitizedPayload, type: res[0].type });
 
   return {
     surface: demoSurfaceUri.concat(demoSurfaceName),
@@ -95,6 +101,12 @@ function prepareTemplateVariables(
     ),
     ...defaultTemplateVariables,
   };
+}
+ const sanitizeData= (data) =>{
+  if (typeof data === "object") {
+    return DOMPurify.sanitize(JSON.stringify(data));
+  }
+  return DOMPurify.sanitize(data);
 }
 
 // Setup the root route Express app request handler for GET requests
