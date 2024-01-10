@@ -102,7 +102,8 @@ function prepareTemplateVariables(
     ...defaultTemplateVariables,
   };
 }
- const sanitizeData= (data) =>{
+
+const sanitizeData = (data) => {
   if (typeof data === "object") {
     return DOMPurify.sanitize(JSON.stringify(data));
   }
