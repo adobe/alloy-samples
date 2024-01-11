@@ -108,13 +108,6 @@ function sendDisplayEvent(aepEdgeClient, req, propositions, cookieEntries) {
             },
           },
         },
-        data : {
-          "__adobe": {
-            "ajo": {
-              "in-app-response-format": 2
-            }
-          }
-        }
       },
       query: { identity: { fetch: ["ECID"] } },
       meta: {
