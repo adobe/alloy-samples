@@ -45,13 +45,6 @@ function sendDisplayEvent(proposition) {
           },
         },
       },
-    },
-    data: {
-      "__adobe": {
-        "ajo": {
-          "in-app-response-format": 2
-        }
-      }
     }
   });
 }
@@ -79,13 +72,6 @@ function sendInteractEvent(label, proposition) {
           },
         },
       },
-    },
-    data: {
-      "__adobe": {
-        "ajo": {
-          "in-app-response-format": 2
-        }
-      }
     }
   });
 }
