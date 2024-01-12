@@ -45,12 +45,8 @@ function requestAepEdgePersonalization(
       identityMap: {
         ...identityMap,
       },
-    },
-    data: {
-      "__adobe": {
-        "ajo": {
-          "in-app-response-format": 2
-        }
+      implementationDetails: {
+        name: "server-side"
       }
     },
     meta: {

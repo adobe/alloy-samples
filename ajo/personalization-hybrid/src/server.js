@@ -80,7 +80,7 @@ function prepareTemplateVariables(
     })),
   }));
 
-  const payloadFiltered = Object.assign({}, { payload: sanitizedPayload, type: res[0].type });
+  const payloadSanitized = Object.assign({}, { payload: sanitizedPayload, type: res[0].type });
 
   return {
     surface: demoSurfaceUri.concat(demoSurfaceName),
@@ -93,7 +93,7 @@ function prepareTemplateVariables(
         responseHeaders: headers,
         responseBody: {
           ...body,
-          handle: [payloadFiltered],
+          handle: [payloadSanitized],
         },
       },
       null,
@@ -102,12 +102,11 @@ function prepareTemplateVariables(
     ...defaultTemplateVariables,
   };
 }
-
-const sanitizeData = (data) => {
-  if (typeof data === "object") {
-    return DOMPurify.sanitize(JSON.stringify(data));
+const sanitizeData = (inputString) => {
+  if (typeof inputString === "object") {
+    return JSON.stringify(inputString).replace(/\//g, "\\/");
   }
-  return DOMPurify.sanitize(data);
+  return inputString;
 }
 
 // Setup the root route Express app request handler for GET requests
