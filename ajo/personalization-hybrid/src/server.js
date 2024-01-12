@@ -10,10 +10,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const path = require("path");
-const createDOMPurify = require("dompurify");
-const { JSDOM } = require("jsdom");
-const DOMPurify = createDOMPurify(new JSDOM("").window);
-
 require("dotenv").config({ path: path.resolve(process.cwd(), "..", ".env") });
 
 const express = require("express");

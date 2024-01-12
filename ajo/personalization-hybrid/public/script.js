@@ -45,7 +45,7 @@ function sendDisplayEvent(proposition) {
           },
         },
       },
-    }
+    },
   });
 }
 
@@ -72,7 +72,7 @@ function sendInteractEvent(label, proposition) {
           },
         },
       },
-    }
+    },
   });
 }
 
