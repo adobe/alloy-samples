@@ -45,6 +45,9 @@ function requestAepEdgePersonalization(
       identityMap: {
         ...identityMap,
       },
+      implementationDetails: {
+        name: "server-side",
+      }
     },
     meta: {
       state: {
