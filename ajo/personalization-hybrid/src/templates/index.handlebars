@@ -90,7 +90,8 @@
     </div>
   </div>
   <script>
-    alloy("applyResponse", {{safeString applyResponseParam}}).then(applyPersonalization("{{surface}}"));
+    const edgeResponse = JSON.parse(atob("{{safeString applyResponseParam}}"));
+    alloy("applyResponse", edgeResponse).then(applyPersonalization("{{surface}}"));
   </script>
 </body>
 </html>
