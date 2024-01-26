@@ -71,17 +71,15 @@ function prepareTemplateVariables(
     edgeDomain: AEP_EDGE_DOMAIN,
     edgeConfigId: EDGE_CONFIG_ID_WITH_ANALYTICS,
     orgId: ORGANIZATION_ID,
-    applyResponseParam: JSON.stringify(
-      {
+    applyResponseParam: btoa(
+      JSON.stringify({
         renderDecisions: true,
         responseHeaders: headers,
         responseBody: {
           ...body,
           handle: body.handle.filter((item) => item.type !== TYPE_STATE_STORE),
         },
-      },
-      null,
-      2
+      })
     ),
     ...defaultTemplateVariables,
   };
