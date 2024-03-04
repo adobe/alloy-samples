@@ -1,0 +1,12 @@
+body {
+  padding-top: 50px;
+}
+
+img.target-offer {
+  width: 80%;
+  margin-bottom: 20px;
+}
+
+#some-buttons {
+  margin: 20px 0;
+}

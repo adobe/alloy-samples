@@ -65,7 +65,7 @@ function checkForErrors(response) {
     statusCode < 200 ||
     statusCode >= 300 ||
     (!responseBody && statusCode !== NO_CONTENT) ||
-    (responseBody && !Array.isArray(responseBody.handle))
+    (responseBody && !Array.isArray(responseBody.handle) && statusCode !== 202)
   ) {
     const bodyToLog = responseBody ? JSON.stringify(responseBody, null, 2) : "";
     const messageSuffix = bodyToLog
@@ -191,6 +191,53 @@ function createAepEdgeClient(
       });
   }
 
+  function collect(requestBody, requestHeaders = {}) {
+    const requestId = uuidv4();
+
+    let domain = edgeDomain;
+    let region = aepEdgeCluster;
+
+    if (edgeDomain === "server.adobedc.net") {
+      if (aepEdgeCluster.length > 0) {
+        domain = `${aepEdgeCluster}.${edgeDomain}`
+      }
+      region = ""
+    }
+
+    const requestUrl = [
+      `https://${domain}`,
+      edgeBasePath,
+      region,
+      "v2",
+      `collect?dataStreamId=${dataStreamId}&requestId=${requestId}`,
+    ]
+      .filter(isNotBlank)
+      .join("/");
+
+    const headers = {
+      ...DEFAULT_REQUEST_HEADERS,
+      ...requestHeaders,
+    };
+
+    if (debugValidationSession) {
+      headers[HEADER_AEP_VALIDATION_TOKEN] = debugValidationSession;
+    }
+
+    return fetch(requestUrl, {
+      headers,
+      body: JSON.stringify(requestBody),
+      method: "POST",
+    })
+      .then(convertHeadersToSimpleJson)
+      .then(checkForErrors)
+      .then(prepareAepResponse(headers, requestBody))
+      .then(logResult(`AEP EDGE REQUEST: ${requestUrl}`))
+      .catch((err) => {
+        console.error(err.message);
+        throw err;
+      });
+  }
+
   function getPropositions({
     decisionScopes = [PAGE_WIDE_SCOPE],
     surfaces = [],
@@ -227,6 +274,7 @@ function createAepEdgeClient(
 
   return {
     interact,
+    collect,
     getPropositions,
   };
 }
