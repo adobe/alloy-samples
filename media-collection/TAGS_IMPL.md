@@ -10,30 +10,34 @@ To configure Media, when installing the Web SDK Extension, there is a Media sect
 
 # Create a session
 
-To create a Media Session, similarly to the standalone library implementation, session details are needed as well as an
-alias to that media session, this can be a random string, the element ID of the player.
+To create a Media Session, similarly to the standalone library implementation there are two options:
+- handle media session automatically - pings are automatically triggered at the frequency that is set in the configuration
+- handle media session manually - pings need to be triggered manually using `Send Media Event` action.
+
+When handling media session automatically, the `Create Media Session` action should be used. The player ID is an identifier for the media session, this can be a random string, the element ID of the player.
+Session details should be provided when sending a "Media Session start" event using `Send Media Event` action.
+The player ID is an identifier for the media session, this can be a random string, the element ID of the player.
+Playhead and QoE data elements should be provided only when starting the media session. The following events for that media session will be automatically populated with the playhead and QoE using `playerID`.
 ![image](public/img/createSession.png)
 
-To receive the session ID, there is an event that triggers once the response from server is returned and has
-the sessionID in the `event.sessionId`. It can be stored to a Data Element and reused later using a Custom Code
-action provided by Core extension.
-![img.png](public/img/sessionReceived.png)
-Using Custom Code action it can be stored to a Data Element.
+
+# Create a playhead data element
+To create a playhead data element, a custom code data element should be used. The custom code should return the current playhead of the player.
 
 ```javascript
-_satellite.setVar("sessionId", event.sessionId);
+const player = document.getElementById("launch-media-movie");
+return parseInt(player.currentTime, 10);
 ```
+# Create a Quality of Experience data element
+To create a Quality of Experience data element, a `Media: Quality of Experience` data element or custom code data element can be used. 
+The custom code should return the current quality of experience of the player.
+
+![image](public/img/qoe.png)
 
 # Send a Media Event
-
-After a Media Session has been successfully created, following Media Events can be triggered using the `Send Media Event` action.
-The action allows to handle it in two modes: automatic and non-automatic mode, which can be enabled
-checking `Handle Media Session Automatically`.
 Once the `eventType` is selected the appropriate form will be rendered, so that related details are provided to the event.
 
 ![img.png](public/img/sendMediaEvent.png)
-If more control over the Media Session is needed then the other form should be used by unchecking the `Handle Media Session Automatically` option.
-![img.png](public/img/sendMediaEvent2.png)
 
 # Migration Strategy
 

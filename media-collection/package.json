@@ -15,6 +15,7 @@
   "author": "Adobe Systems Inc.",
   "license": "Apache-2.0",
   "dependencies": {
+    "@adobe/alloy": "^2.20.0-alpha.0",
     "dotenv": "^16.0.1",
     "handlebars": "^4.7.7"
   },

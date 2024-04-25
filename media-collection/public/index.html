@@ -35,13 +35,13 @@
       alloy("configure", {
         "edgeConfigId": "27dae196-8c75-4eed-82d1-3895616f85d6",
         "orgId": "97D1F3F459CE0AD80A495CBE@AdobeOrg",
-        "mediaCollection": {
+        "streamingMedia": {
           "channel": "test-channel",
           "playerName": "test-name-for-web-implementation"
         }
       });
     </script>
-    <script src="alloy.js"></script>
+  <script src="https://cdn1.adoberesources.net/alloy/2.20.0-alpha.1/alloy.min.js" async></script>
 </head>
 <body>
 <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -66,7 +66,7 @@
 </nav>
 <div class="container" id="main-container">
     <div class="page-header" style="padding-top: 10px;">
-        <h1>Media Collection with automatic session handling </h1>
+        <h1>Collect streaming media events using automatic session handling option.</h1>
     </div>
     <video controls id="media-movie" muted preload width="600">
         <source
@@ -75,7 +75,7 @@
         />
     </video>
     <div class="page-header" style="padding-top: 10px;">
-        <h1>Media Collection with non-automatic session handling </h1>
+        <h1>Collect streaming media events using manual session handling option.</h1>
     </div>
     <video controls id="second-media-movie" muted preload width="600">
         <source

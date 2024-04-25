@@ -9,7 +9,7 @@ command call would look something like this:
 
 ```javascript
  alloy("configure", {
-  mediaCollection: {
+  streamingMedia: {
     channel: "video channel",
     playerName: "test player",
     version: "alloy 2.16.0"
@@ -28,7 +28,7 @@ There are few ways to implement Media Edge Data Collection:
 ### Automatic Media Session Handling
 
 When using `automatic` setup for Media Edge Data Collection, WEB SDK will take care of session ID handling and keeping track of
-player stater. In order to be able to successfully use this setup WEB SDK needs to know a few details when dealing with
+player state. In order to be able to successfully use this setup WEB SDK needs to know a few details when dealing with
 player events. To make sure that all this can be successfully wired WEB SDK exposes a new command named `createMediaSession`.
 
 ```javascript
@@ -41,7 +41,7 @@ player events. To make sure that all this can be successfully wired WEB SDK expo
       }
     }
   },
-  onBeforeMediaEvent: ({ playerId }) => {
+  getPlayerDetails: ({ playerId }) => {
     const getPlayhead = getVideoPlayedPlayhead(videoPlayer);
     return {
       playhead: getPlayhead
@@ -54,7 +54,7 @@ Here are the `createMediaSession` parameters:
 
 - `playerId` - is the identifier of your Media Session
 - `xdm.mediaCollection.sessionDetails` - are the Media Session details
-- `onBeforeMediaEvent` - the callback function that should be defined by the customer, that will return `playhead` (current
+- `getPlayerDetails` - the callback function that should be defined by the customer, that will return `playhead` (current
   state of player play head) and `qoeDataDetails`(Quality of Experience details). This callback function will be called
   before every Media event to augment it with relevant details.
 
@@ -90,7 +90,7 @@ like:
 
 - session ID
 - callback function
-- Media event specific data
+- media event specific data
 - etc.
 
 By leveraging `playerId` value, customer can trigger a Media event. WEB SDK internally will use the value of the `playerId`

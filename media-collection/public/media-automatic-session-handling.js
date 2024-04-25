@@ -160,7 +160,6 @@ document.addEventListener("DOMContentLoaded", async function(event) {
   const { playerSettings, videoPlayer } = createVideoPlayer("media-movie");
   var sessionPromise;
   videoPlayer.addEventListener("playing", function() {
-    console.log("player", videoPlayer );
     if (!playerSettings.videoLoaded) {
       sessionPromise = window.alloy("createMediaSession", {
           // start media session
@@ -202,7 +201,7 @@ document.addEventListener("DOMContentLoaded", async function(event) {
               }
             }
           },
-          onBeforeMediaEvent: () => {
+        getPlayerDetails: () => {
             const getPlayhead = getVideoPlayedPlayhead(videoPlayer);
             return {
               playhead: getPlayhead
