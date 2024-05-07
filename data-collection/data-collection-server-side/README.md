@@ -1,4 +1,4 @@
-# Server-side Personalization
+# Server-side data collection
 
 ## Overview
 
@@ -24,16 +24,17 @@ Or you can interact with the 3 buttons to see how the `buy` / `subscribe` / `tri
 To run this sample:
 
 1. [Setup local SSL certificates for https](../../LocalSSLCertificateSetup.md).
-2. Clone the repository to your local machine.
-3. Open a terminal and change directory to this sample's folder.
-4. Run `npm install`
-5. Run `npm start`
-6. Open a web browser to [https://localhost](https://localhost)
+1. Clone the repository to your local machine.
+1. Open a terminal and change directory to this sample's folder.
+1. Edit the `.env` files with your own configuration details.
+1. Run `npm install`
+1. Run `npm start`
+1. Open a web browser to [https://localhost](https://localhost)
 
 ## How it works
 
 We can observe from the below sequence diagram that the browser has no direct interaction with Adobe Experience Platform.
-The interaction is done by the server asynchronously from the browser requests to the server, this way no extra lateny is added to the user experience.
+The interaction is done by the server asynchronously from the browser requests to the server, this way no extra latency is added to the user experience.
 
 ```mermaid
 sequenceDiagram

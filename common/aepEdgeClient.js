@@ -117,6 +117,10 @@ function extractEdgeCluster(
   [statusCode, responseHeaders, responseBody],
   aepEdgeCluster
 ) {
+  if (!responseBody.handle) {
+    return aepEdgeCluster;
+  }
+
   const locationHintHandle = responseBody.handle.find(
     (item) => item.type === TYPE_LOCATION_HINT
   );
@@ -150,15 +154,26 @@ function createAepEdgeClient(
   debugValidationSession = undefined,
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD
 ) {
-  function interact(requestBody, requestHeaders = {}) {
+
+  function edgeRequest(endpoint, requestBody, requestHeaders = {}) {
     const requestId = uuidv4();
 
+    let domain = edgeDomain;
+    let region = aepEdgeCluster;
+
+    if (edgeDomain === "server.adobedc.net") {
+      if (aepEdgeCluster) {
+        domain = `${aepEdgeCluster}.${edgeDomain}`
+      }
+      region = ""
+    }
+
     const requestUrl = [
-      `https://${edgeDomain}`,
+      `https://${domain}`,
       edgeBasePath,
-      aepEdgeCluster,
+      region,
       "v2",
-      `interact?dataStreamId=${dataStreamId}&requestId=${requestId}`,
+      `${endpoint}?dataStreamId=${dataStreamId}&requestId=${requestId}`,
     ]
       .filter(isNotBlank)
       .join("/");
@@ -191,51 +206,12 @@ function createAepEdgeClient(
       });
   }
 
+  function interact(requestBody, requestHeaders = {}) {
+    return edgeRequest("interact", requestBody, requestHeaders);
+  }
+
   function collect(requestBody, requestHeaders = {}) {
-    const requestId = uuidv4();
-
-    let domain = edgeDomain;
-    let region = aepEdgeCluster;
-
-    if (edgeDomain === "server.adobedc.net") {
-      if (aepEdgeCluster.length > 0) {
-        domain = `${aepEdgeCluster}.${edgeDomain}`
-      }
-      region = ""
-    }
-
-    const requestUrl = [
-      `https://${domain}`,
-      edgeBasePath,
-      region,
-      "v2",
-      `collect?dataStreamId=${dataStreamId}&requestId=${requestId}`,
-    ]
-      .filter(isNotBlank)
-      .join("/");
-
-    const headers = {
-      ...DEFAULT_REQUEST_HEADERS,
-      ...requestHeaders,
-    };
-
-    if (debugValidationSession) {
-      headers[HEADER_AEP_VALIDATION_TOKEN] = debugValidationSession;
-    }
-
-    return fetch(requestUrl, {
-      headers,
-      body: JSON.stringify(requestBody),
-      method: "POST",
-    })
-      .then(convertHeadersToSimpleJson)
-      .then(checkForErrors)
-      .then(prepareAepResponse(headers, requestBody))
-      .then(logResult(`AEP EDGE REQUEST: ${requestUrl}`))
-      .catch((err) => {
-        console.error(err.message);
-        throw err;
-      });
+   return edgeRequest("collect", requestBody, requestHeaders);
   }
 
   function getPropositions({
