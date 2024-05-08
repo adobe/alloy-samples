@@ -16,6 +16,12 @@ This repository contains code samples for the Adobe Experience Platform Web SDK.
 | Personalization via Hybrid implementation and Single-page app (SPA) - fetch personalization experiences server side and render them in a single-page app (spa) client side using [web-sdk](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html?lang=en) without additional client-side edge requests | [View Sample App](target/personalization-hybrid-spa)  |                                                    |
 |Top and bottom of page events| [View Sample App](target/top-and-bottom)              ||
 
+### Data Collection
+
+| Description                                                                                                                                                               | AEP                                                            |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| Server side data collection - collect data via [Edge Network Server API](https://experienceleague.adobe.com/en/docs/experience-platform/edge-network-server-api/overview) | [View Sample App](data-collection/data-collection-server-side) |
+
 ## Contributing
 
 Check out our [Contribution Guidelines](.github/contributing.md) as well as [Code of Conduct](code_of_conduct.md) prior
