@@ -27,7 +27,7 @@ To run this sample:
 
 ## How it works
 
-1. [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file within the `sample` folder.  Automatic proposition interaction tracking is enabled for AJO using the `autoTrackPropositionInteractions` configuration option. 
+1. [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file within the `sample` folder.  Automatic proposition interaction tracking is enabled for AJO using the `autoCollectPropositionInteractions` configuration option. 
 
 ```javascript
 alloy("configure", {
@@ -37,7 +37,7 @@ alloy("configure", {
   orgId:"{{orgId}}",
   debugEnabled: false,
   thirdPartyCookiesEnabled: false,
-  autoTrackPropositionInteractions: {
+  autoCollectPropositionInteractions: {
     AJO: "always",
     TGT: "never"
   }
@@ -77,8 +77,8 @@ alloy("applyPropositions", {
 });
 ```
 
-5. Code Based JSON experience items are manually applied by the sample implementation code to update the DOM based on the proposition.  
-The [applyPropositions](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/applypropositions) command is used to correlate the code-based JSON proposition with elements in the DOM.  This is necessary for code-based JSON propositions where the DOM is updated via custom code.
+5. Code-based JSON experience items are manually applied by the sample implementation code to update the DOM based on the proposition.  
+The [applyPropositions](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/applypropositions) command is used to correlate the code-based JSON experience with elements in the DOM.  This is necessary for code-based JSON experiences where the DOM is updated via custom code.
 ```javascript
 const proposition = propositions.find(
   (proposition) => proposition.scope === "web://localhost/#sample-json-content"
@@ -89,7 +89,7 @@ alloy("applyPropositions", {
   metadata: {
     ["web://localhost/#sample-json-content"]: {
       selector: "#some-buttons",
-      actionType: "track",
+      actionType: "collectInteractions",
     },
   },
 });
@@ -99,13 +99,13 @@ alloy("applyPropositions", {
   metadata: {
     ["web://localhost/#sample-json-content"]: {
       selector: "img.ajo-decision",
-      actionType: "track",
+      actionType: "collectInteractions",
     },
   },
 });
 
 ```
-6. When the user clicks anywhere in the DOM where a proposition was rendered, an `interact` event is automatically collected.
+6. When the user clicks anywhere in the DOM where an experience was rendered, an `interact` event is automatically collected.
    <img src="../../.assets/with-offers-movies-clicks.png" alt="drawing" width="800"/>
 
    
@@ -116,7 +116,7 @@ alloy("applyPropositions", {
 
 ### Proposition interactions are automatically collected
 
-Notice how `interact` events are automatically collected whenever a DOM element on the page is clicked -- if that DOM element is part of a proposition that was rendered.
+Notice how `interact` events are automatically collected whenever a DOM element on the page is clicked -- if that DOM element is part of an experience that was rendered.
 
 <img src="../../.assets/with-offers-movies-clicks.gif" alt="drawing" width="800"/>
 
@@ -128,7 +128,7 @@ Data attributes are used add specificity to proposition interactions.
 | ----------- | ---------------------- | ------------------------------------------------------------ |
 | Label       | `data-aep-click-label` | When the label data attribute is present on a clicked element, it is included with the interaction details sent to the Edge Network. The Web SDK looks for a label data attribute beginning with the element clicked and walking up the DOM tree. The Web SDK uses the first label it finds. |
 | Token       | `data-aep-click-token` | This token is used when leveraging decision policies in [Adobe Journey Optimizer code-based campaigns](https://experienceleague.adobe.com/en/docs/journey-optimizer/using/code-based-experience/get-started-code-based). You can use the token to distinguish which decision policy item was clicked. When the token data attribute is present on a clicked element, it is included with the interaction details sent to the Edge Network. The Web SDK looks for a token data attribute beginning with the element clicked and walking up the DOM tree. The Web SDK uses the first token it finds. |
-| Interact ID | `data-aep-interact-id` | The Web SDK automatically adds this unique ID to container elements when rendering propositions. It uses this ID to correlate DOM elements with propositions. As this is an ID required by the Web SDK, you should not alter it in any way. You can safely ignore it. |
+| Interact ID | `data-aep-interact-id` | The Web SDK automatically adds this unique ID to container elements when rendering experiences. It uses this ID to correlate DOM elements with propositions. As this is an ID required by the Web SDK, you should not alter it in any way. You can safely ignore it. |
 
 ### Decision Policy
 
@@ -229,7 +229,7 @@ This is what gets rendered to the DOM for the campaign.
 
 The values for movie title, description and image are now populated based on the decision policy and the movies in the collection.  The values for `data-aep-click-token` and `data-aep-click-label` are also populated.
 
-Another observation is that the `data-aep-interact-id` data attribute is present on the two topmost elements.  This data attribute is automatically added to DOM elements by the Web SDK for any propositions automatically rendered to the DOM and propositions rendered to the DOM using the [`applyPropositions`](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/applypropositions) command.  You can safely ignore it.
+Another observation is that the `data-aep-interact-id` data attribute is present on the two topmost elements.  This data attribute is automatically added to DOM elements by the Web SDK for any experiences automatically rendered to the DOM or experiences rendered to the DOM using the [`applyPropositions`](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/applypropositions) command.  You can safely ignore it.
 
 ## Beyond the sample
 

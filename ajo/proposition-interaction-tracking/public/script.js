@@ -106,7 +106,7 @@ function updateButtons(surfaceName, proposition) {
     metadata: {
       [surfaceName]: {
         selector: "#some-buttons",
-        actionType: "track",
+        actionType: "collectInteractions",
       },
     },
   });
@@ -129,13 +129,13 @@ function updateImage(surfaceName, proposition) {
     metadata: {
       [surfaceName]: {
         selector: "img.ajo-decision",
-        actionType: "track",
+        actionType: "collectInteractions",
       },
     },
   });
 }
 
-function createApplyPersonalization(surfaceNames = [], metadata = {}) {
+function createApplyPersonalization(surfaceNames = []) {
   return function (result) {
     const { propositions = [] } = result;
 
