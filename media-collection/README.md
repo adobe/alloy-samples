@@ -1,8 +1,8 @@
-# Media Collection Sample
+# Streaming Media Sample
 
 ## Overview
 
-This sample demonstrates how Media Collection can be implemented using:
+This sample demonstrates how Streaming Media can be implemented using:
 - [Standalone library](./STANDALONE.md)
 - [Tags Platform](./TAGS_IMPL.md)
 
