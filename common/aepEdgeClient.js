@@ -65,7 +65,7 @@ function checkForErrors(response) {
     statusCode < 200 ||
     statusCode >= 300 ||
     (!responseBody && statusCode !== NO_CONTENT) ||
-    (responseBody && !Array.isArray(responseBody.handle))
+    (responseBody && !Array.isArray(responseBody.handle) && statusCode !== 202)
   ) {
     const bodyToLog = responseBody ? JSON.stringify(responseBody, null, 2) : "";
     const messageSuffix = bodyToLog
@@ -117,6 +117,10 @@ function extractEdgeCluster(
   [statusCode, responseHeaders, responseBody],
   aepEdgeCluster
 ) {
+  if (!responseBody.handle) {
+    return aepEdgeCluster;
+  }
+
   const locationHintHandle = responseBody.handle.find(
     (item) => item.type === TYPE_LOCATION_HINT
   );
@@ -150,15 +154,26 @@ function createAepEdgeClient(
   debugValidationSession = undefined,
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD
 ) {
-  function interact(requestBody, requestHeaders = {}) {
+
+  function edgeRequest(endpoint, requestBody, requestHeaders = {}) {
     const requestId = uuidv4();
 
+    let domain = edgeDomain;
+    let region = aepEdgeCluster;
+
+    if (edgeDomain === "server.adobedc.net") {
+      if (aepEdgeCluster) {
+        domain = `${aepEdgeCluster}.${edgeDomain}`
+      }
+      region = ""
+    }
+
     const requestUrl = [
-      `https://${edgeDomain}`,
+      `https://${domain}`,
       edgeBasePath,
-      aepEdgeCluster,
+      region,
       "v2",
-      `interact?dataStreamId=${dataStreamId}&requestId=${requestId}`,
+      `${endpoint}?dataStreamId=${dataStreamId}&requestId=${requestId}`,
     ]
       .filter(isNotBlank)
       .join("/");
@@ -189,6 +204,14 @@ function createAepEdgeClient(
         console.error(err.message);
         throw err;
       });
+  }
+
+  function interact(requestBody, requestHeaders = {}) {
+    return edgeRequest("interact", requestBody, requestHeaders);
+  }
+
+  function collect(requestBody, requestHeaders = {}) {
+   return edgeRequest("collect", requestBody, requestHeaders);
   }
 
   function getPropositions({
@@ -227,6 +250,7 @@ function createAepEdgeClient(
 
   return {
     interact,
+    collect,
     getPropositions,
   };
 }

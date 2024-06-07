@@ -15,42 +15,54 @@ require("dotenv").config({ path: path.resolve(process.cwd(), "..", ".env") });
 
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const bodyParser = require('body-parser')
 
-const {
-  createAepEdgeClient,
-  createIdentityPayload,
-} = require("aep-edge-samples-common/aepEdgeClient");
-
-const {
-  loadHandlebarsTemplate,
-} = require("aep-edge-samples-common/templating");
-
-const { isString } = require("@adobe/target-tools");
-const {
-  TYPE_STATE_STORE,
-  getAepEdgeClusterCookie,
-  getDebugSessionCookie,
-} = require("aep-edge-samples-common");
-const {
-  requestAepEdgePersonalization,
-} = require("aep-edge-samples-common/personalization");
-const {
-  saveAepEdgeCookies,
-  getAepEdgeCookies,
-} = require("aep-edge-samples-common/cookies");
-const { sendResponse } = require("aep-edge-samples-common/utils");
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
 
 const {
-  EDGE_CONFIG_ID_WITH_ANALYTICS,
+  createAepEdgeClient,
+} = require("aep-edge-samples-common/aepEdgeClient");
+
+const {
+  createImsClient,
+} = require("aep-edge-samples-common/authentication");
+
+const {
+  loadHandlebarsTemplate,
+} = require("aep-edge-samples-common/templating");
+
+const {
+  collect,
+  getOrSetFPIDCookie
+} = require("aep-edge-samples-common/collection");
+
+const { sendResponse } = require("aep-edge-samples-common/utils");
+
+const {
+  IMS_HOST,
   ORGANIZATION_ID,
-  demoSurfaceUri,
-  demoSurfaceName,
+  CLIENT_ID,
+  CLIENT_SECRET,
+  ACCESS_SCOPES,
+  DATASTREAM_ID,
   AEP_EDGE_DOMAIN,
-  FPID,
+  AEP_EDGE_REGION
 } = process.env;
+
+const aepEdgeClient = createAepEdgeClient(
+  DATASTREAM_ID,
+  AEP_EDGE_REGION,
+  AEP_EDGE_DOMAIN
+);
+
+const imsClient = createImsClient(
+  CLIENT_ID,
+  CLIENT_SECRET,
+  ACCESS_SCOPES,
+  IMS_HOST
+);
 
 // Initialize the Express app
 const httpApp = express();
@@ -58,75 +70,58 @@ const httpsApp = express();
 
 // Setup cookie parsing middleware and static file serving from the /public directory
 httpsApp.use(cookieParser());
+httpsApp.use(bodyParser.json())
 httpsApp.use(express.static(path.resolve(__dirname, "..", "public")));
-
-function prepareTemplateVariables(
-  { response = {} },
-  defaultTemplateVariables = {}
-) {
-  const { headers = {}, body = { handle: [] } } = response;
-
-  return {
-    surface: demoSurfaceUri.concat(demoSurfaceName),
-    edgeDomain: AEP_EDGE_DOMAIN,
-    edgeConfigId: EDGE_CONFIG_ID_WITH_ANALYTICS,
-    orgId: ORGANIZATION_ID,
-    applyResponseParam: btoa(
-      JSON.stringify({
-        renderDecisions: true,
-        responseHeaders: headers,
-        responseBody: {
-          ...body,
-          handle: body.handle.filter((item) => item.type !== TYPE_STATE_STORE),
-        },
-      })
-    ),
-    ...defaultTemplateVariables,
-  };
-}
 
 // Setup the root route Express app request handler for GET requests
 httpsApp.get("/", async (req, res) => {
-  const aepEdgeClient = createAepEdgeClient(
-    EDGE_CONFIG_ID_WITH_ANALYTICS,
-    getAepEdgeClusterCookie(ORGANIZATION_ID, req),
-    AEP_EDGE_DOMAIN,
-    getDebugSessionCookie(ORGANIZATION_ID, req)
-  );
-
-  const aepEdgeCookies = getAepEdgeCookies(req);
   let template = loadHandlebarsTemplate("index");
   let templateVariables = {
-    pageTitle: "AJO Hybrid Sample",
+    pageTitle: "Collecting data via AEP Edge Network Server API",
+    buttonActions: [{
+      id: "buy-now",
+      content: {
+        eventType: "buy"
+      },
+      text: "Buy now"
+    }, {
+      id: "newsletter",
+      content: {
+        eventType: "subscribe"
+      },
+      text: "Subscribe now"
+    }, {
+      id: "free-trial",
+      content: {
+        eventType: "trial"
+      },
+      text: "Free Trial"
+    }]
   };
 
-  try {
-    const aepEdgeResult = await requestAepEdgePersonalization(
-      aepEdgeClient,
-      req,
-      [],
-      isString(FPID) && FPID.length > 0
-        ? {
-            FPID: [createIdentityPayload(FPID)],
-          }
-        : {},
-      aepEdgeCookies,
-      [demoSurfaceUri, demoSurfaceUri.concat(demoSurfaceName)]
-    );
+  let identity = retrieveIdentity(req, res);
 
-    templateVariables = prepareTemplateVariables(
-      aepEdgeResult,
-      templateVariables
-    );
-    saveAepEdgeCookies(ORGANIZATION_ID, { req, res, aepEdgeResult });
+  try {
+    let authInfo = {
+      accessToken: await imsClient.generateAccessToken(),
+      orgId: ORGANIZATION_ID,
+      apiKey: CLIENT_ID
+    };
+
+    collect(aepEdgeClient, req, identity, {
+      eventType: "pageView",
+      producedBy: "express-demo-app"
+    }, authInfo);
+
     sendResponse({
       req,
       res,
       template,
-      templateVariables,
-      aepEdgeResult,
+      templateVariables
     });
   } catch (e) {
+    console.log(e);
+
     template = loadHandlebarsTemplate("error");
     templateVariables.error = e.message;
     sendResponse({
@@ -137,6 +132,42 @@ httpsApp.get("/", async (req, res) => {
     });
   }
 });
+
+httpsApp.post("/execute", async (req, res) => {
+  try {
+    // Your business logic to handle this event.
+    // processEvent(...):
+
+    let authInfo = {
+      accessToken: await imsClient.generateAccessToken(),
+      orgId: ORGANIZATION_ID,
+      apiKey: CLIENT_ID
+    };
+
+    let identity = retrieveIdentity(req, res);
+
+    // And also collect this event via AEP Edge Sever Side.
+    collect(aepEdgeClient, req, identity, {
+      eventType: req.body.eventType,
+      producedBy: "express-demo-app"
+    }, authInfo);
+
+    res.status(200).send();
+  } catch (e) {
+    console.error(e.message, e);
+    res.status(500).send()
+  }
+});
+
+function retrieveIdentity(req, res) {
+  // Get the identity for the current visitor.
+
+  // We assume it is an authenticated visitor and we return his identity, which is represented by an email.
+  return {
+    type: "Email",
+    id: "user@express-demo-app.com"
+  }
+}
 
 // Startup the Express server listener
 const httpsOptions = {

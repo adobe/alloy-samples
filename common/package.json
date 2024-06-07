@@ -10,6 +10,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@adobe/target-tools": "^1.7.0",
+    "form-data": "^4.0.0",
     "handlebars": "^4.7.7",
     "node-fetch": "^2.6.7",
     "uuid": "^9.0.0"
