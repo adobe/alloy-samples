@@ -161,7 +161,8 @@ document.addEventListener("DOMContentLoaded", async function(event) {
   var sessionPromise;
   videoPlayer.addEventListener("playing", function() {
     if (!playerSettings.videoLoaded) {
-      sessionPromise = window.alloy("createMediaSession", {
+      sessionPromise = window
+        .alloy("createMediaSession", {
           // start media session
           playerId: "episode-1", // unique identifier
           xdm: {
@@ -197,24 +198,22 @@ document.addEventListener("DOMContentLoaded", async function(event) {
                 channel: "broadcastChannel",
                 contentType: "VOD",
                 feed: "sourceFeed",
-                network: "test-network"
-              }
-            }
+                network: "test-network",
+              },
+            },
           },
-        getPlayerDetails: () => {
+          getPlayerDetails: () => {
             const getPlayhead = getVideoPlayedPlayhead(videoPlayer);
             return {
-              playhead: getPlayhead
+              playhead: getPlayhead,
             };
-          }
+          },
         })
-        .then(sessionId => {
-
-          const sampleDemoEventTriggerer = createAddSampleEventsBasedOnPlayhead(
-            videoPlayer
-          );
+        .then((sessionId) => {
+          const sampleDemoEventTriggerer =
+            createAddSampleEventsBasedOnPlayhead(videoPlayer);
           playerSettings.clock = setInterval(sampleDemoEventTriggerer, 1000);
-          console.log("session Id", sessionId);
+
           return sessionId;
         });
 
