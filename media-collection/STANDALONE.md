@@ -44,7 +44,7 @@ When using `automatic` setup for Media Edge Data Collection, WEB SDK will take c
 player state. Here is an example of how to create a media session:
 
 ```javascript
- alloy("createMediaSession", {
+alloy("createMediaSession", {
   playerId: "episode-1", // an unique identifier for your media session
   xdm: {
     mediaCollection: {
@@ -74,7 +74,7 @@ Here are the `createMediaSession` parameters:
 
 For cases when customers want to have full control, they would still use createMediaSession, but they will not provide the `playerId` and `getPlayerDetails`, and would provide just the value of player play head. Here is an example:
 ```javascript
- const mediaSessionPromise = window.alloy("createMediaSession", {
+const mediaSessionPromise = window.alloy("createMediaSession", {
   xdm: {
     mediaCollection: {
       sessionDetails: {
