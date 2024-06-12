@@ -1,6 +1,6 @@
 # Overview
 
-Customers that are using Adobe Tags to implement Adobe solutions, can implement Media using Web SDK Tags Extension.
+Customers that are using Adobe Tags to implement Adobe solutions, can implement Streaming Media using Web SDK Tags Extension.
 
 # Configuration
 
@@ -16,7 +16,7 @@ To create a Media Session, the `Send Media Event` action should be used. Similar
 
 The player ID is an identifier for the media session, this can be a random string or the element ID of the player.
 Session details should be provided when sending a "Session start" event using `Send Media Event` action.
-Playhead and QoE data elements should be provided when starting the media session. The following events for that media session will inherit the playhead and QoE.
+Playhead and QoE data elements should be provided when starting the media session. The following events will inherit the playhead and QoE data from it's session.
 ![image](public/img/createSession.png)
 
 

@@ -3,10 +3,10 @@
 ## Overview
 To use the streamingMedia component of Web SDK, you must meet the following prerequisites:
 
-- Before you can send Media Analytics data to Edge, first complete the steps in [Install Media Analytics with Experience Platform Edge](https://experienceleague.adobe.com/en/docs/media-analytics/using/implementation/edge-recommended/media-edge-sdk/implementation-edge).
+- Before you can send Streaming Media data to Edge, first complete the steps in [Install Streaming Media with Experience Platform Edge](https://experienceleague.adobe.com/en/docs/media-analytics/using/implementation/edge-recommended/media-edge-sdk/implementation-edge).
 - Make sure you have access to Adobe Experience Platform and/or Adobe Analytics.
 - You must use Web SDK version 2.20.0 or later. See the [Web SDK installation overview](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/install/overview?lang=en) to learn how to install the latest version.
-- Enable the [Media Analytics](https://experienceleague.adobe.com/en/docs/experience-platform/datastreams/configure?lang=en) option for the datastream you are using.
+- Enable the [Streaming Media](https://experienceleague.adobe.com/en/docs/experience-platform/datastreams/configure?lang=en) option for the datastream you are using.
 - Ensure that the schema used by your datastream includes the Media Collection schema fields.
 
 ## Configuration
@@ -151,7 +151,7 @@ Please note that in a non-automatic session, you are responsible for managing th
 
 # Migration Strategy
 
-For customers who are implementing Media Analytics using [MediaJS](https://adobe-marketing-cloud.github.io/media-sdks/reference/javascript_3x/APIReference.html) and are considering a migration plan, a new command, `getMediaAnalyticsTracker`, is available. This command returns a `Media` object that is similar to the one found in the [Media Analytics JS library](https://adobe-marketing-cloud.github.io/media-sdks/reference/javascript_3x/APIReference.html).
+For customers who are implementing Streaming Media using [MediaJS](https://adobe-marketing-cloud.github.io/media-sdks/reference/javascript_3x/APIReference.html) and are considering a migration plan, a new command, `getMediaAnalyticsTracker`, is available. This command returns a `Media` object that is similar to the one found in the [Streaming Media JS library](https://adobe-marketing-cloud.github.io/media-sdks/reference/javascript_3x/APIReference.html).
 
 ## Accessing the API
 
