@@ -1,3 +1,7 @@
+// This example demonstrates how to use Web SDK to collect Media Collection events in a migration strategy mode.
+// In this example, the developer will retrieve the Legacy Media API and switch with the API that was used from Media
+// JS SDK. Then the Web SDK will take care to convert the Media Objects to an XDM schema.
+
 const createThirdVideoPlayer = thirdVideoPlayerId => {
   const thirdVideoPlayer = document.getElementById(thirdVideoPlayerId);
 

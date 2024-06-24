@@ -1,3 +1,5 @@
+// This example is to demonstrate how to use the Web SDK to track Media Collection events in a manual mode.
+// In this example the developer will take care of the session handling and will send the media events based on the playhead of the video player.
 const createSecondVideoPlayer = secondVideoPlayerId => {
   const secondVideoPlayer = document.getElementById(secondVideoPlayerId);
 
@@ -78,8 +80,7 @@ const createSecondSampleEventsBasedOnPlayhead = ({
               creativeURL: "https://creativeurl.com",
               placementID: "placementID",
               siteID: "siteID",
-              podPosition: 11,
-              playerName: "HTML5 player" // ?? why do we have it here as well? same as the one from session start event?
+              podPosition: 11
             },
             sessionID: sessionId,
             playhead: parseInt(playhead, 10)
@@ -115,8 +116,7 @@ const createSecondSampleEventsBasedOnPlayhead = ({
               creativeURL: "https://creativeurl.com",
               placementID: "placementID",
               siteID: "siteID",
-              podPosition: 17,
-              playerName: "HTML5 player" // ?? why do we have it here as well? same as the one from session start event?
+              podPosition: 17
             },
             sessionID: sessionId,
             playhead: parseInt(playhead, 10)
@@ -217,7 +217,6 @@ document.addEventListener("DOMContentLoaded", async function(event) {
                 streamFormat: "streamFormat",
                 streamType: "video",
                 adLoad: "adLoadType",
-                channel: "broadcastChannel",
                 contentType: "VOD",
                 feed: "sourceFeed",
                 network: "test-network"
@@ -257,12 +256,6 @@ document.addEventListener("DOMContentLoaded", async function(event) {
     });
   });
 
-  secondVideoPlayer.addEventListener("seeking", function() {
-    console.log("seeking", secondVideoPlayer);
-  });
-  secondVideoPlayer.addEventListener("seeked", function() {
-    console.log("seeked", secondVideoPlayer);
-  });
   secondVideoPlayer.addEventListener("pause", function() {
     sessionPromise.then(sessionId => {
       window.alloy("sendMediaEvent", {

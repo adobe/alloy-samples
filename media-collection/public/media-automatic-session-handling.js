@@ -1,3 +1,5 @@
+// This example is to demonstrate how to use the Web SDK to track Media Collection events in automatic mode.
+// In this example Web SDK will take care of the session handling and will send the media events based on the playhead of the video player.
 const createVideoPlayer = videoPlayerId => {
   const videoPlayer = document.getElementById(videoPlayerId);
   const playerSettings = {
@@ -73,8 +75,7 @@ const createAddSampleEventsBasedOnPlayhead = videoPlayer => {
               creativeURL: "https://creativeurl.com",
               placementID: "placementID",
               siteID: "siteID",
-              podPosition: 11,
-              playerName: "HTML5 player" // ?? why do we have it here as well? same as the one from session start event?
+              podPosition: 11
             }
           }
         }
@@ -106,8 +107,7 @@ const createAddSampleEventsBasedOnPlayhead = videoPlayer => {
               creativeURL: "https://creativeurl.com",
               placementID: "placementID",
               siteID: "siteID",
-              podPosition: 17,
-              playerName: "HTML5 player" // ?? why do we have it here as well? same as the one from session start event?
+              podPosition: 17
             }
           }
         }
@@ -195,7 +195,6 @@ document.addEventListener("DOMContentLoaded", async function(event) {
                 streamFormat: "streamFormat",
                 streamType: "video",
                 adLoad: "adLoadType",
-                channel: "broadcastChannel",
                 contentType: "VOD",
                 feed: "sourceFeed",
                 network: "test-network",
@@ -206,10 +205,17 @@ document.addEventListener("DOMContentLoaded", async function(event) {
             const getPlayhead = getVideoPlayedPlayhead(videoPlayer);
             return {
               playhead: getPlayhead,
+              qoeDataDetails:{
+                framesPerSecond: 1,
+                bitrate: 35000,
+                droppedFrames: 30,
+                timeToStart: 1364
+              }
             };
           },
         })
         .then((sessionId) => {
+          // this is only for demo purposes as we are pretending to send different events based on playhead
           const sampleDemoEventTriggerer =
             createAddSampleEventsBasedOnPlayhead(videoPlayer);
           playerSettings.clock = setInterval(sampleDemoEventTriggerer, 1000);
@@ -234,12 +240,7 @@ document.addEventListener("DOMContentLoaded", async function(event) {
       }
     });
   });
-  videoPlayer.addEventListener("seeking", function() {
-    console.log("seeking", videoPlayer);
-  });
-  videoPlayer.addEventListener("seeked", function() {
-    console.log("seeked", videoPlayer);
-  });
+
   videoPlayer.addEventListener("pause", function() {
     window.alloy("sendMediaEvent", {
       playerId: "episode-1",
