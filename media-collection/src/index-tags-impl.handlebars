@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Top and bottom VEC sample</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="icon" href="https://wwwimages2.adobe.com/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://assets.adobedtm.com/1281f6ff0c59/38d17f64f7b6/launch-15d4a129377f-development.js"></script>
+
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Web Site</a>
+    </div>
+    <div id="navbar" class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="/">Tags implementation</a></li>
+        <li><a href="./index.html">Standalone library</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container" id="main-container">
+    <div class="page-header" style="padding-top: 10px;">
+        <h1>Media Collection with automatic session handling </h1>
+    </div>
+    <video controls id="media-movie" muted preload width="600">
+        <source
+                src="video/clickbaby.mp4"
+                type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+        />
+    </video>
+    <div class="page-header" style="padding-top: 10px;">
+        <h1>Media Collection with non-automatic session handling </h1>
+    </div>
+    <video controls id="second-media-movie" muted preload width="600">
+        <source
+                src="video/clickbaby.mp4"
+                type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+        />
+    </video>
+
+    <div class="page-header" style="padding-top: 10px;">
+        <h1>Media Analytics in a migration use case</h1>
+    </div>
+    <video controls id="third-media-movie" muted preload width="600">
+        <source
+                src="video/clickbaby.mp4"
+                type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+        />
+    </video>
+</div>
+</body>
+</html>
