@@ -1,0 +1,23 @@
+body {
+  padding-top: 50px;
+}
+
+img.ajo-decision {
+  margin-bottom: 20px;
+}
+
+#some-buttons {
+  margin: 20px 0;
+}
+
+div.movies {
+  margin-top: 40px;
+}
+
+div.movies .movie p.description {
+  min-height: 120px;
+}
+
+div.movies .movie img.poster {
+  max-width: 242px;
+}
