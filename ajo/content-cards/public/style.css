@@ -1,5 +1,4 @@
 body {
-  padding-top: 50px;
 }
 
 img.ajo-decision {
@@ -8,4 +7,11 @@ img.ajo-decision {
 
 #some-buttons {
   margin: 20px 0;
+}
+
+
+h1 > small {
+  opacity: 1;
+  color: #848484 !important;
+  font-weight: normal;
 }

@@ -19,6 +19,7 @@
     "handlebars": "^4.7.7"
   },
   "devDependencies": {
+    "find-config": "^1.0.0",
     "http-server": "^14.1.1"
   }
 }
