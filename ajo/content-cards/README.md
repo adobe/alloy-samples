@@ -2,19 +2,13 @@
 
 ## Overview
 
-This sample demonstrates using Adobe Experience Platform to get personalization content from Adobe Journey Optimizer. The web page changes based on the personalization content returned.
+This sample demonstrates using Adobe Experience Platform to get Content Cards from Adobe Journey Optimizer (AJO). It uses the [Adobe Experience Platform Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) to get personalization content and to render it entirely client-side.
 
-This sample uses the [Adobe Experience Platform Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) to get personalization content and to render it entirely client-side.
+Here is what the page looks like on first page load.
 
-Here is what the page looks like before and after personalization content is rendered.
+<img src=".assets/cards1.png" alt="drawing" width="800"/>
 
-| without personalization                                        | with personalization                                                 |
-| -------------------------------------------------------------- | -------------------------------------------------------------------- |
-| <img src="../../.assets/plain.png" alt="drawing" width="800"/> | <img src="../../.assets/with-offers.png" alt="drawing" width="800"/> |
-
-Please review the [summary of personalization content](../AJOCampaigns.md) for this sample.
-
-Keep in mind that personalization content can come from any Adobe source such as [Journey Optimizer](https://experienceleague.adobe.com/docs/journey-optimizer/using/ajo-home.html?lang=en) or [Target](https://experienceleague.adobe.com/docs/target.html). Adobe Journey Optimizer is the source of personalization content used in this sample, but the implementation described here will work for all personalization solutions Adobe offers.
+If you click the "Deposit Funds" and "Share on social media" buttons, additional content cards will be shown.  This is because those cards utilize client side triggers so that they show only when certain conditions are met.
 
 ## Running the sample
 
@@ -31,7 +25,7 @@ To run this sample:
 
 ## How it works
 
-1. [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file within the `ajo` folder.
+1. [Web SDK](https://experienceleague.adobe.com/docs/experience-platform/edge/home.html) is included and configured on the page. The configuration is based on the `.env` file within the sample folder.
 
 ```javascript
 <script src="https://cdn1.adoberesources.net/alloy/2.18.0/alloy.min.js" async></script>
@@ -41,6 +35,7 @@ alloy("configure", {
   edgeConfigId: "{{edgeConfigId}}",
   orgId:"{{orgId}}",
   debugEnabled: false,
+  personalizationStorageEnabled: true,
   thirdPartyCookiesEnabled: false
 });
 ```
@@ -51,115 +46,183 @@ alloy("configure", {
 alloy("sendEvent", {
   renderDecisions: true,
   personalization: {
-    surfaces: ["#sample-json-content"],
+    surfaces: ["web://alloy-samples.adobe.com/#content-cards-sample"],
   },
-}).then(applyPersonalization("#sample-json-content"));
+});
 ```
 
-3. Web SDK renders page load Visual Experience Composer (VEC) offers automatically because the `renderDecisions` flag is set to true.
-4. Code Based JSON experience items are manually applied by the sample implementation code (in the [`applyPersonalization`](public/script.js) method) to update the DOM based on the decision.
-5. For code based experience campaigns, display events must manually be sent to indicate when the content has been displayed. This is done via the `sendEvent` command.
+3. The `subscribeRulesetItems` command is used to subscribe to content cards for a surface.  Any time the rulesets are evaluated, the callback provided to this command receives a result object with `propositions` that hold the content card data.
 
 ```javascript
-function sendDisplayEvent(proposition) {
-  const { id, scope, scopeDetails = {} } = proposition;
+const contentCardManager = createContentCardManager("content-cards");
 
-  alloy("sendEvent", {
-    xdm: {
-      eventType: "decisioning.propositionDisplay",
-      _experience: {
-        decisioning: {
-          propositions: [
-            {
-              id: id,
-              scope: scope,
-              scopeDetails: scopeDetails,
-            },
-          ],
-          propositionEventType: {
-            display: 1
-          },
-        },
-      },
-    },
-  });
-}
+alloy("subscribeRulesetItems", {
+  surfaces: ["web://alloy-samples.adobe.com/#content-cards-sample"],
+  schemas: ["https://ns.adobe.com/personalization/message/content-card"],
+  callback: (result, collectEvent) => {
+    const { propositions = [] } = result;
+    contentCardManager.refresh(propositions, collectEvent);
+  },
+});
 ```
 
-6. For code based experience campaigns, interaction events must manually be sent to indicate when a user has interacted with the content. This is done via the `sendEvent` command.
+6. The `contentCardsManager` object is unique to this sample (found in `script.js`).  It's in charge of rendering content cards and sending `interact` and `display` events for them.  When it receives propositions from the callback method, it extracts content cards from them and sorts them.
 
 ```javascript
-function sendInteractEvent(label, proposition) {
-  const { id, scope, scopeDetails = {} } = proposition;
+  const createContentCard = (proposition, item) => {
+    const { data = {}, id } = item;
+    const {
+      content = {},
+      meta = {},
+      publishedDate,
+      qualifiedDate,
+      displayedDate,
+    } = data;
 
-  alloy("sendEvent", {
-    xdm: {
-      eventType: "decisioning.propositionInteract",
-      _experience: {
-        decisioning: {
-          propositions: [
-            {
-              id: id,
-              scope: scope,
-              scopeDetails: scopeDetails,
-            },
-          ],
-          propositionEventType: {
-            interact: 1
-          },
-          propositionAction: {
-            label: label
-          },
-        },
-      },
-    },
-  });
-}
+    return {
+      id,
+      ...content,
+      meta,
+      qualifiedDate,
+      displayedDate,
+      publishedDate,
+      getProposition: () => proposition,
+    };
+  };
+
+  const extractContentCards = (propositions) =>
+    propositions
+      .reduce((allItems, proposition) => {
+        const { items = [] } = proposition;
+
+        return [
+          ...allItems,
+          ...items.map((item) => createContentCard(proposition, item)),
+        ];
+      }, [])
+      .sort(
+        (a, b) =>
+          b.qualifiedDate - a.qualifiedDate || b.publishedDate - a.publishedDate
+      );
+
+const contentCards = extractContentCards(propositions);
 ```
+
+7. Next, content cards are rendered based on the content card details defined for each campaign.  Each card includes a `title`, `body`, `imageUrl`, and other custom data values.  
+
+```javascript
+const renderContentCards = () => {
+  const contentCardsContainer = document.getElementById(containerElementId);
+  contentCardsContainer.addEventListener("click", handleContentCardClick);
+
+  let contents = "";
+
+  contentCards.forEach((card) => {
+    const { id, title, body, imageUrl, meta = {} } = card;
+    const { buttonLabel = "" } = meta;
+
+    contents += `
+        <div class="col">
+          <div data-id="${id}" class="card h-100">
+            <img src="${imageUrl}" class="card-img-top" alt="...">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">${title}</h5>
+              <p class="card-text">${body}</p>
+              <a href="#" class="mt-auto btn btn-primary">${buttonLabel}</a>
+            </div>
+          </div>
+        </div>
+      `;
+  });
+
+  contentCardsContainer.innerHTML = contents;
+  collectEvent(
+    "display",
+    contentCards.map((card) => card.getProposition())
+  );
+};
+
+```
+
+8. When the `subscribeRulesetItems` callback is invoked, in addition to personalization results, a convenience function called `collectEvent` is provided that can be used send experience edge events to track interactions, displays and other events.  This function is used in this sample to track any time a content card is clicked.  And if the button on the content card is clicked, the browser is directed to the `actionUrl` specified by the campaign.
+
+```javascript
+const handleContentCardClick = (evt) => {
+  const cardEl = evt.target.closest(".card");
+
+  if (!cardEl) {
+    return;
+  }
+
+  const isAnchor = evt.target.nodeName === "A";
+  const card = contentCards.find((card) => card.id === cardEl.dataset.id);
+
+  if (!card) {
+    return;
+  }
+
+  collectEvent("interact", [card.getProposition()]);
+
+  if (isAnchor) {
+    evt.preventDefault();
+    evt.stopImmediatePropagation();
+    const { actionUrl } = card;
+    if (actionUrl && actionUrl.length > 0) {
+      window.location.href = actionUrl;
+    }
+  }
+};
+
+```
+
+
+
+
 
 ## Key Observations
 
-### Cookies
+### personalizationStorageEnabled
 
-Cookies are used to persist user identity and cluster information. When using a client-side implementation, the Web SDK handles the storing and sending of these cookies automatically during the request lifecycle.
+The `personalizationStorageEnabled` configuration option is set to `true` in the `configure` command.  This is  important so that content cards that were previously qualified for will continue to be displayed.
 
-| Cookie                   | Purpose                                                                    | Stored by | Sent by |
-| ------------------------ | -------------------------------------------------------------------------- | --------- | ------- |
-| kndctr_AdobeOrg_identity | Contains user identity details                                             | Web SDK   | Web SDK |
-| kndctr_AdobeOrg_cluster  | Indicates which experience edge cluster should be used to fulfill requests | Web SDK   | Web SDK |
+### Triggers
 
-### Request placement
+Content cards support custom triggers that are evaluated client side.  When a trigger rule is satisfied additional content cards will be shown.  There are 4 different campaigns used in this sample.  One campaign for each content card.  Each one uses the same surface: `web://alloy-samples.adobe.com/#content-cards-sample`.  In the table below you can view the trigger rules for each and how to satisfy them.
 
-Requests to Adobe Experience Platform API are required to get propositions, send a display notification and send an interact notification. When using a client-side implementation, the Web SDK makes these requests when the `sendEvent` command is used.
+| Trigger rule                                                 | Card                                                         | How to satisfy the trigger rule                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| None                                                         | <img src=".assets/card-podcast.png" alt="drawing" width="250"/> | sendEvent command.  No client side rule to satisfy.          |
+| None                                                         | <img src=".assets/card-fitness.png" alt="drawing" width="250"/> | sendEvent command.  No client side rule to satisfy.          |
+| <img src=".assets/card-investing-rule.png" alt="drawing" width="350"/> | <img src=".assets/card-investing.png" alt="drawing" width="250"/> | <img src=".assets/card-investing-rule-satisfied.png" alt="drawing" width="350"/> |
+| <img src=".assets/card-social-rule.png" alt="drawing" width="350"/> | <img src=".assets/card-social.png" alt="drawing" width="250"/> | <img src=".assets/card-social-rule-satisfied.png" alt="drawing" width="350"/> |
 
-| Request                                        | Made by                             |
-|------------------------------------------------| ----------------------------------- |
-| interact request to get propositions           | Web SDK using the sendEvent command |
-| interact request to send display notifications | Web SDK using the sendEvent command |
-| interact request to send click notifications   | Web SDK using the sendEvent command |                          |
+The `evaluateRulesets` command is invoked when clicking the "Deposit Funds" and "Share on social media" buttons.  Each one specifying the appropriate `decisionContext` to satisfy the rule defined for each campaign.
 
-### Flow Diagram
+```javascript
+document.getElementById("action-button-1").addEventListener("click", () => {
+  alloy("evaluateRulesets", {
+    renderDecisions: true,
+    personalization: {
+      decisionContext: {
+        action: "deposit-funds",
+      },
+    },
+  });
+});
 
-```mermaid
-sequenceDiagram
-  participant Browser
-  participant Alloy
-  participant DOM
-  participant Browser Cookies
-  participant API as Adobe Experience Platform API
-  autonumber
-  Browser->>Alloy: Page load
-  Browser Cookies->>Alloy: Read identity and cluster cookies
-  Alloy->>API: Interact request
-  API->>Alloy: Return propositions
-  Alloy->>Browser Cookies: Set identity and cluster cookies
-  Alloy->>DOM: Render propositions
-  Alloy->>API: Send display notification(s)
-  Alloy->>API: Send interact notification(s)
+document.getElementById("action-button-2").addEventListener("click", () => {
+  alloy("evaluateRulesets", {
+    renderDecisions: true,
+    personalization: {
+      decisionContext: {
+        action: "social-media",
+      },
+    },
+  });
+});
+
 ```
-
-Please refer to [Sample Adobe Experience Platform Edge Network Personalization Payloads](../PersonalizationPayloads.md) for examples of the Edge Network API request and responses in the steps 3, 4, 7 and 8 of the flow.
 
 ## Beyond the sample
 
-This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file within the `ajo` folder and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
+This sample app can serve as a starting point for you to experiment and learn more about Adobe Experience Platform. For example, you can change a few environment variables so the sample app pulls in content from your own AEP configuration. To do so, just open the `.env` file within the sample folder and modify the variables. Restart the sample app, and you're ready to experiment using your own personalization content.
