@@ -66,7 +66,7 @@ alloy("subscribeRulesetItems", {
 });
 ```
 
-6. The `contentCardsManager` object is unique to this sample (found in `script.js`).  It's in charge of rendering content cards and sending `interact` and `display` events for them.  When it receives propositions from the callback method, it extracts content cards from them and sorts them.
+4. The `contentCardsManager` object is unique to this sample (found in `script.js`).  It's in charge of rendering content cards and sending `interact` and `display` events for them.  When it receives propositions from the callback method, it extracts content cards from them and sorts them.
 
 ```javascript
   const createContentCard = (proposition, item) => {
@@ -108,7 +108,7 @@ alloy("subscribeRulesetItems", {
 const contentCards = extractContentCards(propositions);
 ```
 
-7. Next, content cards are rendered based on the content card details defined for each campaign.  Each card includes a `title`, `body`, `imageUrl`, and other custom data values.  
+5. Next, content cards are rendered based on the content card details defined for each campaign.  Each card includes a `title`, `body`, `imageUrl`, and other custom data values.  
 
 ```javascript
 const renderContentCards = () => {
@@ -144,7 +144,7 @@ const renderContentCards = () => {
 
 ```
 
-8. When the `subscribeRulesetItems` callback is invoked, in addition to personalization results, a convenience function called `collectEvent` is provided that can be used send experience edge events to track interactions, displays and other events.  This function is used in this sample to track any time a content card is clicked.  And if the button on the content card is clicked, the browser is directed to the `actionUrl` specified by the campaign.
+6. When the `subscribeRulesetItems` callback is invoked, in addition to personalization results, a convenience function called `collectEvent` is provided that can be used to send experience edge events to track interactions, displays and other events.  This function is used in this sample to track any time a content card is clicked.  And if the button on the content card is clicked, the browser is directed to the `actionUrl` specified by the campaign.
 
 ```javascript
 const handleContentCardClick = (evt) => {
