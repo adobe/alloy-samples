@@ -1,0 +1,17 @@
+body {
+}
+
+img.ajo-decision {
+  margin-bottom: 20px;
+}
+
+#some-buttons {
+  margin: 20px 0;
+}
+
+
+h1 > small {
+  opacity: 1;
+  color: #848484 !important;
+  font-weight: normal;
+}
