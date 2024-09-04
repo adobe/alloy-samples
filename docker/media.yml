@@ -1,0 +1,17 @@
+version: '3'
+services:
+  media-collection:
+    build:
+      context: ../media-collection
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/media-collection
+      - APP_DOMAIN=media.alloyio.com
+      - EDGE_CONFIG_ID_WITH_MEDIA=${EDGE_CONFIG_ID_WITH_MEDIA}
+      - ORGANIZATION_ID=${ORGANIZATION_ID}
+    ports:
+      - "7001:443"
+
+networks:
+  default:
+    name: media_network

@@ -1,0 +1,55 @@
+version: '3'
+services:
+  personalization-client-side:
+    build:
+      context: ../target/personalization-client-side
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/personalization-client-side
+      - APP_DOMAIN=target.alloyio.com
+    ports:
+      - "9001:443"
+
+  personalization-hybrid:
+    build:
+      context: ../target/personalization-hybrid
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/personalization-hybrid
+      - APP_DOMAIN=target.alloyio.com
+    ports:
+      - "9002:443"
+
+  personalization-hybrid-spa:
+    build:
+      context: ../target/personalization-hybrid-spa
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/personalization-hybrid-spa
+      - APP_DOMAIN=target.alloyio.com
+    ports:
+      - "9003:443"
+
+  personalization-server-side:
+    build:
+      context: ../target/personalization-server-side
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/personalization-server-side
+      - APP_DOMAIN=target.alloyio.com
+    ports:
+      - "9004:443"
+
+  top-and-bottom:
+    build:
+      context: ../target/top-and-bottom
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/top-and-bottom
+      - APP_DOMAIN=target.alloyio.com
+    ports:
+      - "9005:443"
+
+networks:
+  default:
+    name: target_network

@@ -1,0 +1,86 @@
+name: Deploy Alloy Samples
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: 'Specific sample to deploy (leave empty to deploy all)'
+        required: false
+        type: choice
+        options:
+          - ajo-content-cards
+          - ajo-in-app-messages
+          - ajo-personalization-client-side
+          - ajo-personalization-hybrid
+          - ajo-personalization-server-side
+          - ajo-proposition-interaction-tracking
+          - target-personalization-client-side
+          - target-personalization-hybrid
+          - target-personalization-hybrid-spa
+          - target-personalization-server-side
+          - target-top-and-bottom
+          - media-collection
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.sample }}" != "" ]; then
+            echo "matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
+          else
+            echo "matrix={\"include\":[{\"sample\":\"ajo-content-cards\"},{\"sample\":\"ajo-in-app-messages\"},{\"sample\":\"ajo-personalization-client-side\"},{\"sample\":\"ajo-personalization-hybrid\"},{\"sample\":\"ajo-personalization-server-side\"},{\"sample\":\"ajo-proposition-interaction-tracking\"},{\"sample\":\"target-personalization-client-side\"},{\"sample\":\"target-personalization-hybrid\"},{\"sample\":\"target-personalization-hybrid-spa\"},{\"sample\":\"target-personalization-server-side\"},{\"sample\":\"target-top-and-bottom\"},{\"sample\":\"media-collection\"}]}" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.setup.outputs.matrix)}}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+    - name: Set environment variables
+      run: |
+        echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
+        echo "APP_DOMAIN=ajo.alloyio.com" >> $GITHUB_ENV
+        echo "AEP_EDGE_DOMAIN=${{ secrets.AEP_EDGE_DOMAIN }}" >> $GITHUB_ENV
+        echo "EDGE_CONFIG_ID_WITH_MEDIA=${{ secrets.EDGE_CONFIG_ID_WITH_MEDIA }}" >> $GITHUB_ENV
+        echo "EDGE_CONFIG_ID_WITH_ANALYTICS=${{ secrets.EDGE_CONFIG_ID_WITH_ANALYTICS }}" >> $GITHUB_ENV
+        echo "ORGANIZATION_ID=${{ secrets.ORGANIZATION_ID }}" >> $GITHUB_ENV
+        echo "DEMO_SURFACE_NAME=${{ secrets.DEMO_SURFACE_NAME }}" >> $GITHUB_ENV
+        echo "DEMO_SURFACE_URI=${{ secrets.DEMO_SURFACE_URI }}" >> $GITHUB_ENV
+    - name: Build and push Docker image
+      env:
+        IMAGE_NAME: ${{ matrix.sample }}
+      run: |
+        docker build \
+          --build-arg BASE_PATH=${{ env.BASE_PATH }} \
+          --build-arg APP_DOMAIN=${{ env.APP_DOMAIN }} \
+          --build-arg AEP_EDGE_DOMAIN=${{ env.AEP_EDGE_DOMAIN }} \
+          --build-arg EDGE_CONFIG_ID_WITH_ANALYTICS=${{ env.EDGE_CONFIG_ID_WITH_ANALYTICS }} \
+          --build-arg EDGE_CONFIG_ID_WITH_MEDIA=${{ env.EDGE_CONFIG_ID_WITH_MEDIA }} \
+          --build-arg ORGANIZATION_ID=${{ env.ORGANIZATION_ID }} \
+          --build-arg DEMO_SURFACE_NAME=${{ env.DEMO_SURFACE_NAME }} \
+          --build-arg DEMO_SURFACE_URI=${{ env.DEMO_SURFACE_URI }} \
+          -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${IMAGE_NAME}:${{ github.sha }} ${{ matrix.sample }}
+        docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ matrix.sample }}
+        publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
+        images: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${{ matrix.sample }}:${{ github.sha }}

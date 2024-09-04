@@ -1,0 +1,65 @@
+version: '3'
+services:
+  content-cards:
+    build:
+      context: ../ajo/content-cards
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/content-cards
+      - APP_DOMAIN=ajo.alloyio.com
+    ports:
+      - "8001:443"
+
+  in-app-messages:
+    build:
+      context: ../ajo/in-app-messages
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/in-app-messages
+      - APP_DOMAIN=ajo.alloyio.com
+    ports:
+      - "8002:443"
+
+  personalization-client-side:
+    build:
+      context: ../ajo/personalization-client-side
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/personalization-client-side
+      - APP_DOMAIN=ajo.alloyio.com
+    ports:
+      - "8003:443"
+
+  personalization-hybrid:
+    build:
+      context: ../ajo/personalization-hybrid
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/personalization-hybrid
+      - APP_DOMAIN=ajo.alloyio.com
+    ports:
+      - "8004:443"
+
+  personalization-server-side:
+    build:
+      context: ../ajo/personalization-server-side
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/personalization-server-side
+      - APP_DOMAIN=ajo.alloyio.com
+    ports:
+      - "8005:443"
+
+  proposition-interaction-tracking:
+    build:
+      context: ../ajo/proposition-interaction-tracking
+      dockerfile: Dockerfile
+    environment:
+      - BASE_PATH=/proposition-interaction-tracking
+      - APP_DOMAIN=ajo.alloyio.com
+    ports:
+      - "8006:443"
+
+networks:
+  default:
+    name: ajo_network
