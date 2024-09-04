@@ -56,31 +56,25 @@ jobs:
     - name: Set environment variables
       run: |
         echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
-        echo "APP_DOMAIN=ajo.alloyio.com" >> $GITHUB_ENV
-        echo "AEP_EDGE_DOMAIN=${{ secrets.AEP_EDGE_DOMAIN }}" >> $GITHUB_ENV
-        echo "EDGE_CONFIG_ID_WITH_MEDIA=${{ secrets.EDGE_CONFIG_ID_WITH_MEDIA }}" >> $GITHUB_ENV
-        echo "EDGE_CONFIG_ID_WITH_ANALYTICS=${{ secrets.EDGE_CONFIG_ID_WITH_ANALYTICS }}" >> $GITHUB_ENV
-        echo "ORGANIZATION_ID=${{ secrets.ORGANIZATION_ID }}" >> $GITHUB_ENV
-        echo "DEMO_SURFACE_NAME=${{ secrets.DEMO_SURFACE_NAME }}" >> $GITHUB_ENV
-        echo "DEMO_SURFACE_URI=${{ secrets.DEMO_SURFACE_URI }}" >> $GITHUB_ENV
+        if [[ "${{ matrix.sample }}" == ajo-* ]]; then
+          echo "APP_DOMAIN=ajo.alloyio.com" >> $GITHUB_ENV
+          echo "COMPOSE_FILE=docker/ajo.yml" >> $GITHUB_ENV
+        elif [[ "${{ matrix.sample }}" == target-* ]]; then
+          echo "APP_DOMAIN=target.alloyio.com" >> $GITHUB_ENV
+          echo "COMPOSE_FILE=docker/target.yml" >> $GITHUB_ENV
+        elif [[ "${{ matrix.sample }}" == media-* ]]; then
+          echo "APP_DOMAIN=media.alloyio.com" >> $GITHUB_ENV
+          echo "COMPOSE_FILE=docker/media.yml" >> $GITHUB_ENV
+        fi
     - name: Build and push Docker image
       env:
         IMAGE_NAME: ${{ matrix.sample }}
       run: |
-        docker build \
-          --build-arg BASE_PATH=${{ env.BASE_PATH }} \
-          --build-arg APP_DOMAIN=${{ env.APP_DOMAIN }} \
-          --build-arg AEP_EDGE_DOMAIN=${{ env.AEP_EDGE_DOMAIN }} \
-          --build-arg EDGE_CONFIG_ID_WITH_ANALYTICS=${{ env.EDGE_CONFIG_ID_WITH_ANALYTICS }} \
-          --build-arg EDGE_CONFIG_ID_WITH_MEDIA=${{ env.EDGE_CONFIG_ID_WITH_MEDIA }} \
-          --build-arg ORGANIZATION_ID=${{ env.ORGANIZATION_ID }} \
-          --build-arg DEMO_SURFACE_NAME=${{ env.DEMO_SURFACE_NAME }} \
-          --build-arg DEMO_SURFACE_URI=${{ env.DEMO_SURFACE_URI }} \
-          -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${IMAGE_NAME}:${{ github.sha }} ${{ matrix.sample }}
-        docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}
+        docker-compose -f ${{ env.COMPOSE_FILE }} build ${{ matrix.sample }}
+        docker-compose -f ${{ env.COMPOSE_FILE }} push ${{ matrix.sample }}
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ matrix.sample }}
         publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
-        images: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${{ matrix.sample }}:${{ github.sha }}
+        images: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${{ matrix.sample }}:latest
