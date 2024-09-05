@@ -1,4 +1,4 @@
-name: Deploy Alloy Samples
+name: Trigger Azure Pipeline for Alloy Samples
 
 on:
   push:
@@ -25,128 +25,19 @@ on:
           - media-collection
 
 env:
-  ACR_NAME: alloysamples.azurecr.io
+  AZURE_DEVOPS_ORGANIZATION: mowla
+  AZURE_DEVOPS_PROJECT: alloysample
+  AZURE_PIPELINE_ID: 4
 
 jobs:
-  setup:
+  trigger-azure-pipeline:
     runs-on: ubuntu-latest
-    outputs:
-      ajo_matrix: ${{ steps.set-matrix.outputs.ajo_matrix }}
-      target_matrix: ${{ steps.set-matrix.outputs.target_matrix }}
-      media_matrix: ${{ steps.set-matrix.outputs.media_matrix }}
     steps:
-      - id: set-matrix
-        run: |
-          if [ "${{ github.event.inputs.sample }}" != "" ]; then
-            if [[ "${{ github.event.inputs.sample }}" == ajo-* ]]; then
-              echo "ajo_matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.inputs.sample }}" == target-* ]]; then
-              echo "target_matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.inputs.sample }}" == media-* ]]; then
-              echo "media_matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "ajo_matrix={\"include\":[{\"sample\":\"ajo-content-cards\"},{\"sample\":\"ajo-in-app-messages\"},{\"sample\":\"ajo-personalization-client-side\"},{\"sample\":\"ajo-personalization-hybrid\"},{\"sample\":\"ajo-personalization-server-side\"},{\"sample\":\"ajo-proposition-interaction-tracking\"}]}" >> $GITHUB_OUTPUT
-            echo "target_matrix={\"include\":[{\"sample\":\"target-personalization-client-side\"},{\"sample\":\"target-personalization-hybrid\"},{\"sample\":\"target-personalization-hybrid-spa\"},{\"sample\":\"target-personalization-server-side\"},{\"sample\":\"target-top-and-bottom\"}]}" >> $GITHUB_OUTPUT
-            echo "media_matrix={\"include\":[{\"sample\":\"media-collection\"}]}" >> $GITHUB_OUTPUT
-          fi
-
-  deploy-ajo:
-    needs: setup
-    if: ${{ fromJson(needs.setup.outputs.ajo_matrix).include[0] }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{fromJson(needs.setup.outputs.ajo_matrix)}}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Azure
-        uses: azure/login@v1
+      - name: Trigger Azure Pipeline
+        uses: Azure/pipelines@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Set environment variables
-        run: |
-          echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
-          echo "APP_DOMAIN=ajo.alloyio.com" >> $GITHUB_ENV
-          echo "COMPOSE_FILE=docker/ajo.yml" >> $GITHUB_ENV
-          echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^ajo-//')" >> $GITHUB_ENV
-      - name: Get ACR credentials
-        run: |
-          ACR_USERNAME=$(az acr credential show -n ${{ env.ACR_NAME }} --query username -o tsv)
-          ACR_PASSWORD=$(az acr credential show -n ${{ env.ACR_NAME }} --query "passwords[0].value" -o tsv)
-          echo "ACR_USERNAME=$ACR_USERNAME" >> $GITHUB_ENV
-          echo "ACR_PASSWORD=$ACR_PASSWORD" >> $GITHUB_ENV
-      - name: Login to Azure Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.ACR_NAME }}
-          username: ${{ env.ACR_USERNAME }}
-          password: ${{ env.ACR_PASSWORD }}
-      - name: Build and push Docker image
-        run: |
-          docker build -t ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }} -f ${{ env.COMPOSE_FILE }} .
-          docker push ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }}
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ajo
-          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }}
-
-  deploy-target:
-    needs: setup
-    if: ${{ fromJson(needs.setup.outputs.target_matrix).include[0] }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{fromJson(needs.setup.outputs.target_matrix)}}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Set environment variables
-        run: |
-          echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
-          echo "APP_DOMAIN=target.alloyio.com" >> $GITHUB_ENV
-          echo "COMPOSE_FILE=docker/target.yml" >> $GITHUB_ENV
-          echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^target-//')" >> $GITHUB_ENV
-      - name: Build and push Docker image
-        run: |
-          az acr build --registry ${{ env.ACR_NAME }} --image ${{ matrix.sample }}:${{ github.sha }} --file ${{ env.COMPOSE_FILE }} .
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: target-sample
-          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }}
-
-  deploy-media:
-    needs: setup
-    if: ${{ fromJson(needs.setup.outputs.media_matrix).include[0] }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{fromJson(needs.setup.outputs.media_matrix)}}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Set environment variables
-        run: |
-          echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
-          echo "APP_DOMAIN=media.alloyio.com" >> $GITHUB_ENV
-          echo "COMPOSE_FILE=docker/media.yml" >> $GITHUB_ENV
-          echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^media-//')" >> $GITHUB_ENV
-      - name: Build and push Docker image
-        run: |
-          az acr build --registry ${{ env.ACR_NAME }} --image ${{ matrix.sample }}:${{ github.sha }} --file ${{ env.COMPOSE_FILE }} .
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: media-sample
-          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }}
+          azure-devops-project-url: 'https://dev.azure.com/${{ env.AZURE_DEVOPS_ORGANIZATION }}/${{ env.AZURE_DEVOPS_PROJECT }}'
+          azure-pipeline-name: '${{ env.AZURE_PIPELINE_ID }}'
+          azure-devops-token: '${{ secrets.AZURE_DEVOPS_TOKEN }}'
+        env:
+          sample: ${{ github.event.inputs.sample }}
