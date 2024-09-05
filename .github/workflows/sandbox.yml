@@ -71,9 +71,18 @@ jobs:
           echo "APP_DOMAIN=ajo.alloyio.com" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker/ajo.yml" >> $GITHUB_ENV
           echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^ajo-//')" >> $GITHUB_ENV
-      - name: Login to Azure Container Registry
+      - name: Get ACR credentials
         run: |
-          az acr login --name ${{ env.ACR_NAME }}
+          ACR_USERNAME=$(az acr credential show -n ${{ env.ACR_NAME }} --query username -o tsv)
+          ACR_PASSWORD=$(az acr credential show -n ${{ env.ACR_NAME }} --query "passwords[0].value" -o tsv)
+          echo "ACR_USERNAME=$ACR_USERNAME" >> $GITHUB_ENV
+          echo "ACR_PASSWORD=$ACR_PASSWORD" >> $GITHUB_ENV
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.ACR_NAME }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
       - name: Build and push Docker image
         run: |
           docker build -t ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }} -f ${{ env.COMPOSE_FILE }} .
