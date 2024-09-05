@@ -84,7 +84,7 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ matrix.sample }}
+          app-name: ajo
           publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
           images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
 
@@ -121,7 +121,7 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ matrix.sample }}
+          app-name: target-sample
           publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
           images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
 
@@ -158,6 +158,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ matrix.sample }}
+          app-name: media-sample
           publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
           images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
