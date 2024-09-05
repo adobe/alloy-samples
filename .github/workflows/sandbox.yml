@@ -71,9 +71,18 @@ jobs:
           echo "APP_DOMAIN=ajo.alloyio.com" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker/ajo.yml" >> $GITHUB_ENV
           echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^ajo-//')" >> $GITHUB_ENV
+      - name: Add IP to ACR firewall
+        run: |
+          MY_IP=$(curl -s https://api.ipify.org)
+          az acr network-rule add --name ${{ env.ACR_NAME }} --ip-address $MY_IP
       - name: Build and push Docker image
         run: |
           az acr build --registry ${{ env.ACR_NAME }} --image ${{ matrix.sample }}:${{ github.sha }} --file ${{ env.COMPOSE_FILE }} .
+      - name: Remove IP from ACR firewall
+        if: always()
+        run: |
+          MY_IP=$(curl -s https://api.ipify.org)
+          az acr network-rule remove --name ${{ env.ACR_NAME }} --ip-address $MY_IP
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
