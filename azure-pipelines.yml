@@ -17,13 +17,13 @@ stages:
       vmImage: ubuntu-latest
     steps:
     - bash: |
-        if [ "${{ parameters.sample }}" != "" ]; then
-          if [[ "${{ parameters.sample }}" == ajo-* ]]; then
-            echo "##vso[task.setvariable variable=ajo_matrix;isoutput=true]{\"include\":[{\"sample\":\"${{ parameters.sample }}\"}]}"
-          elif [[ "${{ parameters.sample }}" == target-* ]]; then
-            echo "##vso[task.setvariable variable=target_matrix;isoutput=true]{\"include\":[{\"sample\":\"${{ parameters.sample }}\"}]}"
-          elif [[ "${{ parameters.sample }}" == media-* ]]; then
-            echo "##vso[task.setvariable variable=media_matrix;isoutput=true]{\"include\":[{\"sample\":\"${{ parameters.sample }}\"}]}"
+        if [ "$(parameters.sample)" != "" ]; then
+          if [[ "$(parameters.sample)" == ajo-* ]]; then
+            echo "##vso[task.setvariable variable=ajo_matrix;isoutput=true]{\"include\":[{\"sample\":\"$(parameters.sample)\"}]}"
+          elif [[ "$(parameters.sample)" == target-* ]]; then
+            echo "##vso[task.setvariable variable=target_matrix;isoutput=true]{\"include\":[{\"sample\":\"$(parameters.sample)\"}]}"
+          elif [[ "$(parameters.sample)" == media-* ]]; then
+            echo "##vso[task.setvariable variable=media_matrix;isoutput=true]{\"include\":[{\"sample\":\"$(parameters.sample)\"}]}"
           fi
         else
           echo "##vso[task.setvariable variable=ajo_matrix;isoutput=true]{\"include\":[{\"sample\":\"ajo-content-cards\"},{\"sample\":\"ajo-in-app-messages\"},{\"sample\":\"ajo-personalization-client-side\"},{\"sample\":\"ajo-personalization-hybrid\"},{\"sample\":\"ajo-personalization-server-side\"},{\"sample\":\"ajo-proposition-interaction-tracking\"}]}"
@@ -44,7 +44,7 @@ stages:
     steps:
     - task: Docker@2
       inputs:
-        containerRegistry: 'Your-ACR-Service-Connection'
+        containerRegistry: 'ACR-Connection'
         repository: '$(sample)'
         command: 'buildAndPush'
         Dockerfile: 'docker/ajo.yml'
@@ -52,7 +52,7 @@ stages:
           $(Build.BuildId)
     - task: AzureWebAppContainer@1
       inputs:
-        azureSubscription: 'Your-Azure-Service-Connection'
+        azureSubscription: 'Azure-Subscription-Connection'
         appName: 'ajo'
         containers: '$(ACR_NAME)/$(sample):$(Build.BuildId)'
 
@@ -68,7 +68,7 @@ stages:
     steps:
     - task: Docker@2
       inputs:
-        containerRegistry: 'Your-ACR-Service-Connection'
+        containerRegistry: 'ACR-Connection'
         repository: '$(sample)'
         command: 'buildAndPush'
         Dockerfile: 'docker/target.yml'
@@ -76,7 +76,7 @@ stages:
           $(Build.BuildId)
     - task: AzureWebAppContainer@1
       inputs:
-        azureSubscription: 'Your-Azure-Service-Connection'
+        azureSubscription: 'Azure-Subscription-Connection'
         appName: 'target-sample'
         containers: '$(ACR_NAME)/$(sample):$(Build.BuildId)'
 
@@ -92,7 +92,7 @@ stages:
     steps:
     - task: Docker@2
       inputs:
-        containerRegistry: 'Your-ACR-Service-Connection'
+        containerRegistry: 'ACR-Connection'
         repository: '$(sample)'
         command: 'buildAndPush'
         Dockerfile: 'docker/media.yml'
@@ -100,6 +100,6 @@ stages:
           $(Build.BuildId)
     - task: AzureWebAppContainer@1
       inputs:
-        azureSubscription: 'Your-Azure-Service-Connection'
+        azureSubscription: 'Azure-Subscription-Connection'
         appName: 'media-sample'
         containers: '$(ACR_NAME)/$(sample):$(Build.BuildId)'
