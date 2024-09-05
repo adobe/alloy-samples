@@ -53,8 +53,12 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     
     - name: Docker Login to ACR
-      run: |
-        az acr login --name "${{ secrets.AZURE_CONTAINER_REGISTRY }}"
+      uses: azure/docker-login@v1
+      with:
+        login-server: alloysamples.azurecr.io
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+    
     - name: Set environment variables
       run: |
         echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
