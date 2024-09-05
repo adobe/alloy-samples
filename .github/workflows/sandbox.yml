@@ -65,9 +65,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Docker Login to ACR
-        run: |
-          echo ${{ secrets.DOCKER_REGISTRY_SERVER_PASSWORD }} | docker login ${{ secrets.DOCKER_REGISTRY_SERVER_URL }} -u ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }} --password-stdin
       - name: Set environment variables
         run: |
           echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
@@ -76,14 +73,12 @@ jobs:
           echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^ajo-//')" >> $GITHUB_ENV
       - name: Build and push Docker image
         run: |
-          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.SERVICE_NAME }}
-          docker compose -f ${{ env.COMPOSE_FILE }} push ${{ env.SERVICE_NAME }}
+          az acr build --registry ${{ env.ACR_NAME }} --image ${{ matrix.sample }}:${{ github.sha }} --file ${{ env.COMPOSE_FILE }} .
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ajo
-          publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
-          images: ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}/${{ matrix.sample }}:latest
+          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }}
 
   deploy-target:
     needs: setup
@@ -99,12 +94,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Docker Login to ACR
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ env.ACR_NAME }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
       - name: Set environment variables
         run: |
           echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
@@ -113,14 +102,12 @@ jobs:
           echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^target-//')" >> $GITHUB_ENV
       - name: Build and push Docker image
         run: |
-          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.SERVICE_NAME }}
-          docker compose -f ${{ env.COMPOSE_FILE }} push ${{ env.SERVICE_NAME }}
+          az acr build --registry ${{ env.ACR_NAME }} --image ${{ matrix.sample }}:${{ github.sha }} --file ${{ env.COMPOSE_FILE }} .
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: target-sample
-          publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
-          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
+          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }}
 
   deploy-media:
     needs: setup
@@ -136,12 +123,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Docker Login to ACR
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ env.ACR_NAME }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
       - name: Set environment variables
         run: |
           echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
@@ -150,11 +131,9 @@ jobs:
           echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^media-//')" >> $GITHUB_ENV
       - name: Build and push Docker image
         run: |
-          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.SERVICE_NAME }}
-          docker compose -f ${{ env.COMPOSE_FILE }} push ${{ env.SERVICE_NAME }}
+          az acr build --registry ${{ env.ACR_NAME }} --image ${{ matrix.sample }}:${{ github.sha }} --file ${{ env.COMPOSE_FILE }} .
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: media-sample
-          publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
-          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
+          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:${{ github.sha }}
