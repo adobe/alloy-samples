@@ -54,7 +54,7 @@ jobs:
     
     - name: Docker Login to ACR
       run: |
-        az acr login --name ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+        az acr login --name "${{ secrets.AZURE_CONTAINER_REGISTRY }}"
     - name: Set environment variables
       run: |
         echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
