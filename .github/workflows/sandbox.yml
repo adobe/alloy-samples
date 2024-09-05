@@ -81,8 +81,17 @@ jobs:
       env:
         IMAGE_NAME: ${{ matrix.sample }}
       run: |
-        docker compose -f ${{ env.COMPOSE_FILE }} build ${{ matrix.sample }}
-        docker compose -f ${{ env.COMPOSE_FILE }} push ${{ matrix.sample }}
+        if [[ "${{ matrix.sample }}" == ajo-* ]]; then
+          SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^ajo-//')
+        elif [[ "${{ matrix.sample }}" == target-* ]]; then
+          SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^target-//')
+        elif [[ "${{ matrix.sample }}" == media-* ]]; then
+          SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^media-//')
+        else
+          SERVICE_NAME=${{ matrix.sample }}
+        fi
+        docker compose -f ${{ env.COMPOSE_FILE }} build $SERVICE_NAME
+        docker compose -f ${{ env.COMPOSE_FILE }} push $SERVICE_NAME
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
