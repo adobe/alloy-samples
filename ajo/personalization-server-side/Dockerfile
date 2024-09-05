@@ -9,7 +9,7 @@ ENV APP_DOMAIN=$APP_DOMAIN
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
 
