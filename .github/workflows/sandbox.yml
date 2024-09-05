@@ -66,11 +66,8 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Docker Login to ACR
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ env.ACR_NAME }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+        run: |
+          echo ${{ secrets.DOCKER_REGISTRY_SERVER_PASSWORD }} | docker login ${{ secrets.DOCKER_REGISTRY_SERVER_URL }} -u ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }} --password-stdin
       - name: Set environment variables
         run: |
           echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
@@ -86,7 +83,7 @@ jobs:
         with:
           app-name: ajo
           publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
-          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
+          images: ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}/${{ matrix.sample }}:latest
 
   deploy-target:
     needs: setup
