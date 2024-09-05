@@ -18,4 +18,4 @@ RUN npm run build
 
 EXPOSE 443
 
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npm start -- --base-path $BASE_PATH"]
