@@ -24,77 +24,140 @@ on:
           - target-top-and-bottom
           - media-collection
 
+env:
+  ACR_NAME: alloysamples.azurecr.io
+
 jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      ajo_matrix: ${{ steps.set-matrix.outputs.ajo_matrix }}
+      target_matrix: ${{ steps.set-matrix.outputs.target_matrix }}
+      media_matrix: ${{ steps.set-matrix.outputs.media_matrix }}
     steps:
       - id: set-matrix
         run: |
           if [ "${{ github.event.inputs.sample }}" != "" ]; then
-            echo "matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
+            if [[ "${{ github.event.inputs.sample }}" == ajo-* ]]; then
+              echo "ajo_matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
+            elif [[ "${{ github.event.inputs.sample }}" == target-* ]]; then
+              echo "target_matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
+            elif [[ "${{ github.event.inputs.sample }}" == media-* ]]; then
+              echo "media_matrix={\"include\":[{\"sample\":\"${{ github.event.inputs.sample }}\"}]}" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "matrix={\"include\":[{\"sample\":\"ajo-content-cards\"},{\"sample\":\"ajo-in-app-messages\"},{\"sample\":\"ajo-personalization-client-side\"},{\"sample\":\"ajo-personalization-hybrid\"},{\"sample\":\"ajo-personalization-server-side\"},{\"sample\":\"ajo-proposition-interaction-tracking\"},{\"sample\":\"target-personalization-client-side\"},{\"sample\":\"target-personalization-hybrid\"},{\"sample\":\"target-personalization-hybrid-spa\"},{\"sample\":\"target-personalization-server-side\"},{\"sample\":\"target-top-and-bottom\"},{\"sample\":\"media-collection\"}]}" >> $GITHUB_OUTPUT
+            echo "ajo_matrix={\"include\":[{\"sample\":\"ajo-content-cards\"},{\"sample\":\"ajo-in-app-messages\"},{\"sample\":\"ajo-personalization-client-side\"},{\"sample\":\"ajo-personalization-hybrid\"},{\"sample\":\"ajo-personalization-server-side\"},{\"sample\":\"ajo-proposition-interaction-tracking\"}]}" >> $GITHUB_OUTPUT
+            echo "target_matrix={\"include\":[{\"sample\":\"target-personalization-client-side\"},{\"sample\":\"target-personalization-hybrid\"},{\"sample\":\"target-personalization-hybrid-spa\"},{\"sample\":\"target-personalization-server-side\"},{\"sample\":\"target-top-and-bottom\"}]}" >> $GITHUB_OUTPUT
+            echo "media_matrix={\"include\":[{\"sample\":\"media-collection\"}]}" >> $GITHUB_OUTPUT
           fi
 
-  deploy:
+  deploy-ajo:
     needs: setup
+    if: ${{ fromJson(needs.setup.outputs.ajo_matrix).include[0] }}
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{fromJson(needs.setup.outputs.matrix)}}
+      matrix: ${{fromJson(needs.setup.outputs.ajo_matrix)}}
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
-    - name: Docker Login to ACR
-      uses: azure/docker-login@v1
-      with:
-        login-server: alloysamples.azurecr.io
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
-    
-    - name: Set environment variables
-      run: |
-        echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
-        if [[ "${{ matrix.sample }}" == ajo-* ]]; then
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Docker Login to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Set environment variables
+        run: |
+          echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
           echo "APP_DOMAIN=ajo.alloyio.com" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker/ajo.yml" >> $GITHUB_ENV
-        elif [[ "${{ matrix.sample }}" == target-* ]]; then
+          echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^ajo-//')" >> $GITHUB_ENV
+      - name: Build and push Docker image
+        run: |
+          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.SERVICE_NAME }}
+          docker compose -f ${{ env.COMPOSE_FILE }} push ${{ env.SERVICE_NAME }}
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ matrix.sample }}
+          publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
+          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
+
+  deploy-target:
+    needs: setup
+    if: ${{ fromJson(needs.setup.outputs.target_matrix).include[0] }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.setup.outputs.target_matrix)}}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Docker Login to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Set environment variables
+        run: |
+          echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
           echo "APP_DOMAIN=target.alloyio.com" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker/target.yml" >> $GITHUB_ENV
-        elif [[ "${{ matrix.sample }}" == media-* ]]; then
+          echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^target-//')" >> $GITHUB_ENV
+      - name: Build and push Docker image
+        run: |
+          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.SERVICE_NAME }}
+          docker compose -f ${{ env.COMPOSE_FILE }} push ${{ env.SERVICE_NAME }}
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ matrix.sample }}
+          publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
+          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
+
+  deploy-media:
+    needs: setup
+    if: ${{ fromJson(needs.setup.outputs.media_matrix).include[0] }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.setup.outputs.media_matrix)}}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Docker Login to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Set environment variables
+        run: |
+          echo "BASE_PATH=/$(echo ${{ matrix.sample }} | cut -d'-' -f2-)" >> $GITHUB_ENV
           echo "APP_DOMAIN=media.alloyio.com" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker/media.yml" >> $GITHUB_ENV
-        fi
-    - name: Install Docker Compose V2
-      run: |
-        mkdir -p ~/.docker/cli-plugins/
-        curl -SL https://github.com/docker/compose/releases/download/v2.17.2/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
-        chmod +x ~/.docker/cli-plugins/docker-compose
-    - name: Build and push Docker image
-      env:
-        IMAGE_NAME: ${{ matrix.sample }}
-      run: |
-        if [[ "${{ matrix.sample }}" == ajo-* ]]; then
-          SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^ajo-//')
-        elif [[ "${{ matrix.sample }}" == target-* ]]; then
-          SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^target-//')
-        elif [[ "${{ matrix.sample }}" == media-* ]]; then
-          SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^media-//')
-        else
-          SERVICE_NAME=${{ matrix.sample }}
-        fi
-        docker compose -f ${{ env.COMPOSE_FILE }} build $SERVICE_NAME
-        docker compose -f ${{ env.COMPOSE_FILE }} push $SERVICE_NAME
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ matrix.sample }}
-        publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
-        images: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/${{ matrix.sample }}:latest
+          echo "SERVICE_NAME=$(echo ${{ matrix.sample }} | sed 's/^media-//')" >> $GITHUB_ENV
+      - name: Build and push Docker image
+        run: |
+          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.SERVICE_NAME }}
+          docker compose -f ${{ env.COMPOSE_FILE }} push ${{ env.SERVICE_NAME }}
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ matrix.sample }}
+          publish-profile: ${{ secrets[format('{0}_PUBLISH_PROFILE', matrix.sample)] }}
+          images: ${{ env.ACR_NAME }}/${{ matrix.sample }}:latest
