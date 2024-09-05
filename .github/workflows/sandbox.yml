@@ -27,7 +27,6 @@ on:
 env:
   AZURE_DEVOPS_ORGANIZATION: mowla
   AZURE_DEVOPS_PROJECT: alloysample
-  AZURE_PIPELINE_ID: 4
 
 jobs:
   trigger-azure-pipeline:
@@ -37,7 +36,7 @@ jobs:
         uses: Azure/pipelines@v1
         with:
           azure-devops-project-url: 'https://dev.azure.com/${{ env.AZURE_DEVOPS_ORGANIZATION }}/${{ env.AZURE_DEVOPS_PROJECT }}'
-          azure-pipeline-name: '${{ env.AZURE_PIPELINE_ID }}'
+          azure-pipeline-name: 'adobe.alloy-samples'
           azure-devops-token: '${{ secrets.AZURE_DEVOPS_TOKEN }}'
         env:
           sample: ${{ github.event.inputs.sample }}
