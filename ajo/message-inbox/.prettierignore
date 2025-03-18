@@ -1,0 +1,22 @@
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Node modules
+node_modules/
+
+# Cache
+.cache/
+
+# Various file types to ignore
+*.min.js
+*.map
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Public assets
+public/ 
