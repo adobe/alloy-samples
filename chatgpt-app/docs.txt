@@ -1,0 +1,48 @@
+# ChatGPT Apps SDK (as of 2025-11-03)
+
+> A framework to build integrated applications for ChatGPT using the Model Context Protocol (MCP) Server. The SDK enables developers to create apps with custom tools, conversational flows, and native-feeling user experiences.
+
+Important notes:
+
+- The Apps SDK is currently in preview for building and testing
+- The core architecture centers on the Model Context Protocol (MCP) Server
+- Apps should be designed to feel native to ChatGPT with quality conversational flows
+- Developers must follow quality, safety, and policy guidelines
+
+## Getting Started
+
+- [Research use cases](https://developers.openai.com/apps-sdk/plan/use-case): Identify and prioritize viable applications for your app
+- [Define tools](https://developers.openai.com/apps-sdk/plan/tools): Specify the capabilities your app will provide to ChatGPT
+- [Design components](https://developers.openai.com/apps-sdk/plan/components): Plan conversational flows and UI elements
+- [Set up MCP server](https://developers.openai.com/apps-sdk/build/mcp-server): Initialize and configure your MCP server
+
+## Core Concepts
+
+- [MCP Server overview](https://developers.openai.com/apps-sdk/concepts/mcp-server): Foundation of app functionality and ChatGPT integration
+- [User interaction patterns](https://developers.openai.com/apps-sdk/concepts/user-interaction): How users interact with your app through ChatGPT
+- [Design guidelines](https://developers.openai.com/apps-sdk/concepts/design-guidelines): Best practices for creating native-feeling experiences
+
+## Building
+
+- [MCP server setup](https://developers.openai.com/apps-sdk/build/mcp-server): Complete guide to setting up your MCP server
+- [Custom UX development](https://developers.openai.com/apps-sdk/build/custom-ux): Build enhanced custom user experiences
+- [User authentication](https://developers.openai.com/apps-sdk/build/auth): Implement secure user authentication flows
+- [State management](https://developers.openai.com/apps-sdk/build/state-management): Manage data persistence across conversations
+- [Code examples](https://developers.openai.com/apps-sdk/build/examples): Working examples and reference implementations
+
+## Deployment
+
+- [Deployment guide](https://developers.openai.com/apps-sdk/deploy): Deploy your app server to production
+- [Connect to ChatGPT](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt): Integrate your app with ChatGPT
+- [Testing integration](https://developers.openai.com/apps-sdk/deploy/testing): Test your app integration thoroughly
+
+## Guides
+
+- [Optimize metadata](https://developers.openai.com/apps-sdk/guides/optimize-metadata): Improve app discoverability
+- [Security and privacy](https://developers.openai.com/apps-sdk/guides/security-privacy): Essential compliance and security considerations
+- [Developer guidelines](https://developers.openai.com/apps-sdk/app-developer-guidelines): Quality standards, safety, and policy requirements
+- [API reference](https://developers.openai.com/apps-sdk/reference): Complete technical API specifications
+
+## Optional
+
+- [Troubleshooting](https://developers.openai.com/apps-sdk/deploy/troubleshooting): Common issues and solutions for deployment and integration
