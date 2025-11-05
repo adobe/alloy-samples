@@ -9,7 +9,8 @@ export default defineConfig({
     outDir: "dist",
     rollupOptions: {
       input: {
-        "hotel-list": resolve(__dirname, "src/views/hotel-list/hotel-list.html"),
+        "office-list": resolve(__dirname, "src/views/office-list/office-list.html"),
+        "office-details": resolve(__dirname, "src/views/office-details/office-details.html"),
       },
       output: {
         entryFileNames: "[name].js",

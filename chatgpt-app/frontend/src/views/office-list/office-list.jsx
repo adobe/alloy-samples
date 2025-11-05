@@ -5,7 +5,7 @@ import {
   defaultTheme,
   Provider as SpectrumProvider,
 } from "@adobe/react-spectrum";
-import "./hotel-list.css";
+import "./office-list.css";
 
 import { Heading, View } from "@adobe/react-spectrum";
 import { useState, useEffect } from "react";

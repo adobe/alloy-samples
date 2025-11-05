@@ -6,7 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm --filter frontend build:watch & pnpm --filter backend dev"
+    "dev": "pnpm run --recursive --stream dev"
   },
   "keywords": [],
   "author": "",
