@@ -1,4 +1,4 @@
-# ChatGPT Apps SDK (as of 2025-11-03)
+# ChatGPT Apps SDK (as of 2025-11-03) - https://developers.openai.com/apps-sdk/
 
 > A framework to build integrated applications for ChatGPT using the Model Context Protocol (MCP) Server. The SDK enables developers to create apps with custom tools, conversational flows, and native-feeling user experiences.
 

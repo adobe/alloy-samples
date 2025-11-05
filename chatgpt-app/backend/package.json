@@ -1,6 +1,5 @@
 {
-  "name": "chatgpt-app",
-  "private": true,
+  "name": "backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
