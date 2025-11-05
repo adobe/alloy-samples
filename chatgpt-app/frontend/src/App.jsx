@@ -1,3 +1,4 @@
+import { Heading, View } from "@adobe/react-spectrum";
 import { useState, useEffect } from "react";
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -30,9 +31,9 @@ const App = () => {
   const now = useNow();
 
   return (
-    <div>
-      <h1>Hello, World! It is {formatTime(now)}</h1>
-    </div>
+    <View>
+      <Heading>Hello, World! It is {formatTime(now)}</Heading>
+    </View>
   );
 };
 

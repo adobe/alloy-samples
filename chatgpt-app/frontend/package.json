@@ -16,6 +16,7 @@
     "vite": "^7.2.0"
   },
   "dependencies": {
+    "@adobe/react-spectrum": "^3.45.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   }
