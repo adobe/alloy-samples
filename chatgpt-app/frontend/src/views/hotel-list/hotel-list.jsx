@@ -1,3 +1,12 @@
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  Button,
+  defaultTheme,
+  Provider as SpectrumProvider,
+} from "@adobe/react-spectrum";
+import "./hotel-list.css";
+
 import { Heading, View } from "@adobe/react-spectrum";
 import { useState, useEffect } from "react";
 
@@ -38,3 +47,11 @@ const App = () => {
 };
 
 export default App;
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <SpectrumProvider theme={defaultTheme}>
+      <App />
+    </SpectrumProvider>
+  </StrictMode>
+);
