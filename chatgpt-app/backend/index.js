@@ -13,42 +13,53 @@ import { dirname, join } from "node:path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const OfficeSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(2).max(100),
+  location: z.string().min(2).max(100),
+  description: z.string().min(2).max(1000),
+  amenities: z.array(z.string().min(2).max(100)),
+  phone: z.string().min(2).max(20),
+});
+/** @typedef {z.infer<typeof OfficeSchema>} Office */
+
+/** @type {Record<Office["id"], Office>} */
+const officeData = {
+  sf: {
+    id: "sf",
+    name: "San Francisco",
+    location: "Market Street, SF",
+    description: "Our headquarters office with amazing views of the Bay",
+    amenities: ["Gym", "Cafe", "Parking", "Bike Storage"],
+    phone: "+1 (415) 555-0100",
+  },
+  nyc: {
+    id: "nyc",
+    name: "New York",
+    location: "Times Square, NYC",
+    description:
+      "East coast hub with great amenities and public transit access",
+    amenities: ["Cafe", "Gym", "Conference Rooms", "Rooftop Deck"],
+    phone: "+1 (212) 555-0200",
+  },
+  seattle: {
+    id: "seattle",
+    name: "Seattle",
+    location: "Downtown Seattle",
+    description:
+      "Pacific Northwest office near the waterfront with mountain views",
+    amenities: ["Cafe", "Gym", "Bike Storage", "Pet Friendly"],
+    phone: "+1 (206) 555-0300",
+  },
+};
+const OfficeIdSchema = z.enum(Object.keys(officeData));
+
 const app = new Hono();
 
 const mcpServer = new McpServer({
-  name: "alloy-vacations",
+  name: "adobe-office-information",
   version: "1.0.0",
-  capabilities: {
-    resources: {},
-    tools: {},
-  },
 });
-
-// Load locally built frontend assets
-const FRONTEND_DIST = join(__dirname, "..", "frontend", "dist");
-const loadViewAssets = (viewName) => {
-  const js = (() => {
-    try {
-      return readFileSync(join(FRONTEND_DIST, `${viewName}.js`), "utf8");
-    } catch (err) {
-      console.error(`Failed to load ${viewName} JS:`, err.message);
-      return "";
-    }
-  })();
-  const css = (() => {
-    try {
-      return readFileSync(join(FRONTEND_DIST, `${viewName}.css`), "utf8");
-    } catch {
-      return ""; // CSS optional
-    }
-  })();
-  return { js, css };
-};
-
-const officeListAssets = loadViewAssets("office-list");
-const officeDetailsAssets = loadViewAssets("office-details");
-
-console.log("[DEBUG] Registering resources and tools...");
 
 mcpServer.registerResource(
   "office-list-widget",
@@ -59,11 +70,7 @@ mcpServer.registerResource(
       {
         uri: "ui://widget/office-list.html",
         mimeType: "text/html+skybridge",
-        text: `
-<div id="root"></div>
-${officeListAssets.css ? `<style>${officeListAssets.css}</style>` : ""}
-<script type="module">${officeListAssets.js}</script>
-        `.trim(),
+        text: `<h1>Office List</h1>`,
         _meta: {
           "openai/widgetDescription":
             "Renders an interactive list of available Adobe offices with location details and photos.",
@@ -79,6 +86,26 @@ ${officeListAssets.css ? `<style>${officeListAssets.css}</style>` : ""}
   })
 );
 
+mcpServer.registerTool(
+  "office-list",
+  {
+    title: "List offices",
+    _meta: {
+      "openai/outputTemplate": "ui://widget/office-list.html",
+      "openai/toolInvocation/invoking": "Listing offices",
+      "openai/toolInvocation/invoked": "Listed offices",
+    },
+  },
+  async () => {
+    return {
+      content: [{ type: "text", text: "Displayed the list of offices." }],
+      structuredContent: {
+        offices: Object.values(officeData),
+      },
+    };
+  }
+);
+
 mcpServer.registerResource(
   "office-details-widget",
   "ui://widget/office-details.html",
@@ -88,11 +115,7 @@ mcpServer.registerResource(
       {
         uri: "ui://widget/office-details.html",
         mimeType: "text/html+skybridge",
-        text: `
-<div id="root"></div>
-${officeDetailsAssets.css ? `<style>${officeDetailsAssets.css}</style>` : ""}
-<script type="module">${officeDetailsAssets.js}</script>
-        `.trim(),
+        text: `<h1>Office Details</h1>`,
         _meta: {
           "openai/widgetDescription":
             "Displays detailed information about a specific Adobe office including amenities, photos, and contact options.",
@@ -109,29 +132,11 @@ ${officeDetailsAssets.css ? `<style>${officeDetailsAssets.css}</style>` : ""}
 );
 
 mcpServer.registerTool(
-  "office-list",
-  {
-    description: "Show the list of available offices",
-    inputSchema: {},
-    _meta: {
-      "openai/outputTemplate": "ui://widget/office-list.html",
-      "openai/toolInvocation/invoking": "Loading office list",
-      "openai/toolInvocation/invoked": "Displayed office list",
-    },
-  },
-  async () => {
-    return {
-      content: [{ type: "text", text: "Displayed the office list!" }],
-    };
-  }
-);
-
-mcpServer.registerTool(
   "office-details",
   {
-    description: "Show details for a specific office",
+    title: "Show details for a specific office",
     inputSchema: {
-      officeId: z.string().describe("The ID of the office to show details for"),
+      officeId: OfficeIdSchema,
     },
     _meta: {
       "openai/outputTemplate": "ui://widget/office-details.html",
@@ -139,11 +144,34 @@ mcpServer.registerTool(
       "openai/toolInvocation/invoked": "Displayed office details",
     },
   },
+  /** @param {object} params
+   * @param {keyof typeof officeData} params.officeId
+   */
   async ({ officeId }) => {
+    try {
+      if (!(officeId in officeData)) {
+        throw new Error(`Office with ID ${officeId} not found`);
+      }
+    } catch (error) {
+      console.error(error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error displaying office details: ${error.message}`,
+          },
+        ],
+      };
+    }
+    const office = officeData[officeId];
+
     return {
       content: [
         { type: "text", text: `Displayed details for office ${officeId}` },
       ],
+      structuredContent: {
+        office,
+      },
     };
   }
 );
@@ -151,10 +179,13 @@ mcpServer.registerTool(
 mcpServer.registerTool(
   "send-email",
   {
-    description: "Send an email expressing interest in visiting an office",
+    title: "Send an email expressing interest in visiting an office",
     inputSchema: {
-      officeId: z.string().describe("The ID of the office the user is interested in visiting"),
-      officeName: z.string().describe("The name of the office the user is interested in visiting"),
+      officeId: OfficeIdSchema,
+      officeName: z
+        .string()
+        .describe("The name of the office the user is interested in visiting"),
+      email: z.string().email().describe("The email address of the user"),
     },
     _meta: {
       "openai/toolInvocation/invoking": "Sending email",
@@ -176,7 +207,6 @@ mcpServer.registerTool(
     };
   }
 );
-console.log("[DEBUG] send-email tool registered successfully");
 
 const LOG_PREFIX = "[alloy-vacations-backend] ";
 const log = (...args) => console.log(LOG_PREFIX, ...args);
@@ -221,20 +251,6 @@ app.use(async (c, next) => {
 
 app.get("/", (c) => {
   return c.text("Hello, World!");
-});
-
-// OAuth 2.0 Discovery Endpoints - return 404 to signal no OAuth support
-// ChatGPT will then rely on tool-level securitySchemes (noauth)
-app.get("/.well-known/oauth-protected-resource", (c) => {
-  return c.notFound();
-});
-
-app.get("/.well-known/oauth-authorization-server", (c) => {
-  return c.notFound();
-});
-
-app.get("/.well-known/openid-configuration", (c) => {
-  return c.notFound();
 });
 
 app.all("/mcp", async (c) => {

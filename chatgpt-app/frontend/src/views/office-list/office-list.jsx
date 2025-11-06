@@ -7,41 +7,83 @@ import {
 } from "@adobe/react-spectrum";
 import "./office-list.css";
 
-import { Heading, View } from "@adobe/react-spectrum";
+import { Heading, View, Content, Text, Flex } from "@adobe/react-spectrum";
 import { useState, useEffect } from "react";
 
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  second: "numeric",
-  timeZoneName: "short",
-});
-/**
- * @param {number} now - The UTC time in milliseconds.
- */
-const formatTime = (now) => {
-  return timeFormatter.format(now);
-};
-
-const useNow = () => {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-  return now;
-};
-
 const App = () => {
-  const now = useNow();
+  const [offices, setOffices] = useState([]);
+
+  useEffect(() => {
+    // Read initial data from window.openai.toolOutput
+    if (window.openai?.toolOutput?.offices) {
+      setOffices(window.openai.toolOutput.offices);
+    }
+
+    // Listen for updates
+    const handleSetGlobals = (event) => {
+      if (event.detail?.globals?.toolOutput?.offices) {
+        setOffices(event.detail.globals.toolOutput.offices);
+      }
+    };
+
+    window.addEventListener("openai:set_globals", handleSetGlobals);
+    return () => window.removeEventListener("openai:set_globals", handleSetGlobals);
+  }, []);
+
+  const handleViewDetails = async (officeId) => {
+    try {
+      await window.openai?.callTool("office-details", { officeId });
+    } catch (error) {
+      console.error("Failed to call office-details tool:", error);
+    }
+  };
+
+  const handleSendEmail = async (officeId, officeName) => {
+    try {
+      await window.openai?.callTool("send-email", { officeId, officeName });
+    } catch (error) {
+      console.error("Failed to send email:", error);
+    }
+  };
 
   return (
-    <View>
-      <Heading>Hello, World! It is {formatTime(now)}</Heading>
+    <View padding="size-250">
+      <Heading level={1}>Adobe Offices</Heading>
+      <Content marginTop="size-200">
+        {offices.length === 0 ? (
+          <Text>No offices available</Text>
+        ) : (
+          <Flex direction="column" gap="size-200">
+            {offices.map((office) => (
+              <View
+                key={office.id}
+                padding="size-200"
+                borderWidth="thin"
+                borderColor="dark"
+                borderRadius="medium"
+              >
+                <Heading level={2}>{office.name}</Heading>
+                <Text>{office.location}</Text>
+                <Text marginTop="size-100">{office.description}</Text>
+                <Flex gap="size-100" marginTop="size-200">
+                  <Button
+                    variant="primary"
+                    onPress={() => handleViewDetails(office.id)}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onPress={() => handleSendEmail(office.id, office.name)}
+                  >
+                    Express Interest
+                  </Button>
+                </Flex>
+              </View>
+            ))}
+          </Flex>
+        )}
+      </Content>
     </View>
   );
 };
