@@ -10,6 +10,7 @@ import process from "node:process";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import crypto from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,35 +53,40 @@ const readAsset = (name) => {
   }
 };
 
+/**
+ * @param {string} name
+ * @returns { html: string, uri: string };
+ */
+const createResourceAssets = (name) => {
+  const css = readAsset(`${name}.css`) || "";
+  const js = readAsset(`${name}.js`) || "";
+  const hash = crypto
+    .createHash("blake2s256")
+    .update(css + js)
+    .digest("hex")
+    .substring(0, 12);
+  const html = generateHtml({ css, js });
+  const uri = `ui://widget/${name}-${hash}.html`;
+  return { uri, html };
+};
+
 /** @typedef {object} Resource
  * @property {string} uri - The URI of the resource.
  * @property {() => Promise<string>} html
  */
-const resources = Object.freeze({
-  "office-list": {
-    uri: "ui://widget/office-list.html",
-    text: generateHtml({
-      css: readAsset("office-list.css"),
-      js: readAsset("office-list.js"),
-    }),
-  },
-  "office-details": {
-    uri: "ui://widget/office-detail.html",
-    text: generateHtml({
-      css: readAsset("office-detail.css"),
-      js: readAsset("office-detail.js"),
-    }),
-  },
+const resourceAssets = Object.freeze({
+  "office-list": createResourceAssets("office-list"),
+  "office-details": createResourceAssets("office-details"),
 });
 
 mcpServer.registerResource(
   "office-list-widget",
-  resources["office-list"].uri,
+  resourceAssets["office-list"].uri,
   {},
   async () => ({
     contents: [
       {
-        ...resources["office-list"],
+        ...resourceAssets["office-list"],
         mimeType: "text/html+skybridge",
         _meta: {
           "openai/widgetDescription":
@@ -102,7 +108,7 @@ mcpServer.registerTool(
   {
     title: "List offices",
     _meta: {
-      "openai/outputTemplate": resources["office-list"].uri,
+      "openai/outputTemplate": resourceAssets["office-list"].uri,
       "openai/toolInvocation/invoking": "Listing offices",
       "openai/toolInvocation/invoked": "Listed offices",
     },
@@ -119,12 +125,12 @@ mcpServer.registerTool(
 
 mcpServer.registerResource(
   "office-details-widget",
-  resources["office-details"].uri,
+  resourceAssets["office-details"].uri,
   {},
   async () => ({
     contents: [
       {
-        ...resources["office-details"],
+        ...resourceAssets["office-details"],
         mimeType: "text/html+skybridge",
         _meta: {
           "openai/widgetDescription":
@@ -149,7 +155,7 @@ mcpServer.registerTool(
       officeId: OfficeIdSchema,
     },
     _meta: {
-      "openai/outputTemplate": resources["office-details"].uri,
+      "openai/outputTemplate": resourceAssets["office-details"].uri,
       "openai/toolInvocation/invoking": "Loading office details",
       "openai/toolInvocation/invoked": "Displayed office details",
     },
