@@ -6,7 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm run --recursive --stream dev",
+    "dev": "pnpm run --recursive --parallel --stream dev",
     "debug": "mcp-inspector"
   },
   "keywords": [],
