@@ -9,8 +9,8 @@ export default defineConfig({
     outDir: "dist",
     rollupOptions: {
       input: {
-        "office-list": resolve(__dirname, "src/views/office-list/office-list.html"),
-        "office-details": resolve(__dirname, "src/views/office-details/office-details.html"),
+        "office-list": resolve(__dirname, "src/views/office-list/office-list.jsx"),
+        "office-details": resolve(__dirname, "src/views/office-details/office-details.jsx"),
       },
       output: {
         entryFileNames: "[name].js",
@@ -20,6 +20,8 @@ export default defineConfig({
           }
           return "assets/[name]-[hash][extname]";
         },
+        // Inline all dependencies into single bundle per entry
+        inlineDynamicImports: true,
       },
     },
   },

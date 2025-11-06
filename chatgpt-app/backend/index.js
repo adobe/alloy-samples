@@ -3,6 +3,7 @@ import { serve } from "@hono/node-server";
 import { StreamableHTTPTransport } from "@hono/mcp";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+import { z } from "zod";
 
 import process from "node:process";
 import { readFileSync } from "node:fs";
@@ -17,6 +18,10 @@ const app = new Hono();
 const mcpServer = new McpServer({
   name: "alloy-vacations",
   version: "1.0.0",
+  capabilities: {
+    resources: {},
+    tools: {},
+  },
 });
 
 // Load locally built frontend assets
@@ -43,8 +48,10 @@ const loadViewAssets = (viewName) => {
 const officeListAssets = loadViewAssets("office-list");
 const officeDetailsAssets = loadViewAssets("office-details");
 
+console.log("[DEBUG] Registering resources and tools...");
+
 mcpServer.registerResource(
-  "office-list",
+  "office-list-widget",
   "ui://widget/office-list.html",
   {},
   async () => ({
@@ -58,6 +65,8 @@ ${officeListAssets.css ? `<style>${officeListAssets.css}</style>` : ""}
 <script type="module">${officeListAssets.js}</script>
         `.trim(),
         _meta: {
+          "openai/widgetDescription":
+            "Renders an interactive list of available Adobe offices with location details and photos.",
           "openai/widgetPrefersBorder": true,
           "openai/widgetDomain": "https://chatgpt.com",
           "openai/widgetCSP": {
@@ -71,7 +80,7 @@ ${officeListAssets.css ? `<style>${officeListAssets.css}</style>` : ""}
 );
 
 mcpServer.registerResource(
-  "office-details",
+  "office-details-widget",
   "ui://widget/office-details.html",
   {},
   async () => ({
@@ -85,6 +94,8 @@ ${officeDetailsAssets.css ? `<style>${officeDetailsAssets.css}</style>` : ""}
 <script type="module">${officeDetailsAssets.js}</script>
         `.trim(),
         _meta: {
+          "openai/widgetDescription":
+            "Displays detailed information about a specific Adobe office including amenities, photos, and contact options.",
           "openai/widgetPrefersBorder": true,
           "openai/widgetDomain": "https://chatgpt.com",
           "openai/widgetCSP": {
@@ -100,22 +111,17 @@ ${officeDetailsAssets.css ? `<style>${officeDetailsAssets.css}</style>` : ""}
 mcpServer.registerTool(
   "office-list",
   {
-    title: "Show Office List",
     description: "Show the list of available offices",
+    inputSchema: {},
     _meta: {
       "openai/outputTemplate": "ui://widget/office-list.html",
       "openai/toolInvocation/invoking": "Loading office list",
       "openai/toolInvocation/invoked": "Displayed office list",
     },
-    inputSchema: {
-      type: "object",
-      properties: {},
-    },
   },
   async () => {
     return {
       content: [{ type: "text", text: "Displayed the office list!" }],
-      structuredContent: {},
     };
   }
 );
@@ -123,22 +129,14 @@ mcpServer.registerTool(
 mcpServer.registerTool(
   "office-details",
   {
-    title: "Show Office Details",
     description: "Show details for a specific office",
+    inputSchema: {
+      officeId: z.string().describe("The ID of the office to show details for"),
+    },
     _meta: {
       "openai/outputTemplate": "ui://widget/office-details.html",
       "openai/toolInvocation/invoking": "Loading office details",
       "openai/toolInvocation/invoked": "Displayed office details",
-    },
-    inputSchema: {
-      type: "object",
-      properties: {
-        officeId: {
-          type: "string",
-          description: "The ID of the office to show details for",
-        },
-      },
-      required: ["officeId"],
     },
   },
   async ({ officeId }) => {
@@ -146,7 +144,6 @@ mcpServer.registerTool(
       content: [
         { type: "text", text: `Displayed details for office ${officeId}` },
       ],
-      structuredContent: {},
     };
   }
 );
@@ -154,27 +151,14 @@ mcpServer.registerTool(
 mcpServer.registerTool(
   "send-email",
   {
-    title: "Send Office Visit Interest Email",
     description: "Send an email expressing interest in visiting an office",
+    inputSchema: {
+      officeId: z.string().describe("The ID of the office the user is interested in visiting"),
+      officeName: z.string().describe("The name of the office the user is interested in visiting"),
+    },
     _meta: {
       "openai/toolInvocation/invoking": "Sending email",
       "openai/toolInvocation/invoked": "Email sent successfully",
-    },
-    inputSchema: {
-      type: "object",
-      properties: {
-        officeId: {
-          type: "string",
-          description:
-            "The ID of the office the user is interested in visiting",
-        },
-        officeName: {
-          type: "string",
-          description:
-            "The name of the office the user is interested in visiting",
-        },
-      },
-      required: ["officeId", "officeName"],
     },
   },
   async ({ officeId, officeName }) => {
@@ -192,13 +176,65 @@ mcpServer.registerTool(
     };
   }
 );
+console.log("[DEBUG] send-email tool registered successfully");
 
 const LOG_PREFIX = "[alloy-vacations-backend] ";
 const log = (...args) => console.log(LOG_PREFIX, ...args);
 app.use(logger(log));
 
+// Add detailed request logging middleware
+app.use(async (c, next) => {
+  const method = c.req.method;
+  const path = c.req.path;
+
+  log(`>>> ${method} ${path}`);
+
+  // Log important headers
+  const acceptHeader = c.req.header("accept");
+  const contentType = c.req.header("content-type");
+  const userAgent = c.req.header("user-agent");
+
+  if (acceptHeader) log("    Accept:", acceptHeader);
+  if (contentType) log("    Content-Type:", contentType);
+  if (userAgent) log("    User-Agent:", userAgent);
+
+  // Log body for POST/PUT/PATCH by cloning the request
+  if (method !== "GET" && method !== "HEAD") {
+    try {
+      const cloned = c.req.raw.clone();
+      const text = await cloned.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text);
+          log("    Body:", JSON.stringify(json, null, 2));
+        } catch {
+          log("    Body (text):", text.substring(0, 500));
+        }
+      }
+    } catch (e) {
+      log("    Body: (could not read)");
+    }
+  }
+
+  await next();
+});
+
 app.get("/", (c) => {
   return c.text("Hello, World!");
+});
+
+// OAuth 2.0 Discovery Endpoints - return 404 to signal no OAuth support
+// ChatGPT will then rely on tool-level securitySchemes (noauth)
+app.get("/.well-known/oauth-protected-resource", (c) => {
+  return c.notFound();
+});
+
+app.get("/.well-known/oauth-authorization-server", (c) => {
+  return c.notFound();
+});
+
+app.get("/.well-known/openid-configuration", (c) => {
+  return c.notFound();
 });
 
 app.all("/mcp", async (c) => {

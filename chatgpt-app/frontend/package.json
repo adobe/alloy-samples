@@ -5,8 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch",
-    "build": "vite build"
+    "dev": "npm run build:office-list && npm run build:office-details",
+    "build": "npm run build:office-list && npm run build:office-details",
+    "build:office-list": "vite build --config vite.config.office-list.js",
+    "build:office-details": "vite build --config vite.config.office-details.js"
   },
   "keywords": [],
   "author": "",

@@ -19,6 +19,6 @@
     "@hono/node-server": "^1.19.6",
     "@modelcontextprotocol/sdk": "^1.21.0",
     "hono": "^4.10.4",
-    "zod": "^4.1.12"
+    "zod": "^3.24.1"
   }
 }
