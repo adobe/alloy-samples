@@ -34,11 +34,23 @@ const mcpServer = new McpServer({
 const generateHtml = ({ js, css }) =>
   [
     `<div id="root"></div>`,
-    css && `<link rel="stylesheet" href="${css}">`,
-    js && `<script src="${js}"></script>`,
+    css && `<style>${css}</style>`,
+    js && `<script type="module">${js}</script>`,
   ]
     .filter(Boolean)
     .join("");
+
+/**
+ * @param {string} name
+ * @returns {string | null}
+ */
+const readAsset = (name) => {
+  try {
+    return readFileSync(join(ASSETS_DIR, name), "utf8");
+  } catch (error) {
+    return null;
+  }
+};
 
 /** @typedef {object} Resource
  * @property {string} uri - The URI of the resource.
@@ -47,19 +59,17 @@ const generateHtml = ({ js, css }) =>
 const resources = Object.freeze({
   "office-list": {
     uri: "ui://widget/office-list.html",
-    html: async () =>
-      generateHtml({
-        css: readFileSync(join(ASSETS_DIR, "office-list.css"), "utf8"),
-        js: readFileSync(join(ASSETS_DIR, "office-list.js"), "utf8"),
-      }),
+    text: generateHtml({
+      css: readAsset("office-list.css"),
+      js: readAsset("office-list.js"),
+    }),
   },
   "office-details": {
     uri: "ui://widget/office-detail.html",
-    html: async () =>
-      generateHtml({
-        css: readFileSync(join(ASSETS_DIR, "office-detail.css"), "utf8"),
-        js: readFileSync(join(ASSETS_DIR, "office-detail.js"), "utf8"),
-      }),
+    text: generateHtml({
+      css: readAsset("office-detail.css"),
+      js: readAsset("office-detail.js"),
+    }),
   },
 });
 
@@ -70,9 +80,8 @@ mcpServer.registerResource(
   async () => ({
     contents: [
       {
-        uri: "ui://widget/office-list.html",
+        ...resources["office-list"],
         mimeType: "text/html+skybridge",
-        text: `<h1>Office List</h1>`,
         _meta: {
           "openai/widgetDescription":
             "Renders an interactive list of available Adobe offices with location details and photos.",
@@ -115,9 +124,8 @@ mcpServer.registerResource(
   async () => ({
     contents: [
       {
-        uri: resources["office-details"].uri,
+        ...resources["office-details"],
         mimeType: "text/html+skybridge",
-        text: `<h1>Office Details</h1>`,
         _meta: {
           "openai/widgetDescription":
             "Displays detailed information about a specific Adobe office including amenities, photos, and contact options.",
@@ -179,9 +187,9 @@ mcpServer.registerTool(
 );
 
 mcpServer.registerTool(
-  "send-email",
+  "request-visit",
   {
-    title: "Send an email expressing interest in visiting an office",
+    title: "Notify Adobe that you would like to visit an office.",
     inputSchema: {
       officeId: OfficeIdSchema,
       officeName: z
@@ -190,8 +198,8 @@ mcpServer.registerTool(
       email: z.string().email().describe("The email address of the user"),
     },
     _meta: {
-      "openai/toolInvocation/invoking": "Sending email",
-      "openai/toolInvocation/invoked": "Email sent successfully",
+      "openai/toolInvocation/invoking": "Requesting visit",
+      "openai/toolInvocation/invoked": "Visit requested.",
     },
   },
   async ({ officeId, officeName }) => {
