@@ -1,10 +1,5 @@
 {
-  "watch": [
-    ".",
-    "../frontend/dist"
-  ],
+  "watch": [".", "../frontend/dist", "../datastore"],
   "ext": "js,json,css",
-  "ignore": [
-    "node_modules"
-  ]
+  "ignore": ["node_modules"]
 }

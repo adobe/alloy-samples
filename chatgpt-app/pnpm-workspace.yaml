@@ -1,3 +1,5 @@
 packages:
   - frontend
   - backend
+  - datastore
+linkWorkspacePackages: true
