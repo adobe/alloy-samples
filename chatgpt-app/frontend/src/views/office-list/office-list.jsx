@@ -1,89 +1,95 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  Button,
   defaultTheme,
   Provider as SpectrumProvider,
+  View,
+  Heading,
+  Grid,
+  Text,
+  Content,
+  Flex,
+  Divider,
 } from "@adobe/react-spectrum";
 import "./office-list.css";
+import { useToolOutput, useWidgetState } from "../../openai-hooks";
 
-import { Heading, View, Content, Text, Flex } from "@adobe/react-spectrum";
-import { useState, useEffect } from "react";
+const OfficeCard = ({ office }) => {
+  const imageSize = 300;
+  const imageUrl = `https://picsum.photos/seed/${office.id}/${imageSize}`;
+
+  return (
+    <View
+      borderWidth="thin"
+      borderColor="gray-300"
+      borderRadius="medium"
+      overflow="hidden"
+      backgroundColor="gray-50"
+    >
+      <img
+        src={imageUrl}
+        alt={office.name}
+        style={{ width: "100%", height: "200px", objectFit: "cover" }}
+      />
+      <View padding="size-200">
+        <Heading level={3} marginBottom="size-50">
+          {office.name}
+        </Heading>
+        <Text marginBottom="size-100">
+          <strong>Location:</strong> {office.location}
+        </Text>
+        <Text marginBottom="size-150">{office.description}</Text>
+        <Divider size="S" marginBottom="size-150" />
+        <Text>
+          <strong>Amenities:</strong>
+        </Text>
+        <Flex gap="size-100" wrap marginTop="size-50" marginBottom="size-150">
+          {office.amenities.map((amenity) => (
+            <View
+              key={amenity}
+              backgroundColor="gray-200"
+              paddingX="size-100"
+              paddingY="size-50"
+              borderRadius="small"
+            >
+              <Text UNSAFE_style={{ fontSize: "0.875rem" }}>{amenity}</Text>
+            </View>
+          ))}
+        </Flex>
+        <Text
+          UNSAFE_style={{
+            fontSize: "0.875rem",
+            color: "var(--spectrum-global-color-gray-700)",
+          }}
+        >
+          <strong>Phone:</strong> {office.phone}
+        </Text>
+      </View>
+    </View>
+  );
+};
 
 const App = () => {
-  const [offices, setOffices] = useState([]);
-
-  useEffect(() => {
-    // Read initial data from window.openai.toolOutput
-    if (window.openai?.toolOutput?.offices) {
-      setOffices(window.openai.toolOutput.offices);
-    }
-
-    // Listen for updates
-    const handleSetGlobals = (event) => {
-      if (event.detail?.globals?.toolOutput?.offices) {
-        setOffices(event.detail.globals.toolOutput.offices);
-      }
-    };
-
-    window.addEventListener("openai:set_globals", handleSetGlobals);
-    return () => window.removeEventListener("openai:set_globals", handleSetGlobals);
-  }, []);
-
-  const handleViewDetails = async (officeId) => {
-    try {
-      await window.openai?.callTool("office-details", { officeId });
-    } catch (error) {
-      console.error("Failed to call office-details tool:", error);
-    }
-  };
-
-  const handleSendEmail = async (officeId, officeName) => {
-    try {
-      await window.openai?.callTool("send-email", { officeId, officeName });
-    } catch (error) {
-      console.error("Failed to send email:", error);
-    }
-  };
+  /** @type {import("datastore").Office[]} */
+  const offices = useToolOutput();
 
   return (
     <View padding="size-250">
-      <Heading level={1}>Adobe Offices</Heading>
-      <Content marginTop="size-200">
-        {offices.length === 0 ? (
-          <Text>No offices available</Text>
-        ) : (
-          <Flex direction="column" gap="size-200">
-            {offices.map((office) => (
-              <View
-                key={office.id}
-                padding="size-200"
-                borderWidth="thin"
-                borderColor="dark"
-                borderRadius="medium"
-              >
-                <Heading level={2}>{office.name}</Heading>
-                <Text>{office.location}</Text>
-                <Text marginTop="size-100">{office.description}</Text>
-                <Flex gap="size-100" marginTop="size-200">
-                  <Button
-                    variant="primary"
-                    onPress={() => handleViewDetails(office.id)}
-                  >
-                    View Details
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onPress={() => handleSendEmail(office.id, office.name)}
-                  >
-                    Express Interest
-                  </Button>
-                </Flex>
-              </View>
-            ))}
-          </Flex>
-        )}
-      </Content>
+      <Heading level={1} marginBottom="size-300">
+        Adobe Offices
+      </Heading>
+      <Grid
+        columns={{
+          base: ["1fr"],
+          M: ["1fr", "1fr"],
+          L: ["1fr", "1fr", "1fr"],
+        }}
+        gap="size-300"
+      >
+        {offices.map((office) => (
+          <OfficeCard key={office.id} office={office} />
+        ))}
+      </Grid>
     </View>
   );
 };
