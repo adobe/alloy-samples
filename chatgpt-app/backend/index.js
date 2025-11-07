@@ -88,7 +88,7 @@ mcpServer.registerResource(
           "openai/widgetDomain": "https://chatgpt.com",
           "openai/widgetCSP": {
             connect_domains: ["https://chatgpt.com"],
-            resource_domains: ["https://*.oaistatic.com"],
+            resource_domains: ["https://*.oaistatic.com", "https://picsum.photos"],
           },
         },
       },
@@ -136,7 +136,7 @@ mcpServer.registerResource(
           "openai/widgetDomain": "https://chatgpt.com",
           "openai/widgetCSP": {
             connect_domains: ["https://chatgpt.com"],
-            resource_domains: ["https://*.oaistatic.com"],
+            resource_domains: ["https://*.oaistatic.com", "https://picsum.photos"],
           },
         },
       },

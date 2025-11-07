@@ -16,16 +16,6 @@ import { useToolOutput, useWidgetState } from "../../openai-hooks";
 
 const OfficeCard = ({ office }) => {
   const imageSize = 300;
-  /* TODO: Figure out a different way to serve images - ChatGPT's Content Security Policy generates the following error:
-   * Content-Security-Policy: The page’s settings blocked the loading of a resource (img-src) at
-   * https://picsum.photos/seed/sf/300 because it violates the following directive: “img-src 'self' data:
-   * https://cdn.tailwindcss.com
-   * https://cdn.jsdelivr.net
-   * https://unpkg.com
-   * https://*.oaiusercontent.com
-   * https://threejs.org
-   * https://*.oaistatic.com”
-   */
   const imageUrl = `https://picsum.photos/seed/${office.id}/${imageSize}`;
 
   return (
