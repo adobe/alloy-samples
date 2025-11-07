@@ -7,9 +7,9 @@ import {
   Heading,
   Grid,
   Text,
-  Content,
   Flex,
   Divider,
+  Image,
 } from "@adobe/react-spectrum";
 import "./office-list.css";
 import { useToolOutput, useWidgetState } from "../../openai-hooks";
@@ -26,11 +26,9 @@ const OfficeCard = ({ office }) => {
       overflow="hidden"
       backgroundColor="gray-50"
     >
-      <img
-        src={imageUrl}
-        alt={office.name}
-        style={{ width: "100%", height: "200px", objectFit: "cover" }}
-      />
+      <View width="space-200">
+        <Image src={imageUrl} alt={office.name} />
+      </View>
       <View padding="size-200">
         <Heading level={3} marginBottom="size-50">
           {office.name}

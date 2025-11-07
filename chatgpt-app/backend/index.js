@@ -32,6 +32,7 @@ const mcpServer = new McpServer({
  */
 const generateHtml = ({ js, css }) =>
   [
+    `<!DOCTYPE html>`,
     `<div id="root"></div>`,
     css && `<style>${css}</style>`,
     js && `<script type="module">${js}</script>`,
@@ -44,11 +45,7 @@ const generateHtml = ({ js, css }) =>
  * @returns {string | null}
  */
 const readAsset = (name) => {
-  try {
-    return readFileSync(join(ASSETS_DIR, name), "utf8");
-  } catch (error) {
-    return null;
-  }
+  return readFileSync(join(ASSETS_DIR, name), "utf8");
 };
 
 /**
@@ -88,7 +85,10 @@ mcpServer.registerResource(
           "openai/widgetDomain": "https://chatgpt.com",
           "openai/widgetCSP": {
             connect_domains: ["https://chatgpt.com"],
-            resource_domains: ["https://*.oaistatic.com", "https://picsum.photos"],
+            resource_domains: [
+              "https://*.oaistatic.com",
+              "https://picsum.photos",
+            ],
           },
         },
       },
@@ -136,7 +136,10 @@ mcpServer.registerResource(
           "openai/widgetDomain": "https://chatgpt.com",
           "openai/widgetCSP": {
             connect_domains: ["https://chatgpt.com"],
-            resource_domains: ["https://*.oaistatic.com", "https://picsum.photos"],
+            resource_domains: [
+              "https://*.oaistatic.com",
+              "https://picsum.photos",
+            ],
           },
         },
       },
