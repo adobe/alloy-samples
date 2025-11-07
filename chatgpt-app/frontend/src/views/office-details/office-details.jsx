@@ -11,8 +11,9 @@ import {
   Divider,
   TextField,
   Image,
+  ToastQueue,
+  ToastContainer,
 } from "@adobe/react-spectrum";
-import { ToastQueue, ToastContainer } from "@react-spectrum/toast";
 import "./office-details.css";
 import { useToolOutput, useTool } from "../../openai-hooks";
 

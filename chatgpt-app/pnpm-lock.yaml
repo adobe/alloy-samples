@@ -51,9 +51,6 @@ importers:
       '@adobe/react-spectrum':
         specifier: ^3.45.0
         version: 3.45.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@react-spectrum/toast':
-        specifier: ^3.1.4
-        version: 3.1.4(@react-spectrum/provider@3.10.11(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react:
         specifier: ^19.2.0
         version: 19.2.0
