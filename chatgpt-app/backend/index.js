@@ -1,4 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { serve } from "@hono/node-server";
 import { StreamableHTTPTransport } from "@hono/mcp";
 import { OfficeIdSchema, officeData } from "datastore";
@@ -81,12 +81,16 @@ const resourceAssets = Object.freeze({
 
 mcpServer.registerResource(
   "office-list-widget",
-  resourceAssets["office-list"].uri,
-  {},
+  new ResourceTemplate("ui://widget/office-list-{hash}.html", { list: undefined }),
+  {
+    title: "Office List Widget",
+    description: "Renders an interactive list of available Adobe offices",
+  },
   async () => ({
     contents: [
       {
-        ...resourceAssets["office-list"],
+        uri: resourceAssets["office-list"].uri,
+        text: resourceAssets["office-list"].html,
         mimeType: "text/html+skybridge",
         _meta: {
           "openai/widgetDescription":
@@ -125,12 +129,16 @@ mcpServer.registerTool(
 
 mcpServer.registerResource(
   "office-details-widget",
-  resourceAssets["office-details"].uri,
-  {},
+  new ResourceTemplate("ui://widget/office-details-{hash}.html", { list: undefined }),
+  {
+    title: "Office Details Widget",
+    description: "Displays detailed information about a specific Adobe office",
+  },
   async () => ({
     contents: [
       {
-        ...resourceAssets["office-details"],
+        uri: resourceAssets["office-details"].uri,
+        text: resourceAssets["office-details"].html,
         mimeType: "text/html+skybridge",
         _meta: {
           "openai/widgetDescription":
