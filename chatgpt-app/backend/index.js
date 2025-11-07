@@ -1,4 +1,4 @@
-import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { serve } from "@hono/node-server";
 import { StreamableHTTPTransport } from "@hono/mcp";
 import { OfficeIdSchema, officeData } from "datastore";
@@ -7,10 +7,9 @@ import { logger } from "hono/logger";
 import { z } from "zod";
 
 import process from "node:process";
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
-import crypto from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,7 +25,6 @@ const mcpServer = new McpServer({
 });
 
 /**
- *
  * @param {object} params
  * @param {string} params.js
  * @param {string} params.css
@@ -60,20 +58,11 @@ const readAsset = (name) => {
 const createResourceAssets = (name) => {
   const css = readAsset(`${name}.css`) || "";
   const js = readAsset(`${name}.js`) || "";
-  const hash = crypto
-    .createHash("blake2s256")
-    .update(css + js)
-    .digest("hex")
-    .substring(0, 12);
   const html = generateHtml({ css, js });
-  const uri = `ui://widget/${name}-${hash}.html`;
+  const uri = `ui://widget/${name}.html`;
   return { uri, html };
 };
 
-/** @typedef {object} Resource
- * @property {string} uri - The URI of the resource.
- * @property {() => Promise<string>} html
- */
 const resourceAssets = Object.freeze({
   "office-list": createResourceAssets("office-list"),
   "office-details": createResourceAssets("office-details"),
@@ -81,7 +70,7 @@ const resourceAssets = Object.freeze({
 
 mcpServer.registerResource(
   "office-list-widget",
-  new ResourceTemplate("ui://widget/office-list-{hash}.html", { list: undefined }),
+  resourceAssets["office-list"].uri,
   {
     title: "Office List Widget",
     description: "Renders an interactive list of available Adobe offices",
@@ -129,7 +118,7 @@ mcpServer.registerTool(
 
 mcpServer.registerResource(
   "office-details-widget",
-  new ResourceTemplate("ui://widget/office-details-{hash}.html", { list: undefined }),
+  resourceAssets["office-details"].uri,
   {
     title: "Office Details Widget",
     description: "Displays detailed information about a specific Adobe office",
