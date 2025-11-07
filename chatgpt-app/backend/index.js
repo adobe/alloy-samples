@@ -32,7 +32,6 @@ const mcpServer = new McpServer({
  */
 const generateHtml = ({ js, css }) =>
   [
-    `<!DOCTYPE html>`,
     `<div id="root"></div>`,
     css && `<style>${css}</style>`,
     js && `<script type="module">${js}</script>`,
@@ -205,8 +204,9 @@ mcpServer.registerTool(
       "openai/toolInvocation/invoked": "Visit requested.",
     },
   },
-  async ({ officeId, officeName }) => {
-    const emailMessage = `Hi, I am interested in visiting the ${officeName} office.`;
+  async ({ officeId }) => {
+    const office = officeData[officeId];
+    const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
     console.log(
       `[send-email] Would send email for office ${officeId}: "${emailMessage}"`
     );

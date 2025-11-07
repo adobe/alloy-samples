@@ -30,7 +30,7 @@ const buildOptions = {
   entryNames: "[name]",
   assetNames: "[name]",
   chunkNames: "[name]",
-  minify: !isWatch,
+  minify: true,
   sourcemap: false,
 };
 
