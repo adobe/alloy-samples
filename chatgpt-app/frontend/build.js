@@ -23,6 +23,7 @@ const buildOptions = {
   outdir: "dist/",
   splitting: false,
   format: "esm",
+  jsx: "automatic",
   loader: {
     ".css": "css",
   },
