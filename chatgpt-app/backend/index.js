@@ -52,7 +52,7 @@ const readAsset = (name) => {
 
 const EnvSchema = z.object({
   IMS_HOST: AlloyServerInstance.InstanceConfigSchema.shape.imsHost,
-  ORGANIZATION_ID: AlloyServerInstance.InstanceConfigSchema.shape.orgId,
+  ORG_ID: AlloyServerInstance.InstanceConfigSchema.shape.orgId,
   CLIENT_ID: AlloyServerInstance.InstanceConfigSchema.shape.clientId,
   CLIENT_SECRET: AlloyServerInstance.InstanceConfigSchema.shape.clientSecret,
   ACCESS_SCOPES: AlloyServerInstance.InstanceConfigSchema.shape.accessScopes,
