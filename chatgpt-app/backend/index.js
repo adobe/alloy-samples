@@ -12,7 +12,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
-configDotenv({ path: ["../.env", "./.env"] });
+configDotenv({ path: ["../.env", "./.env"], quiet: true });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -141,11 +141,11 @@ mcpServer.registerTool(
   async ({ adobeMeta }) => {
     const meta = alloy.extractMetadataFromRequest(adobeMeta);
     return {
-      content: [{ type: "text", text: "Displayed the list of offices." }],
       structuredContent: {
         offices: Object.values(officeData),
         adobeMeta: meta,
       },
+      content: [{ type: "text", text: "Displayed the list of offices." }],
     };
   }
 );
@@ -208,27 +208,27 @@ mcpServer.registerTool(
     } catch (error) {
       console.error(error);
       return {
+        structuredContent: {
+          adobeMeta: meta,
+        },
         content: [
           {
             type: "text",
             text: `Error displaying office details: ${error.message}`,
           },
         ],
-        structuredContent: {
-          adobeMeta: meta,
-        },
       };
     }
     const office = officeData[officeId];
 
     return {
-      content: [
-        { type: "text", text: `Displayed details for office ${officeId}` },
-      ],
       structuredContent: {
         office,
         adobeMeta: meta,
       },
+      content: [
+        { type: "text", text: `Displayed details for office ${officeId}` },
+      ],
     };
   }
 );
@@ -254,29 +254,49 @@ mcpServer.registerTool(
       `[send-email] Would send email for office ${officeId}: "${emailMessage}"`
     );
     return {
+      structuredContent: {
+        adobeMeta,
+      },
       content: [
         {
           type: "text",
           text: `Email sent! Message: "${emailMessage}"`,
         },
       ],
-      structuredContent: {
-        adobeMeta,
-      },
     };
   }
 );
 
 const LOG_PREFIX = "[alloy-vacations-backend] ";
 const log = (...args) => console.log(LOG_PREFIX, ...args);
-app.use(logger(log));
+/**
+ *
+ * @param {string | number} status
+ */
+const colorStatus = (status) => {
+  const s = typeof status === "string" ? Number.parseInt(status, 10) : status;
+  switch (
+    (status / 100) |
+    0 // most significant digit
+  ) {
+    case 5: // red -- error
+      return `\x1b[31m${s}\x1b[0m`;
+    case 4: // yellow -- warning
+      return `\x1b[33m${s}\x1b[0m`;
+    case 3: // cyan -- redirect
+      return `\x1b[36m${s}\x1b[0m`;
+    case 2: // green -- success
+      return `\x1b[32m${s}\x1b[0m`;
+    default: // 1
+      return `${s}`;
+  }
+};
 
-// Add detailed request logging middleware
 app.use(async (c, next) => {
   const method = c.req.method;
   const path = c.req.path;
 
-  log(`>>> ${method} ${path}`);
+  log(`[IN]  ${method} ${path}`);
 
   // Log important headers
   const acceptHeader = c.req.header("accept");
@@ -305,7 +325,10 @@ app.use(async (c, next) => {
     }
   }
 
+  const start = Date.now();
   await next();
+  const elapsed = Date.now() - start;
+  log(`[OUT] ${method} ${path} ${colorStatus(c.res.status)} ${elapsed}ms`);
 });
 
 app.get("/", (c) => {

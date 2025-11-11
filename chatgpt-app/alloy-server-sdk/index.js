@@ -57,8 +57,8 @@ export class AlloyServerInstance {
   }
 
   static RequestMetadataSchema = z.object({
-    sessionId: z.literal(GENERATE).or(z.string().uuid()),
-    ecid: z.literal(GENERATE).or(z.string()),
+    sessionId: z.literal(GENERATE).or(z.string().uuid()).describe("Prefer the prior session ID; use GENERATE only when none available."),
+    ecid: z.literal(GENERATE).or(z.string()).describe("Prefer the prior ECID; use GENERATE only when none available."),
   });
   get RequestMetadataSchema() {
     return AlloyServerInstance.RequestMetadataSchema;
