@@ -86,6 +86,7 @@ mcpServer.registerResource(
             connect_domains: ["https://chatgpt.com"],
             resource_domains: [
               "https://*.oaistatic.com",
+              "https://fastly.picsum.photos",
               "https://picsum.photos",
             ],
           },
@@ -137,6 +138,7 @@ mcpServer.registerResource(
             connect_domains: ["https://chatgpt.com"],
             resource_domains: [
               "https://*.oaistatic.com",
+              "https://fastly.picsum.photos",
               "https://picsum.photos",
             ],
           },
