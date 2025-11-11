@@ -1,0 +1,19 @@
+{
+  "name": "alloy-server-sdk",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.20.0",
+  "dependencies": {
+    "@adobe/target-tools": "^1.7.2",
+    "aep-edge-samples-common": "file:../../common",
+    "zod": "^3.25.76"
+  }
+}

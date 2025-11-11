@@ -1,5 +1,5 @@
 {
-  "watch": [".", "../frontend/dist", "../datastore"],
+  "watch": [".", "../frontend/dist", "../datastore", "../alloy-server-sdk"],
   "ext": "js,json,css",
   "ignore": ["node_modules"]
 }

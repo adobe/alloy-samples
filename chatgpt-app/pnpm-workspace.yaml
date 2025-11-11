@@ -2,4 +2,5 @@ packages:
   - frontend
   - backend
   - datastore
+  - alloy-server-sdk
 linkWorkspacePackages: true

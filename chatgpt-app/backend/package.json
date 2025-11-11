@@ -18,7 +18,9 @@
     "@hono/mcp": "^0.1.5",
     "@hono/node-server": "^1.19.6",
     "@modelcontextprotocol/sdk": "^1.21.0",
+    "alloy-server-sdk": "workspace:^",
     "datastore": "workspace:*",
+    "dotenv": "^17.2.3",
     "hono": "^4.10.4",
     "zod": "^3.24.1"
   }

@@ -1,15 +1,17 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { serve } from "@hono/node-server";
 import { StreamableHTTPTransport } from "@hono/mcp";
+import { serve } from "@hono/node-server";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { AlloyServerInstance } from "alloy-server-sdk";
 import { OfficeIdSchema, officeData } from "datastore";
+import "dotenv/config";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { z } from "zod";
 
-import process from "node:process";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,6 +48,32 @@ const generateHtml = ({ js, css }) =>
 const readAsset = (name) => {
   return readFileSync(join(ASSETS_DIR, name), "utf8");
 };
+
+const EnvSchema = z.object({
+  IMS_HOST: AlloyServerInstance.InstanceConfigSchema.shape.imsHost,
+  ORGANIZATION_ID: AlloyServerInstance.InstanceConfigSchema.shape.orgId,
+  CLIENT_ID: AlloyServerInstance.InstanceConfigSchema.shape.clientId,
+  CLIENT_SECRET: AlloyServerInstance.InstanceConfigSchema.shape.clientSecret,
+  ACCESS_SCOPES: AlloyServerInstance.InstanceConfigSchema.shape.accessScopes,
+  DATASTREAM_ID: AlloyServerInstance.InstanceConfigSchema.shape.datastreamId,
+  AEP_EDGE_DOMAIN: AlloyServerInstance.InstanceConfigSchema.shape.edgeDomain,
+  AEP_EDGE_REGION: AlloyServerInstance.InstanceConfigSchema.shape.edgeRegion,
+  TIMEOUT: z.coerce
+    .number()
+    .pipe(AlloyServerInstance.InstanceConfigSchema.shape.timeout),
+});
+const env = EnvSchema.parse(process.env);
+const alloy = new AlloyServerInstance({
+  edgeDomain: env.AEP_EDGE_DOMAIN,
+  edgeRegion: env.AEP_EDGE_REGION,
+  imsHost: env.IMS_HOST,
+  clientId: env.CLIENT_ID,
+  clientSecret: env.CLIENT_SECRET,
+  accessScopes: env.ACCESS_SCOPES,
+  timeout: env.TIMEOUT,
+  datastreamId: env.DATASTREAM_ID,
+  orgId: env.ORGANIZATION_ID,
+});
 
 /**
  * @param {string} name
@@ -100,17 +128,22 @@ mcpServer.registerTool(
   "office-list",
   {
     title: "List offices",
+    inputSchema: {
+      adobeMeta: alloy.RequestMetadataSchema,
+    },
     _meta: {
       "openai/outputTemplate": resourceAssets["office-list"].uri,
       "openai/toolInvocation/invoking": "Listing offices",
       "openai/toolInvocation/invoked": "Listed offices",
     },
   },
-  async () => {
+  async ({ adobeMeta }) => {
+    const meta = alloy.extractMetadataFromRequest(adobeMeta);
     return {
       content: [{ type: "text", text: "Displayed the list of offices." }],
       structuredContent: {
         offices: Object.values(officeData),
+        adobeMeta: meta,
       },
     };
   }
@@ -154,6 +187,7 @@ mcpServer.registerTool(
     title: "Show details for a specific office",
     inputSchema: {
       officeId: OfficeIdSchema,
+      adobeMeta: alloy.RequestMetadataSchema,
     },
     _meta: {
       "openai/outputTemplate": resourceAssets["office-details"].uri,
@@ -164,7 +198,8 @@ mcpServer.registerTool(
   /** @param {object} params
    * @param {keyof typeof officeData} params.officeId
    */
-  async ({ officeId }) => {
+  async ({ officeId, adobeMeta }) => {
+    const meta = alloy.extractMetadataFromRequest(adobeMeta);
     try {
       if (!(officeId in officeData)) {
         throw new Error(`Office with ID ${officeId} not found`);
@@ -178,6 +213,9 @@ mcpServer.registerTool(
             text: `Error displaying office details: ${error.message}`,
           },
         ],
+        structuredContent: {
+          adobeMeta: meta,
+        },
       };
     }
     const office = officeData[officeId];
@@ -188,6 +226,7 @@ mcpServer.registerTool(
       ],
       structuredContent: {
         office,
+        adobeMeta: meta,
       },
     };
   }
@@ -200,6 +239,7 @@ mcpServer.registerTool(
     inputSchema: {
       officeId: OfficeIdSchema,
       email: z.string().email().describe("The email address of the user"),
+      adobeMeta: alloy.RequestMetadataSchema,
     },
     _meta: {
       "openai/toolInvocation/invoking": "Requesting visit",
@@ -219,6 +259,9 @@ mcpServer.registerTool(
           text: `Email sent! Message: "${emailMessage}"`,
         },
       ],
+      structuredContent: {
+        adobeMeta,
+      },
     };
   }
 );
