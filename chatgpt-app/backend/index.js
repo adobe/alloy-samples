@@ -3,15 +3,16 @@ import { serve } from "@hono/node-server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { AlloyServerInstance } from "alloy-server-sdk";
 import { OfficeIdSchema, officeData } from "datastore";
-import "dotenv/config";
+import { configDotenv } from "dotenv";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
-import { z } from "zod";
-
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
+
+configDotenv({ path: ["../.env", "./.env"] });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
