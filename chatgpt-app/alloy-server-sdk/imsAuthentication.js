@@ -26,12 +26,10 @@ export function createImsClient(
   async function generateAccessToken() {
     let currentTimestamp = Math.floor(Date.now() / 1000);
 
-    // If not expired, return cached access token.
     if (
       imsToken &&
       currentTimestamp < imsTokenGenerationTimestamp + imsToken["expires_in"]
     ) {
-      console.log("Reused cached access token.");
       return imsToken["access_token"];
     }
 
@@ -57,9 +55,6 @@ export function createImsClient(
         `The server responded with a status code ${status} and ${body}`
       );
     } else {
-      console.log(`IMS REQUEST: ${requestUrl}`, JSON.stringify(body, null, 2));
-
-      // Cache the access token.
       imsToken = body;
       imsTokenGenerationTimestamp = Math.floor(Date.now() / 1000);
 

@@ -110,7 +110,6 @@ function prepareAepResponse(requestHeaders, requestBody) {
 
 function logResult(message) {
   return (result) => {
-    console.log(message, JSON.stringify(result, null, 2));
     return result;
   };
 }
@@ -202,7 +201,6 @@ function createAepEdgeClient(
       .then(prepareAepResponse(headers, requestBody))
       .then(logResult(`AEP EDGE REQUEST: ${requestUrl}`))
       .catch((err) => {
-        console.error(err.message);
         throw err;
       });
   }

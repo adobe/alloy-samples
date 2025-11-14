@@ -74,11 +74,9 @@ function getOrSetFPIDCookie(req, res) {
 
   if (req.cookies[cookieName] === undefined) {
     fpid = uuid.v4();
-    console.log(`Creating FPID: ${fpid}`);
     res.cookie(cookieName, fpid, cookieOptions);
   } else {
     fpid = req.cookies[cookieName];
-    console.log(`Reusing FPID ${fpid}`);
   }
 
   return fpid;

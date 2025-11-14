@@ -73,7 +73,7 @@ const alloy = new AlloyServerInstance({
   accessScopes: env.ACCESS_SCOPES,
   timeout: env.TIMEOUT,
   datastreamId: env.DATASTREAM_ID,
-  orgId: env.ORGANIZATION_ID,
+  orgId: env.ORG_ID,
 });
 
 /**
@@ -138,8 +138,30 @@ mcpServer.registerTool(
       "openai/toolInvocation/invoked": "Listed offices",
     },
   },
-  async ({ adobeMeta }) => {
-    const meta = alloy.extractMetadataFromRequest(adobeMeta);
+  async ({ adobeMeta }, { _meta } = {}) => {
+    const meta = alloy.extractMetadataFromRequest(adobeMeta, { _meta });
+
+    try {
+      const result = await alloy.collect({
+        ecid: meta.ecid,
+        fpid: meta.fpid,
+        xdm: {
+          eventType: "office.list.view",
+          web: {
+            webPageDetails: {
+              name: "Office List",
+            },
+          },
+        },
+      });
+      // Update ECID from response if Adobe generated one
+      if (result.generatedEcid) {
+        meta.ecid = result.generatedEcid;
+      }
+    } catch (error) {
+      console.error("Failed to collect analytics:", error);
+    }
+
     return {
       structuredContent: {
         offices: Object.values(officeData),
@@ -199,8 +221,8 @@ mcpServer.registerTool(
   /** @param {object} params
    * @param {keyof typeof officeData} params.officeId
    */
-  async ({ officeId, adobeMeta }) => {
-    const meta = alloy.extractMetadataFromRequest(adobeMeta);
+  async ({ officeId, adobeMeta }, { _meta } = {}) => {
+    const meta = alloy.extractMetadataFromRequest(adobeMeta, { _meta });
     try {
       if (!(officeId in officeData)) {
         throw new Error(`Office with ID ${officeId} not found`);
@@ -220,6 +242,34 @@ mcpServer.registerTool(
       };
     }
     const office = officeData[officeId];
+
+    try {
+      const result = await alloy.collect({
+        ecid: meta.ecid,
+        fpid: meta.fpid,
+        xdm: {
+          eventType: "office.details.view",
+          web: {
+            webPageDetails: {
+              name: `Office Details - ${office.name}`,
+            },
+          },
+          _adobe: {
+            office: {
+              id: officeId,
+              name: office.name,
+              city: office.city,
+              country: office.country,
+            },
+          },
+        },
+      });
+      if (result.generatedEcid) {
+        meta.ecid = result.generatedEcid;
+      }
+    } catch (error) {
+      console.error("Failed to collect analytics:", error);
+    }
 
     return {
       structuredContent: {
@@ -247,15 +297,43 @@ mcpServer.registerTool(
       "openai/toolInvocation/invoked": "Visit requested.",
     },
   },
-  async ({ officeId }) => {
+  async ({ officeId, adobeMeta }, { _meta } = {}) => {
+    const meta = alloy.extractMetadataFromRequest(adobeMeta, { _meta });
     const office = officeData[officeId];
     const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
-    console.log(
-      `[send-email] Would send email for office ${officeId}: "${emailMessage}"`
-    );
+
+    try {
+      const result = await alloy.collect({
+        ecid: meta.ecid,
+        fpid: meta.fpid,
+        xdm: {
+          eventType: "office.visit.request",
+          web: {
+            webPageDetails: {
+              name: `Request Visit - ${office.name}`,
+            },
+          },
+          _adobe: {
+            office: {
+              id: officeId,
+              name: office.name,
+              city: office.city,
+              country: office.country,
+            },
+          },
+        },
+      });
+      // Update ECID from response if Adobe generated one
+      if (result.generatedEcid) {
+        meta.ecid = result.generatedEcid;
+      }
+    } catch (error) {
+      console.error("Failed to collect analytics:", error);
+    }
+
     return {
       structuredContent: {
-        adobeMeta,
+        adobeMeta: meta,
       },
       content: [
         {

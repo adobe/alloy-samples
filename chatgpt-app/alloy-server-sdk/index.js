@@ -21,6 +21,7 @@ export class AlloyServerInstance {
   config = null;
   #aepEdgeClient = null;
   #imsClient = null;
+  #accessTokenPromise = null;
   static InstanceConfigSchema = z.object({
     edgeDomain: z
       .string()
@@ -36,7 +37,7 @@ export class AlloyServerInstance {
     accessScopes: z.string().min(1),
     timeout: z.number().min(1).default(10000),
     datastreamId: z.string().min(1),
-    orgId: z.string().min(1).max(30),
+    orgId: z.string().min(1).max(50),
   });
   /**
    * @param {InstanceConfig} config
@@ -54,11 +55,23 @@ export class AlloyServerInstance {
       this.config.accessScopes,
       this.config.imsHost
     );
+    this.#accessTokenPromise = this.#imsClient.generateAccessToken();
   }
 
   static RequestMetadataSchema = z.object({
-    sessionId: z.literal(GENERATE).or(z.string().uuid()).describe("Prefer the prior session ID; use GENERATE only when none available."),
-    ecid: z.literal(GENERATE).or(z.string()).describe("Prefer the prior ECID; use GENERATE only when none available."),
+    sessionId: z
+      .literal(GENERATE)
+      .or(z.string().uuid())
+      .describe(
+        "Prefer the prior session ID; use GENERATE only when none available."
+      ),
+    ecid: z
+      .literal(GENERATE)
+      .or(z.string())
+      .optional()
+      .describe(
+        "Prefer the prior ECID; use GENERATE only when none available."
+      ),
   });
   get RequestMetadataSchema() {
     return AlloyServerInstance.RequestMetadataSchema;
@@ -66,18 +79,88 @@ export class AlloyServerInstance {
   /**
    * @typedef {z.infer<typeof this.RequestMetadataSchema>} RequestMetadata
    * @param {RequestMetadata} adobeMeta
-   * @returns {RequestMetadata}
+   * @param {object} [options]
+   * @param {object} [options._meta] MCP metadata object containing client context (e.g., openai/subject)
+   * @returns {RequestMetadata & { fpid?: string }}
    */
-  extractMetadataFromRequest(adobeMeta) {
+  extractMetadataFromRequest(adobeMeta, { _meta } = {}) {
     let { sessionId, ecid } = adobeMeta;
     if (!sessionId || sessionId === GENERATE) {
       sessionId = generateSessionId();
     }
-    if (!ecid || ecid === GENERATE) {
-      ecid = generateEcid();
+    if (ecid === GENERATE) {
+      ecid = undefined;
     }
-    return { sessionId, ecid };
+    const fpid = _meta?.["openai/subject"];
+    return { sessionId, ecid, fpid };
   }
 
-  async collect() {}
+  async collect({ ecid, fpid, xdm = {} }) {
+    const accessToken = await this.#accessTokenPromise;
+
+    const identityMap = {};
+    const hasValidEcid = typeof ecid === "string" && ecid !== GENERATE;
+
+    if (hasValidEcid) {
+      identityMap.ECID = [
+        {
+          id: ecid,
+          primary: true,
+        },
+      ];
+    }
+
+    // Include FPID when present, or generate one if no ECID is provided.
+    // When both ECID and FPID exist, ECID remains the primary identity.
+    // V 2 konductor APIs require some form of identity. So we use a generated FPID if nothing else is present.
+    const shouldGenerateFpid = !hasValidEcid && !fpid;
+    const fpidValue = fpid ?? (shouldGenerateFpid ? randomUUID() : undefined);
+    if (fpidValue) {
+      identityMap.FPID = [
+        {
+          id: fpidValue,
+          authenticatedState: "ambiguous",
+          primary: !hasValidEcid,
+        },
+      ];
+    }
+
+    const requestBody = {
+      events: [
+        {
+          xdm: {
+            timestamp: new Date().toISOString(),
+            identityMap,
+            ...xdm,
+          },
+        },
+      ],
+    };
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      "x-gw-ims-org-id": this.config.orgId,
+      "x-api-key": this.config.clientId,
+    };
+
+    const result = await this.#aepEdgeClient.collect(requestBody, headers);
+
+    if (!ecid) {
+      const handles = result.response?.body?.handle || [];
+      const identityResult = handles.find((h) => h.type === "identity:result");
+      if (identityResult?.payload) {
+        const ecidEntry = identityResult.payload.find(
+          (p) => p.namespace?.code === "ECID"
+        );
+        if (ecidEntry?.id) {
+          result.generatedEcid = ecidEntry.id;
+        }
+      }
+    }
+
+    console.log("=== ALLOY SERVER COLLECT RESULT ===");
+    console.log("Result:", JSON.stringify(result, null, 2));
+
+    return result;
+  }
 }
