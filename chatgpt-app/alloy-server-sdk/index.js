@@ -13,6 +13,57 @@ const isDomainName = (val) => {
 };
 
 const GENERATE = "GENERATE";
+
+const createEdgeRequestHeaders = (accessToken, { orgId, clientId }) => ({
+  Authorization: `Bearer ${accessToken}`,
+  "x-gw-ims-org-id": orgId,
+  "x-api-key": clientId,
+});
+
+const buildIdentityMap = ({ ecid, fpid }) => {
+  const identityMap = {};
+  const hasValidEcid = typeof ecid === "string" && ecid !== GENERATE;
+
+  if (hasValidEcid) {
+    identityMap.ECID = [
+      {
+        id: ecid,
+        primary: true,
+      },
+    ];
+  }
+
+  // Include FPID when present, or generate one if no ECID is provided.
+  // When both ECID and FPID exist, ECID remains the primary identity.
+  // V2 Konductor APIs require some form of identity, so generate FPID if nothing else is present.
+  const shouldGenerateFpid = !hasValidEcid && !fpid;
+  const fpidValue = fpid ?? (shouldGenerateFpid ? randomUUID() : undefined);
+  if (fpidValue) {
+    identityMap.FPID = [
+      {
+        id: fpidValue,
+        authenticatedState: "ambiguous",
+        primary: !hasValidEcid,
+      },
+    ];
+  }
+
+  return identityMap;
+};
+
+const attachGeneratedEcidFromResult = (result) => {
+  const handles = result.response?.body?.handle || [];
+  const identityResult = handles.find((h) => h.type === "identity:result");
+  if (identityResult?.payload) {
+    const ecidEntry = identityResult.payload.find(
+      (p) => p.namespace?.code === "ECID"
+    );
+    if (ecidEntry?.id) {
+      result.generatedEcid = ecidEntry.id;
+    }
+  }
+};
+
 export class AlloyServerInstance {
   /**
    * @typedef {z.infer<typeof InstanceConfigSchema>} InstanceConfig
@@ -98,32 +149,7 @@ export class AlloyServerInstance {
   async collect({ ecid, fpid, xdm = {} }) {
     const accessToken = await this.#accessTokenPromise;
 
-    const identityMap = {};
-    const hasValidEcid = typeof ecid === "string" && ecid !== GENERATE;
-
-    if (hasValidEcid) {
-      identityMap.ECID = [
-        {
-          id: ecid,
-          primary: true,
-        },
-      ];
-    }
-
-    // Include FPID when present, or generate one if no ECID is provided.
-    // When both ECID and FPID exist, ECID remains the primary identity.
-    // V 2 konductor APIs require some form of identity. So we use a generated FPID if nothing else is present.
-    const shouldGenerateFpid = !hasValidEcid && !fpid;
-    const fpidValue = fpid ?? (shouldGenerateFpid ? randomUUID() : undefined);
-    if (fpidValue) {
-      identityMap.FPID = [
-        {
-          id: fpidValue,
-          authenticatedState: "ambiguous",
-          primary: !hasValidEcid,
-        },
-      ];
-    }
+    const identityMap = buildIdentityMap({ ecid, fpid });
 
     const requestBody = {
       events: [
@@ -137,30 +163,49 @@ export class AlloyServerInstance {
       ],
     };
 
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-      "x-gw-ims-org-id": this.config.orgId,
-      "x-api-key": this.config.clientId,
-    };
+    const headers = createEdgeRequestHeaders(accessToken, this.config);
 
     const result = await this.#aepEdgeClient.collect(requestBody, headers);
 
     if (!ecid) {
-      const handles = result.response?.body?.handle || [];
-      const identityResult = handles.find((h) => h.type === "identity:result");
-      if (identityResult?.payload) {
-        const ecidEntry = identityResult.payload.find(
-          (p) => p.namespace?.code === "ECID"
-        );
-        if (ecidEntry?.id) {
-          result.generatedEcid = ecidEntry.id;
-        }
-      }
+      attachGeneratedEcidFromResult(result);
+    }
+    return result;
+  }
+
+  async interact({ ecid, fpid, xdm = {}, data, query, meta }) {
+    const accessToken = await this.#accessTokenPromise;
+
+    const identityMap = buildIdentityMap({ ecid, fpid });
+    const event = {
+      xdm: {
+        timestamp: new Date().toISOString(),
+        identityMap,
+        ...xdm,
+      },
+    };
+
+    if (data) {
+      event.data = data;
     }
 
-    console.log("=== ALLOY SERVER COLLECT RESULT ===");
-    console.log("Result:", JSON.stringify(result, null, 2));
+    const requestBody = { event };
 
+    if (query) {
+      requestBody.query = query;
+    }
+
+    if (meta) {
+      requestBody.meta = meta;
+    }
+
+    const headers = createEdgeRequestHeaders(accessToken, this.config);
+
+    const result = await this.#aepEdgeClient.interact(requestBody, headers);
+
+    if (!ecid) {
+      attachGeneratedEcidFromResult(result);
+    }
     return result;
   }
 }

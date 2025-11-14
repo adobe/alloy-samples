@@ -142,7 +142,7 @@ mcpServer.registerTool(
     const meta = alloy.extractMetadataFromRequest(adobeMeta, { _meta });
 
     try {
-      const result = await alloy.collect({
+      const result = await alloy.interact({
         ecid: meta.ecid,
         fpid: meta.fpid,
         xdm: {
@@ -244,7 +244,7 @@ mcpServer.registerTool(
     const office = officeData[officeId];
 
     try {
-      const result = await alloy.collect({
+      const result = await alloy.interact({
         ecid: meta.ecid,
         fpid: meta.fpid,
         xdm: {
@@ -303,7 +303,7 @@ mcpServer.registerTool(
     const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
 
     try {
-      const result = await alloy.collect({
+      const result = await alloy.interact({
         ecid: meta.ecid,
         fpid: meta.fpid,
         xdm: {
