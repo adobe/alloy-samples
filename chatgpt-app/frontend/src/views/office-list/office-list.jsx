@@ -1,4 +1,4 @@
-import React, { StrictMode } from "react";
+import React, { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   defaultTheme,
@@ -13,6 +13,7 @@ import {
 } from "@adobe/react-spectrum";
 import "./office-list.css";
 import { useToolOutput, useWidgetState } from "../../openai-hooks";
+import { useAlloy } from "../../resources";
 
 const OfficeCard = ({ office }) => {
   const imageSize = 300;
@@ -70,6 +71,27 @@ const OfficeCard = ({ office }) => {
 const App = () => {
   /** @type {import("datastore").Office[]} */
   const output = useToolOutput();
+  const alloy = useAlloy();
+
+  useEffect(() => {
+    if (alloy && output?.offices) {
+      alloy("sendEvent", {
+        xdm: {
+          eventType: "web.webpagedetails.pageViews",
+          web: {
+            webPageDetails: {
+              name: "Office List",
+              pageViews: {
+                value: 1,
+              },
+            },
+          },
+        },
+      }).catch((error) => {
+        console.error("[alloy] Failed to send page view event:", error);
+      });
+    }
+  }, [alloy, output?.offices]);
 
   if (!output?.offices) {
     return (

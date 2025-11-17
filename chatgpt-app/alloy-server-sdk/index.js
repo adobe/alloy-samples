@@ -64,6 +64,10 @@ const attachGeneratedEcidFromResult = (result) => {
   }
 };
 
+/**
+ * Server-side Alloy SDK instance for Adobe Experience Platform Edge Network.
+ * For client-side integration, see frontend/src/resources.js which uses @adobe/alloy.
+ */
 export class AlloyServerInstance {
   /**
    * @typedef {z.infer<typeof InstanceConfigSchema>} InstanceConfig

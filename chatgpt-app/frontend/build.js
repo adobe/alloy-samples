@@ -2,6 +2,11 @@ import * as esbuild from "esbuild";
 import fg from "fast-glob";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import process from "node:process";
+import { configDotenv } from "dotenv";
+
+configDotenv({ path: ["../.env", "./.env"], quiet: true });
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +22,14 @@ const entryPoints = Object.fromEntries(
 
 console.log("Building entry points:", Object.keys(entryPoints));
 
+// Inject environment variables at build time (matching backend env var names)
+const define = {
+  "process.env.DATASTREAM_ID": JSON.stringify(process.env.DATASTREAM_ID || ""),
+  "process.env.ORG_ID": JSON.stringify(process.env.ORG_ID || ""),
+
+};
+
+/** @type {esbuild.BuildOptions} */
 const buildOptions = {
   entryPoints,
   bundle: true,
@@ -31,7 +44,8 @@ const buildOptions = {
   assetNames: "[name]",
   chunkNames: "[name]",
   minify: true,
-  sourcemap: false,
+  sourcemap: "inline",
+  define,
 };
 
 if (isWatch) {

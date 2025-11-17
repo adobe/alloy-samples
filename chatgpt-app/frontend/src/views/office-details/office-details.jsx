@@ -1,4 +1,4 @@
-import React, { StrictMode, useState } from "react";
+import React, { StrictMode, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Button,
@@ -16,13 +16,43 @@ import {
 } from "@adobe/react-spectrum";
 import "./office-details.css";
 import { useToolOutput, useTool } from "../../openai-hooks";
+import { useAlloy } from "../../resources";
 
 const App = () => {
   /** @type {import("datastore").Office} */
   const output = useToolOutput();
   const requestVisit = useTool("request-visit");
+  const alloy = useAlloy();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (alloy && output?.office) {
+      alloy("sendEvent", {
+        xdm: {
+          eventType: "web.webpagedetails.pageViews",
+          web: {
+            webPageDetails: {
+              name: `Office Details - ${output.office.name}`,
+              pageViews: {
+                value: 1,
+              },
+            },
+          },
+          _adobe: {
+            office: {
+              id: output.office.id,
+              name: output.office.name,
+              city: output.office.city,
+              country: output.office.country,
+            },
+          },
+        },
+      }).catch((error) => {
+        console.error("[alloy] Failed to send page view event:", error);
+      });
+    }
+  }, [alloy, output?.office]);
 
   if (!output?.office) {
     return (
@@ -47,6 +77,30 @@ const App = () => {
 
     try {
       await requestVisit({ officeId: office.id, email });
+
+      if (alloy) {
+        alloy("sendEvent", {
+          xdm: {
+            eventType: "office.visit.request",
+            web: {
+              webPageDetails: {
+                name: `Request Visit - ${office.name}`,
+              },
+            },
+            _adobe: {
+              office: {
+                id: office.id,
+                name: office.name,
+                city: office.city,
+                country: office.country,
+              },
+            },
+          },
+        }).catch((error) => {
+          console.error("[alloy] Failed to send visit request event:", error);
+        });
+      }
+
       ToastQueue.positive("Tour request submitted successfully!");
       setEmail("");
     } catch (error) {

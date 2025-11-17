@@ -13,12 +13,15 @@
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
+    "dotenv": "^17.2.3",
     "esbuild": "^0.25.12",
     "fast-glob": "^3.3.3"
   },
   "dependencies": {
+    "@adobe/alloy": "^2.30.0",
     "@adobe/react-spectrum": "^3.45.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^3.25.76"
   }
 }
