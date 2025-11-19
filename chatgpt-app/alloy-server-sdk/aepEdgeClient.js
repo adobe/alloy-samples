@@ -193,12 +193,6 @@ function createAepEdgeClient(
     })
       .then(convertHeadersToSimpleJson)
       .then(checkForErrors)
-      .then((response) => {
-        // We no longer update closure state here.
-        // The caller (AlloyServerInstance) is responsible for extracting and storing
-        // the cluster hint from the response handles (state:store).
-        return response;
-      })
       .then(prepareAepResponse(headers, requestBody))
       .then(logResult(`AEP EDGE REQUEST: ${requestUrl}`))
       .catch((err) => {

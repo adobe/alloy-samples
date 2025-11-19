@@ -2,11 +2,8 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createAepEdgeClient, getAepCookieName } from "./aepEdgeClient.js";
 import { createImsClient } from "./imsAuthentication.js";
-import { collect } from "./collection.js";
 import { StateStore } from "./stateStore.js";
 
-const generateEcid = () => randomUUID();
-const generateSessionId = () => randomUUID();
 const isDomainName = (val) => {
   // must be a valid domain name, without the protocol or path
   const url = new URL(`https://${val}`);
@@ -114,15 +111,7 @@ export class AlloyServerInstance {
     this.#accessTokenPromise = this.#imsClient.generateAccessToken();
   }
 
-  static RequestMetadataSchema = z.object({
-    sessionId: z
-      .literal(GENERATE)
-      .or(z.string().uuid())
-      .optional()
-      .describe(
-        "Prefer the prior session ID; use GENERATE only when none available."
-      ),
-  });
+  static RequestMetadataSchema = z.object({});
   get RequestMetadataSchema() {
     return AlloyServerInstance.RequestMetadataSchema;
   }
@@ -131,19 +120,15 @@ export class AlloyServerInstance {
    * @param {RequestMetadata} adobeMeta
    * @param {object} [options]
    * @param {object} [options._meta] MCP metadata object containing client context (e.g., openai/subject)
-   * @returns {RequestMetadata & { fpid?: string }}
+   * @returns {{ ecid?: string, fpid?: string }}
    */
   extractMetadataFromRequest(adobeMeta, { _meta } = {}) {
-    let { sessionId } = adobeMeta || {};
-    if (!sessionId || sessionId === GENERATE) {
-      sessionId = generateSessionId();
-    }
     const fpid = _meta?.["openai/subject"];
     // We use the FPID to look up the ECID in our state store
     // The frontend no longer sends us the ECID directly
     const ecid = this.#stateStore.getEcidForFpid(fpid);
 
-    return { sessionId, ecid, fpid };
+    return { ecid, fpid };
   }
 
   async collect({ ecid, fpid, xdm = {} }) {
