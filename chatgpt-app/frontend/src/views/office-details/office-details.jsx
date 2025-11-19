@@ -27,32 +27,17 @@ const App = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (alloy && output?.office) {
-      alloy("sendEvent", {
-        xdm: {
-          eventType: "web.webpagedetails.pageViews",
-          web: {
-            webPageDetails: {
-              name: `Office Details - ${output.office.name}`,
-              pageViews: {
-                value: 1,
-              },
-            },
-          },
-          _adobe: {
-            office: {
-              id: output.office.id,
-              name: output.office.name,
-              city: output.office.city,
-              country: output.office.country,
-            },
-          },
+    if (alloy && output?.handles) {
+      alloy("applyResponse", {
+        renderDecisions: true,
+        responseBody: {
+          handle: output.handles,
         },
       }).catch((error) => {
-        console.error("[alloy] Failed to send page view event:", error);
+        console.error("[alloy] Failed to apply response:", error);
       });
     }
-  }, [alloy, output?.office]);
+  }, [alloy, output?.handles]);
 
   if (!output?.office) {
     return (
@@ -76,28 +61,20 @@ const App = () => {
     setIsSubmitting(true);
 
     try {
-      await requestVisit({ officeId: office.id, email });
+      const result = await requestVisit({ officeId: office.id, email });
 
-      if (alloy) {
-        alloy("sendEvent", {
-          xdm: {
-            eventType: "office.visit.request",
-            web: {
-              webPageDetails: {
-                name: `Request Visit - ${office.name}`,
-              },
-            },
-            _adobe: {
-              office: {
-                id: office.id,
-                name: office.name,
-                city: office.city,
-                country: office.country,
-              },
-            },
+      // Apply any personalization/state returned by the tool
+      if (alloy && result?.structuredContent?.handles) {
+        alloy("applyResponse", {
+          renderDecisions: true,
+          responseBody: {
+            handle: result.structuredContent.handles,
           },
         }).catch((error) => {
-          console.error("[alloy] Failed to send visit request event:", error);
+          console.error(
+            "[alloy] Failed to apply response from visit request:",
+            error
+          );
         });
       }
 

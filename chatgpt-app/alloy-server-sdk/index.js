@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { createAepEdgeClient } from "./aepEdgeClient.js";
+import { createAepEdgeClient, getAepCookieName } from "./aepEdgeClient.js";
 import { createImsClient } from "./imsAuthentication.js";
 import { collect } from "./collection.js";
+import { StateStore } from "./stateStore.js";
 
 const generateEcid = () => randomUUID();
 const generateSessionId = () => randomUUID();
@@ -77,6 +78,7 @@ export class AlloyServerInstance {
   #aepEdgeClient = null;
   #imsClient = null;
   #accessTokenPromise = null;
+  #stateStore = new StateStore();
   static InstanceConfigSchema = z.object({
     edgeDomain: z
       .string()
@@ -101,7 +103,6 @@ export class AlloyServerInstance {
     this.config = AlloyServerInstance.InstanceConfigSchema.parse(config);
     this.#aepEdgeClient = createAepEdgeClient(
       this.config.datastreamId,
-      this.config.edgeRegion,
       this.config.edgeDomain
     );
     this.#imsClient = createImsClient(
@@ -117,15 +118,9 @@ export class AlloyServerInstance {
     sessionId: z
       .literal(GENERATE)
       .or(z.string().uuid())
-      .describe(
-        "Prefer the prior session ID; use GENERATE only when none available."
-      ),
-    ecid: z
-      .literal(GENERATE)
-      .or(z.string())
       .optional()
       .describe(
-        "Prefer the prior ECID; use GENERATE only when none available."
+        "Prefer the prior session ID; use GENERATE only when none available."
       ),
   });
   get RequestMetadataSchema() {
@@ -139,14 +134,15 @@ export class AlloyServerInstance {
    * @returns {RequestMetadata & { fpid?: string }}
    */
   extractMetadataFromRequest(adobeMeta, { _meta } = {}) {
-    let { sessionId, ecid } = adobeMeta;
+    let { sessionId } = adobeMeta || {};
     if (!sessionId || sessionId === GENERATE) {
       sessionId = generateSessionId();
     }
-    if (ecid === GENERATE) {
-      ecid = undefined;
-    }
     const fpid = _meta?.["openai/subject"];
+    // We use the FPID to look up the ECID in our state store
+    // The frontend no longer sends us the ECID directly
+    const ecid = this.#stateStore.getEcidForFpid(fpid);
+
     return { sessionId, ecid, fpid };
   }
 
@@ -169,11 +165,39 @@ export class AlloyServerInstance {
 
     const headers = createEdgeRequestHeaders(accessToken, this.config);
 
-    const result = await this.#aepEdgeClient.collect(requestBody, headers);
+    // Inject state store entries if available for this session (using ecid as key)
+    const stateEntries = this.#stateStore.toMetaEntries(ecid);
+    if (stateEntries.length > 0) {
+      requestBody.meta = requestBody.meta || {};
+      requestBody.meta.state = {
+        entries: stateEntries,
+      };
+    }
+
+    const clusterCookieName = getAepCookieName(this.config.orgId, "cluster");
+    const cluster = this.#stateStore.get(ecid).get(clusterCookieName);
+
+    const result = await this.#aepEdgeClient.collect(
+      requestBody,
+      headers,
+      cluster
+    );
 
     if (!ecid) {
       attachGeneratedEcidFromResult(result);
     }
+
+    // Persist any state handles returned by the server
+    const handles = result.response?.body?.handle || [];
+    // Use the final ECID (either original or generated) to store state
+    const finalEcid = ecid || result.generatedEcid;
+    if (finalEcid) {
+      this.#stateStore.update(finalEcid, handles);
+      if (fpid) {
+        this.#stateStore.setEcidForFpid(fpid, finalEcid);
+      }
+    }
+
     return result;
   }
 
@@ -203,13 +227,41 @@ export class AlloyServerInstance {
       requestBody.meta = meta;
     }
 
+    // Inject state store entries if available for this session (using ecid as key)
+    const stateEntries = this.#stateStore.toMetaEntries(ecid);
+    if (stateEntries.length > 0) {
+      requestBody.meta = requestBody.meta || {};
+      requestBody.meta.state = {
+        entries: stateEntries,
+      };
+    }
+
+    const clusterCookieName = getAepCookieName(this.config.orgId, "cluster");
+    const cluster = this.#stateStore.get(ecid).get(clusterCookieName);
+
     const headers = createEdgeRequestHeaders(accessToken, this.config);
 
-    const result = await this.#aepEdgeClient.interact(requestBody, headers);
+    const result = await this.#aepEdgeClient.interact(
+      requestBody,
+      headers,
+      cluster
+    );
 
     if (!ecid) {
       attachGeneratedEcidFromResult(result);
     }
+
+    // Persist any state handles returned by the server
+    const handles = result.response?.body?.handle || [];
+    // Use the final ECID (either original or generated) to store state
+    const finalEcid = ecid || result.generatedEcid;
+    if (finalEcid) {
+      this.#stateStore.update(finalEcid, handles);
+      if (fpid) {
+        this.#stateStore.setEcidForFpid(fpid, finalEcid);
+      }
+    }
+
     return result;
   }
 }

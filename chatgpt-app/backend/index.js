@@ -129,17 +129,15 @@ mcpServer.registerTool(
   "office-list",
   {
     title: "List offices",
-    inputSchema: {
-      adobeMeta: alloy.RequestMetadataSchema,
-    },
+    inputSchema: {},
     _meta: {
       "openai/outputTemplate": resourceAssets["office-list"].uri,
       "openai/toolInvocation/invoking": "Listing offices",
       "openai/toolInvocation/invoked": "Listed offices",
     },
   },
-  async ({ adobeMeta }, { _meta } = {}) => {
-    const meta = alloy.extractMetadataFromRequest(adobeMeta, { _meta });
+  async (_, { _meta } = {}) => {
+    const meta = alloy.extractMetadataFromRequest(null, { _meta });
 
     try {
       const result = await alloy.interact({
@@ -153,22 +151,40 @@ mcpServer.registerTool(
             },
           },
         },
+        query: {
+          personalization: {
+            decisionScopes: ["__view__"],
+          },
+        },
       });
       // Update ECID from response if Adobe generated one
       if (result.generatedEcid) {
         meta.ecid = result.generatedEcid;
       }
+      const handles = result.response?.body?.handle || [];
+      const relevantHandles = handles.filter(
+        (handle) =>
+          handle.type === "personalization:decisions" ||
+          handle.type === "state:store"
+      );
+      return {
+        structuredContent: {
+          offices: Object.values(officeData),
+          handles: relevantHandles,
+        },
+        content: [{ type: "text", text: "Displayed the list of offices." }],
+      };
     } catch (error) {
       console.error("Failed to collect analytics:", error);
+      // Even if analytics/personalization fails, return the content
+      return {
+        structuredContent: {
+          offices: Object.values(officeData),
+          handles: [],
+        },
+        content: [{ type: "text", text: "Displayed the list of offices." }],
+      };
     }
-
-    return {
-      structuredContent: {
-        offices: Object.values(officeData),
-        adobeMeta: meta,
-      },
-      content: [{ type: "text", text: "Displayed the list of offices." }],
-    };
   }
 );
 
@@ -210,7 +226,6 @@ mcpServer.registerTool(
     title: "Show details for a specific office",
     inputSchema: {
       officeId: OfficeIdSchema,
-      adobeMeta: alloy.RequestMetadataSchema,
     },
     _meta: {
       "openai/outputTemplate": resourceAssets["office-details"].uri,
@@ -221,8 +236,8 @@ mcpServer.registerTool(
   /** @param {object} params
    * @param {keyof typeof officeData} params.officeId
    */
-  async ({ officeId, adobeMeta }, { _meta } = {}) => {
-    const meta = alloy.extractMetadataFromRequest(adobeMeta, { _meta });
+  async ({ officeId }, { _meta } = {}) => {
+    const meta = alloy.extractMetadataFromRequest(null, { _meta });
     try {
       if (!(officeId in officeData)) {
         throw new Error(`Office with ID ${officeId} not found`);
@@ -243,6 +258,7 @@ mcpServer.registerTool(
     }
     const office = officeData[officeId];
 
+    let propositions = [];
     try {
       const result = await alloy.interact({
         ecid: meta.ecid,
@@ -263,23 +279,42 @@ mcpServer.registerTool(
             },
           },
         },
+        query: {
+          personalization: {
+            decisionScopes: ["__view__"],
+          },
+        },
       });
       if (result.generatedEcid) {
         meta.ecid = result.generatedEcid;
       }
+      const handles = result.response?.body?.handle || [];
+      const relevantHandles = handles.filter(
+        (handle) =>
+          handle.type === "personalization:decisions" ||
+          handle.type === "state:store"
+      );
+      return {
+        structuredContent: {
+          office,
+          handles: relevantHandles,
+        },
+        content: [
+          { type: "text", text: `Displayed details for office ${officeId}` },
+        ],
+      };
     } catch (error) {
       console.error("Failed to collect analytics:", error);
+      return {
+        structuredContent: {
+          office,
+          handles: [],
+        },
+        content: [
+          { type: "text", text: `Displayed details for office ${officeId}` },
+        ],
+      };
     }
-
-    return {
-      structuredContent: {
-        office,
-        adobeMeta: meta,
-      },
-      content: [
-        { type: "text", text: `Displayed details for office ${officeId}` },
-      ],
-    };
   }
 );
 
@@ -290,15 +325,14 @@ mcpServer.registerTool(
     inputSchema: {
       officeId: OfficeIdSchema,
       email: z.string().email().describe("The email address of the user"),
-      adobeMeta: alloy.RequestMetadataSchema,
     },
     _meta: {
       "openai/toolInvocation/invoking": "Requesting visit",
       "openai/toolInvocation/invoked": "Visit requested.",
     },
   },
-  async ({ officeId, adobeMeta }, { _meta } = {}) => {
-    const meta = alloy.extractMetadataFromRequest(adobeMeta, { _meta });
+  async ({ officeId, email }, { _meta } = {}) => {
+    const meta = alloy.extractMetadataFromRequest(null, { _meta });
     const office = officeData[officeId];
     const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
 
@@ -322,26 +356,48 @@ mcpServer.registerTool(
             },
           },
         },
+        query: {
+          personalization: {
+            decisionScopes: ["__view__"],
+          },
+        },
       });
       // Update ECID from response if Adobe generated one
       if (result.generatedEcid) {
         meta.ecid = result.generatedEcid;
       }
+      const handles = result.response?.body?.handle || [];
+      const relevantHandles = handles.filter(
+        (handle) =>
+          handle.type === "personalization:decisions" ||
+          handle.type === "state:store"
+      );
+
+      return {
+        structuredContent: {
+          handles: relevantHandles,
+        },
+        content: [
+          {
+            type: "text",
+            text: `Email sent! Message: "${emailMessage}"`,
+          },
+        ],
+      };
     } catch (error) {
       console.error("Failed to collect analytics:", error);
-    }
-
-    return {
-      structuredContent: {
-        adobeMeta: meta,
-      },
-      content: [
-        {
-          type: "text",
-          text: `Email sent! Message: "${emailMessage}"`,
+      return {
+        structuredContent: {
+          handles: [],
         },
-      ],
-    };
+        content: [
+          {
+            type: "text",
+            text: `Email sent! Message: "${emailMessage}"`,
+          },
+        ],
+      };
+    }
   }
 );
 

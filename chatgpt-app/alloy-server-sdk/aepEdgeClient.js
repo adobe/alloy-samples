@@ -150,20 +150,19 @@ function extractEdgeCluster(
  */
 function createAepEdgeClient(
   dataStreamId,
-  aepEdgeCluster = "",
   edgeDomain = AEP_EDGE_DOMAIN,
   debugValidationSession = undefined,
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD
 ) {
-  function edgeRequest(endpoint, requestBody, requestHeaders = {}) {
+  function edgeRequest(endpoint, requestBody, requestHeaders = {}, edgeCluster = "") {
     const requestId = uuidv4();
 
     let domain = edgeDomain;
-    let region = aepEdgeCluster;
+    let region = edgeCluster;
 
     if (edgeDomain === "server.adobedc.net") {
-      if (aepEdgeCluster) {
-        domain = `${aepEdgeCluster}.${edgeDomain}`;
+      if (edgeCluster) {
+        domain = `${edgeCluster}.${edgeDomain}`;
       }
       region = "";
     }
@@ -195,7 +194,9 @@ function createAepEdgeClient(
       .then(convertHeadersToSimpleJson)
       .then(checkForErrors)
       .then((response) => {
-        aepEdgeCluster = extractEdgeCluster(response, aepEdgeCluster);
+        // We no longer update closure state here.
+        // The caller (AlloyServerInstance) is responsible for extracting and storing
+        // the cluster hint from the response handles (state:store).
         return response;
       })
       .then(prepareAepResponse(headers, requestBody))
@@ -205,12 +206,12 @@ function createAepEdgeClient(
       });
   }
 
-  function interact(requestBody, requestHeaders = {}) {
-    return edgeRequest("interact", requestBody, requestHeaders);
+  function interact(requestBody, requestHeaders = {}, edgeCluster = "") {
+    return edgeRequest("interact", requestBody, requestHeaders, edgeCluster);
   }
 
-  function collect(requestBody, requestHeaders = {}) {
-    return edgeRequest("collect", requestBody, requestHeaders);
+  function collect(requestBody, requestHeaders = {}, edgeCluster = "") {
+    return edgeRequest("collect", requestBody, requestHeaders, edgeCluster);
   }
 
   function getPropositions({

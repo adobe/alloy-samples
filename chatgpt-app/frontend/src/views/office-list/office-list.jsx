@@ -74,24 +74,17 @@ const App = () => {
   const alloy = useAlloy();
 
   useEffect(() => {
-    if (alloy && output?.offices) {
-      alloy("sendEvent", {
-        xdm: {
-          eventType: "web.webpagedetails.pageViews",
-          web: {
-            webPageDetails: {
-              name: "Office List",
-              pageViews: {
-                value: 1,
-              },
-            },
-          },
+    if (alloy && output?.handles) {
+      alloy("applyResponse", {
+        renderDecisions: true,
+        responseBody: {
+          handle: output.handles,
         },
       }).catch((error) => {
-        console.error("[alloy] Failed to send page view event:", error);
+        console.error("[alloy] Failed to apply response:", error);
       });
     }
-  }, [alloy, output?.offices]);
+  }, [alloy, output?.handles]);
 
   if (!output?.offices) {
     return (
