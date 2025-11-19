@@ -111,27 +111,11 @@ export class AlloyServerInstance {
     this.#accessTokenPromise = this.#imsClient.generateAccessToken();
   }
 
-  static RequestMetadataSchema = z.object({});
-  get RequestMetadataSchema() {
-    return AlloyServerInstance.RequestMetadataSchema;
-  }
-  /**
-   * @typedef {z.infer<typeof this.RequestMetadataSchema>} RequestMetadata
-   * @param {RequestMetadata} adobeMeta
-   * @param {object} [options]
-   * @param {object} [options._meta] MCP metadata object containing client context (e.g., openai/subject)
-   * @returns {{ ecid?: string, fpid?: string }}
-   */
-  extractMetadataFromRequest(adobeMeta, { _meta } = {}) {
-    const fpid = _meta?.["openai/subject"];
-    // We use the FPID to look up the ECID in our state store
-    // The frontend no longer sends us the ECID directly
-    const ecid = this.#stateStore.getEcidForFpid(fpid);
-
-    return { ecid, fpid };
-  }
-
   async collect({ ecid, fpid, xdm = {} }) {
+    if (!ecid && fpid) {
+      ecid = this.#stateStore.getEcidForFpid(fpid);
+    }
+
     const accessToken = await this.#accessTokenPromise;
 
     const identityMap = buildIdentityMap({ ecid, fpid });
@@ -187,6 +171,10 @@ export class AlloyServerInstance {
   }
 
   async interact({ ecid, fpid, xdm = {}, data, query, meta }) {
+    if (!ecid && fpid) {
+      ecid = this.#stateStore.getEcidForFpid(fpid);
+    }
+
     const accessToken = await this.#accessTokenPromise;
 
     const identityMap = buildIdentityMap({ ecid, fpid });

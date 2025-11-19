@@ -137,12 +137,11 @@ mcpServer.registerTool(
     },
   },
   async (_, { _meta } = {}) => {
-    const meta = alloy.extractMetadataFromRequest(null, { _meta });
+    const fpid = _meta?.["openai/subject"];
 
     try {
       const result = await alloy.interact({
-        ecid: meta.ecid,
-        fpid: meta.fpid,
+        fpid,
         xdm: {
           eventType: "office.list.view",
           web: {
@@ -237,7 +236,7 @@ mcpServer.registerTool(
    * @param {keyof typeof officeData} params.officeId
    */
   async ({ officeId }, { _meta } = {}) => {
-    const meta = alloy.extractMetadataFromRequest(null, { _meta });
+    const fpid = _meta?.["openai/subject"];
     try {
       if (!(officeId in officeData)) {
         throw new Error(`Office with ID ${officeId} not found`);
@@ -245,9 +244,7 @@ mcpServer.registerTool(
     } catch (error) {
       console.error(error);
       return {
-        structuredContent: {
-          adobeMeta: meta,
-        },
+        structuredContent: {},
         content: [
           {
             type: "text",
@@ -261,8 +258,7 @@ mcpServer.registerTool(
     let propositions = [];
     try {
       const result = await alloy.interact({
-        ecid: meta.ecid,
-        fpid: meta.fpid,
+        fpid,
         xdm: {
           eventType: "office.details.view",
           web: {
@@ -286,7 +282,7 @@ mcpServer.registerTool(
         },
       });
       if (result.generatedEcid) {
-        meta.ecid = result.generatedEcid;
+        // ECID is handled internally
       }
       const handles = result.response?.body?.handle || [];
       const relevantHandles = handles.filter(
@@ -332,14 +328,13 @@ mcpServer.registerTool(
     },
   },
   async ({ officeId, email }, { _meta } = {}) => {
-    const meta = alloy.extractMetadataFromRequest(null, { _meta });
+    const fpid = _meta?.["openai/subject"];
     const office = officeData[officeId];
     const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
 
     try {
       const result = await alloy.interact({
-        ecid: meta.ecid,
-        fpid: meta.fpid,
+        fpid,
         xdm: {
           eventType: "office.visit.request",
           web: {
