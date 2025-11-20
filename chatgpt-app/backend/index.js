@@ -145,6 +145,28 @@ mcpServer.registerTool(
   {
     title: "List offices",
     inputSchema: {},
+    // Authentication Notes (Hypothetical):
+    // If we implemented OAuth 2.1, we could extract the following metadata from the access token:
+    // - User Identity (sub): Unique identifier for the user.
+    // - Scopes (scope): Permissions granted (e.g., 'offices:read').
+    // - Client ID (client_id): Identifies the ChatGPT client instance.
+    // - Issuer (iss) & Audience (aud): Verifies token origin and intended target.
+    //
+    // FPID Generation:
+    // 1. Extract the 'sub' claim from the verified JWT.
+    // 2. Hash this value to generate a deterministic UUID.
+    // 3. Use this UUID as the FPID in the IdentityMap, setting authenticatedState to 'authenticated'.
+    //
+    // Email Extraction:
+    // 1. Request the 'email' scope in securitySchemes.
+    // 2. Access the 'email' claim from the decoded access token or ID token.
+    // 3. Use this trusted email instead of the user input to prevent spoofing.
+    //
+    // Configuration would include:
+    // securitySchemes: [
+    //   { type: "noauth" }, // Optional auth
+    //   { type: "oauth2", scopes: ["offices:read", "email"] }
+    // ],
     _meta: {
       "openai/outputTemplate": resourceAssets["office-list"].uri,
       "openai/toolInvocation/invoking": "Listing offices",
@@ -247,6 +269,24 @@ mcpServer.registerTool(
     inputSchema: {
       officeId: OfficeIdSchema,
     },
+    // Authentication Notes (Hypothetical):
+    // With OAuth 2.1, we could validate:
+    // - Token Expiry (exp): Ensure the session is active.
+    // - Authorization: Verify 'offices:read' scope is present.
+    // - User Context: Use the 'sub' claim to fetch user preferences or history.
+    //
+    // FPID Generation:
+    // 1. Extract the 'sub' claim from the verified JWT.
+    // 2. Hash this value to generate a deterministic UUID.
+    // 3. Use this UUID as the FPID in the IdentityMap, setting authenticatedState to 'authenticated'.
+    //
+    // Email Extraction:
+    // 1. Request the 'email' scope in securitySchemes.
+    // 2. Access the 'email' claim from the decoded access token or ID token.
+    // 3. Use this trusted email instead of the user input to prevent spoofing.
+    //
+    // Configuration:
+    // securitySchemes: [{ type: "oauth2", scopes: ["offices:read", "email"] }],
     _meta: {
       "openai/outputTemplate": resourceAssets["office-details"].uri,
       "openai/toolInvocation/invoking": "Loading office details",
@@ -345,6 +385,25 @@ mcpServer.registerTool(
       officeId: OfficeIdSchema,
       email: z.string().email().describe("The email address of the user"),
     },
+    // Authentication Notes (Hypothetical):
+    // This write action is a prime candidate for mandatory authentication.
+    // We could extract:
+    // - Verified Email: Potentially from ID token claims if 'email' scope is granted, avoiding manual input.
+    // - User Identity: Confirm who is requesting the visit.
+    // - Replay Protection: Via 'jti' (JWT ID) and nonce.
+    //
+    // FPID Generation:
+    // 1. Extract the 'sub' claim from the verified JWT.
+    // 2. Hash this value to generate a deterministic UUID.
+    // 3. Use this UUID as the FPID in the IdentityMap, setting authenticatedState to 'authenticated'.
+    //
+    // Email Extraction:
+    // 1. Request the 'email' scope in securitySchemes.
+    // 2. Access the 'email' claim from the decoded access token or ID token.
+    // 3. Use this trusted email instead of the user input to prevent spoofing.
+    //
+    // Configuration:
+    // securitySchemes: [{ type: "oauth2", scopes: ["visit:request", "email"] }],
     _meta: {
       "openai/toolInvocation/invoking": "Requesting visit",
       "openai/toolInvocation/invoked": "Visit requested.",
