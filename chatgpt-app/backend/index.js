@@ -5,14 +5,16 @@ import { AlloyServerInstance } from "alloy-server-sdk";
 import { OfficeIdSchema, officeData } from "datastore";
 import { configDotenv } from "dotenv";
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 configDotenv({ path: ["../.env", "./.env"], quiet: true });
+
+const FALLBACK_SESSION_ID = randomUUID();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -93,6 +95,19 @@ const resourceAssets = Object.freeze({
   "office-details": createResourceAssets("office-details"),
 });
 
+const buildIdentityMap = (fpid) => {
+  if (!fpid) return undefined;
+  return {
+    FPID: [
+      {
+        id: fpid,
+        authenticatedState: "ambiguous",
+        primary: true,
+      },
+    ],
+  };
+};
+
 mcpServer.registerResource(
   "office-list-widget",
   resourceAssets["office-list"].uri,
@@ -137,11 +152,13 @@ mcpServer.registerTool(
     },
   },
   async (_, { _meta } = {}) => {
-    const fpid = _meta?.["openai/subject"];
+    const fpid = _meta?.["openai/subject"] || FALLBACK_SESSION_ID;
+    const identityMap = buildIdentityMap(fpid);
 
     try {
-      const result = await alloy.interact({
-        fpid,
+      const result = await alloy.sendEvent({
+        identityMap,
+        sessionId: fpid,
         xdm: {
           eventType: "office.list.view",
           web: {
@@ -169,7 +186,9 @@ mcpServer.registerTool(
       return {
         structuredContent: {
           offices: Object.values(officeData),
-          handles: relevantHandles,
+          _adobe: {
+            handles: relevantHandles,
+          }
         },
         content: [{ type: "text", text: "Displayed the list of offices." }],
       };
@@ -179,7 +198,9 @@ mcpServer.registerTool(
       return {
         structuredContent: {
           offices: Object.values(officeData),
-          handles: [],
+            _adobe: {
+              handles: [],
+            }
         },
         content: [{ type: "text", text: "Displayed the list of offices." }],
       };
@@ -236,7 +257,7 @@ mcpServer.registerTool(
    * @param {keyof typeof officeData} params.officeId
    */
   async ({ officeId }, { _meta } = {}) => {
-    const fpid = _meta?.["openai/subject"];
+    const fpid = _meta?.["openai/subject"] || FALLBACK_SESSION_ID;
     try {
       if (!(officeId in officeData)) {
         throw new Error(`Office with ID ${officeId} not found`);
@@ -254,11 +275,12 @@ mcpServer.registerTool(
       };
     }
     const office = officeData[officeId];
+    const identityMap = buildIdentityMap(fpid);
 
-    let propositions = [];
     try {
-      const result = await alloy.interact({
-        fpid,
+      const result = await alloy.sendEvent({
+        identityMap,
+        sessionId: fpid,
         xdm: {
           eventType: "office.details.view",
           web: {
@@ -281,9 +303,6 @@ mcpServer.registerTool(
           },
         },
       });
-      if (result.generatedEcid) {
-        // ECID is handled internally
-      }
       const handles = result.response?.body?.handle || [];
       const relevantHandles = handles.filter(
         (handle) =>
@@ -293,7 +312,9 @@ mcpServer.registerTool(
       return {
         structuredContent: {
           office,
-          handles: relevantHandles,
+          _adobe: {
+            handles: relevantHandles,
+          }
         },
         content: [
           { type: "text", text: `Displayed details for office ${officeId}` },
@@ -304,7 +325,9 @@ mcpServer.registerTool(
       return {
         structuredContent: {
           office,
-          handles: [],
+          _adobe: {
+            handles: [],
+          }
         },
         content: [
           { type: "text", text: `Displayed details for office ${officeId}` },
@@ -328,13 +351,15 @@ mcpServer.registerTool(
     },
   },
   async ({ officeId, email }, { _meta } = {}) => {
-    const fpid = _meta?.["openai/subject"];
+    const fpid = _meta?.["openai/subject"] || FALLBACK_SESSION_ID;
     const office = officeData[officeId];
     const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
+    const identityMap = buildIdentityMap(fpid);
 
     try {
-      const result = await alloy.interact({
-        fpid,
+      const result = await alloy.sendEvent({
+        identityMap,
+        sessionId: fpid,
         xdm: {
           eventType: "office.visit.request",
           web: {
@@ -357,10 +382,6 @@ mcpServer.registerTool(
           },
         },
       });
-      // Update ECID from response if Adobe generated one
-      if (result.generatedEcid) {
-        meta.ecid = result.generatedEcid;
-      }
       const handles = result.response?.body?.handle || [];
       const relevantHandles = handles.filter(
         (handle) =>
@@ -370,7 +391,9 @@ mcpServer.registerTool(
 
       return {
         structuredContent: {
-          handles: relevantHandles,
+          _adobe: {
+            handles: relevantHandles,
+          }
         },
         content: [
           {
@@ -383,7 +406,9 @@ mcpServer.registerTool(
       console.error("Failed to collect analytics:", error);
       return {
         structuredContent: {
-          handles: [],
+          _adobe: {
+            handles: [],
+          }
         },
         content: [
           {

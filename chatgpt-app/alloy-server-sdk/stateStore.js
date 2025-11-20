@@ -1,20 +1,19 @@
 export class StateStore {
   #store = new Map();
-  #fpidToEcid = new Map();
 
   /**
-   * Updates the state store with new handles for a given ECID.
-   * @param {string} ecid
+   * Updates the state store with new handles for a given session ID.
+   * @param {string} sessionId
    * @param {Array} handles
    */
-  update(ecid, handles) {
-    if (!ecid) return;
+  update(sessionId, handles) {
+    if (!sessionId) return;
     const stateStoreHandle = handles.find((h) => h.type === "state:store");
     if (stateStoreHandle?.payload) {
-      if (!this.#store.has(ecid)) {
-        this.#store.set(ecid, new Map());
+      if (!this.#store.has(sessionId)) {
+        this.#store.set(sessionId, new Map());
       }
-      const sessionStore = this.#store.get(ecid);
+      const sessionStore = this.#store.get(sessionId);
       for (const item of stateStoreHandle.payload) {
         // item.maxAge is in seconds
         const expiresAt = Date.now() + item.maxAge * 1000;
@@ -24,51 +23,31 @@ export class StateStore {
   }
 
   /**
-   * Associates an FPID with an ECID
-   * @param {string} fpid
-   * @param {string} ecid
-   */
-  setEcidForFpid(fpid, ecid) {
-    if (fpid && ecid) {
-      this.#fpidToEcid.set(fpid, ecid);
-    }
-  }
-
-  /**
-   * Gets the ECID associated with an FPID
-   * @param {string} fpid
-   * @returns {string | undefined}
-   */
-  getEcidForFpid(fpid) {
-    return this.#fpidToEcid.get(fpid);
-  }
-
-  /**
    * Manually sets a value in the store.
-   * @param {string} ecid
+   * @param {string} sessionId
    * @param {string} key
    * @param {string} value
    * @param {number} [ttl=1800] Time to live in seconds (default 30 mins)
    */
-  set(ecid, key, value, ttl = 1800) {
-    if (!ecid) return;
-    if (!this.#store.has(ecid)) {
-      this.#store.set(ecid, new Map());
+  set(sessionId, key, value, ttl = 1800) {
+    if (!sessionId) return;
+    if (!this.#store.has(sessionId)) {
+      this.#store.set(sessionId, new Map());
     }
-    const sessionStore = this.#store.get(ecid);
+    const sessionStore = this.#store.get(sessionId);
     const expiresAt = Date.now() + ttl * 1000;
     sessionStore.set(key, { value, expiresAt });
   }
 
   /**
-   * Retrieves the stored state for a given ECID.
+   * Retrieves the stored state for a given session ID.
    * Removes expired items.
-   * @param {string} ecid
+   * @param {string} sessionId
    * @returns {Map<string, string>} Map of key-value pairs for the session
    */
-  get(ecid) {
-    if (!ecid || !this.#store.has(ecid)) return new Map();
-    const sessionStore = this.#store.get(ecid);
+  get(sessionId) {
+    if (!sessionId || !this.#store.has(sessionId)) return new Map();
+    const sessionStore = this.#store.get(sessionId);
     const result = new Map();
     const now = Date.now();
 
@@ -84,11 +63,11 @@ export class StateStore {
 
   /**
    * Formats the stored state as meta entries for the Edge Network request.
-   * @param {string} ecid
+   * @param {string} sessionId
    * @returns {Array<{key: string, value: string}>}
    */
-  toMetaEntries(ecid) {
-    const sessionState = this.get(ecid);
+  toMetaEntries(sessionId) {
+    const sessionState = this.get(sessionId);
     const entries = [];
     for (const [key, value] of sessionState.entries()) {
       entries.push({ key, value });

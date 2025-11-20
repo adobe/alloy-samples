@@ -27,17 +27,17 @@ const App = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (alloy && output?.handles) {
+    if (alloy && output?._adobe?.handles) {
       alloy("applyResponse", {
         renderDecisions: true,
         responseBody: {
-          handle: output.handles,
+          handle: output._adobe.handles,
         },
       }).catch((error) => {
         console.error("[alloy] Failed to apply response:", error);
       });
     }
-  }, [alloy, output?.handles]);
+  }, [alloy, output?._adobe?.handles]);
 
   if (!output?.office) {
     return (
