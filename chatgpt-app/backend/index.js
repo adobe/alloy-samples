@@ -108,6 +108,12 @@ const buildIdentityMap = (fpid) => {
   };
 };
 
+const createCommonXdmFields = () => ({
+  _id: randomUUID(),
+  eventMergeId: randomUUID(),
+  producedBy: "chatgpt-app",
+});
+
 mcpServer.registerResource(
   "office-list-widget",
   resourceAssets["office-list"].uri,
@@ -182,12 +188,8 @@ mcpServer.registerTool(
         identityMap,
         sessionId: fpid,
         xdm: {
+          ...createCommonXdmFields(),
           eventType: "office.list.view",
-          web: {
-            webPageDetails: {
-              name: "Office List",
-            },
-          },
         },
         query: {
           personalization: {
@@ -195,10 +197,6 @@ mcpServer.registerTool(
           },
         },
       });
-      // Update ECID from response if Adobe generated one
-      if (result.generatedEcid) {
-        meta.ecid = result.generatedEcid;
-      }
       const handles = result.response?.body?.handle || [];
       const relevantHandles = handles.filter(
         (handle) =>
@@ -210,7 +208,7 @@ mcpServer.registerTool(
           offices: Object.values(officeData),
           _adobe: {
             handles: relevantHandles,
-          }
+          },
         },
         content: [{ type: "text", text: "Displayed the list of offices." }],
       };
@@ -220,9 +218,9 @@ mcpServer.registerTool(
       return {
         structuredContent: {
           offices: Object.values(officeData),
-            _adobe: {
-              handles: [],
-            }
+          _adobe: {
+            handles: [],
+          },
         },
         content: [{ type: "text", text: "Displayed the list of offices." }],
       };
@@ -322,24 +320,19 @@ mcpServer.registerTool(
         identityMap,
         sessionId: fpid,
         xdm: {
+          ...createCommonXdmFields(),
           eventType: "office.details.view",
-          web: {
-            webPageDetails: {
-              name: `Office Details - ${office.name}`,
+          details: {
+            _unifiedJsLab: {
+              details: {
+                officeId: officeId,
+              },
             },
           },
-          _adobe: {
-            office: {
-              id: officeId,
-              name: office.name,
-              city: office.city,
-              country: office.country,
+          query: {
+            personalization: {
+              decisionScopes: ["__view__"],
             },
-          },
-        },
-        query: {
-          personalization: {
-            decisionScopes: ["__view__"],
           },
         },
       });
@@ -354,7 +347,7 @@ mcpServer.registerTool(
           office,
           _adobe: {
             handles: relevantHandles,
-          }
+          },
         },
         content: [
           { type: "text", text: `Displayed details for office ${officeId}` },
@@ -367,7 +360,7 @@ mcpServer.registerTool(
           office,
           _adobe: {
             handles: [],
-          }
+          },
         },
         content: [
           { type: "text", text: `Displayed details for office ${officeId}` },
@@ -420,18 +413,17 @@ mcpServer.registerTool(
         identityMap,
         sessionId: fpid,
         xdm: {
+          ...createCommonXdmFields(),
           eventType: "office.visit.request",
-          web: {
-            webPageDetails: {
-              name: `Request Visit - ${office.name}`,
-            },
-          },
-          _adobe: {
-            office: {
-              id: officeId,
-              name: office.name,
-              city: office.city,
-              country: office.country,
+          _unifiedJsLab: {
+            details: {
+              officeId: officeId,
+              email: Buffer.from(
+                await crypto.subtle.digest(
+                  "SHA-256",
+                  new TextEncoder().encode(email)
+                )
+              ).toString("hex"),
             },
           },
         },
@@ -452,7 +444,7 @@ mcpServer.registerTool(
         structuredContent: {
           _adobe: {
             handles: relevantHandles,
-          }
+          },
         },
         content: [
           {
@@ -467,7 +459,7 @@ mcpServer.registerTool(
         structuredContent: {
           _adobe: {
             handles: [],
-          }
+          },
         },
         content: [
           {
