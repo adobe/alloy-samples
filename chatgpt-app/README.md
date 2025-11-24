@@ -46,6 +46,28 @@ A hybrid implementation is preferred because for a few reasons:
 2. The MCP specification for backend is more well-defined and is less likely to change-[the proposal for frontend MCP apps was only introduced in November 2025 and has yet to be finalized.](http://blog.modelcontextprotocol.io/posts/2025-11-21-mcp-apps/).
 3. A backend allows us to target multiple MCP clients (Claude, Cursor, Gemini, etc) instead of just ChatGPT.
 
+## Development/Usage
+
+1. Install dependencies: `pnpm install`
+2. Set up the environment variables: `cp .env.example .env` and fill in the values, including IMS token (for server-to-server auth) and datastream ID. All fields are required.
+3. Start dev server in the `chatgpt-app` directory: `pnpm run dev`.
+4. Expose the dev server to the public internet. I used [`ngrok`](https://ngrok.com/). `ngrok http 3000`.
+5. Log into ChatGPT with at least a "Plus" plan. 
+6. Open Settings -> Apps & Connectors -> Advanced Settings (bottom of the page) -> Developer Mode.
+7. Go back to "Apps & Connectors" -> Create and add the details of the dev server. Use your ngrok URL + "/mcp" as the URL. Select "No Authentication". Fill out the other fields and click "Create".
+8. Try out the app in a new chat.
+
+Example usage:
+
+> Use the Adobe Office Information tool to show me the details about the office that is most pet friendly.
+
+9. Observe the output log of your dev server. See the tool calls come in. Real data should be sent to the edge.
+
+## Example AEP dataset schema
+
+<img width="357" height="652" alt="image" src="https://github.com/user-attachments/assets/67ac03bd-a97d-41f5-bacc-3fc9ab9942b6" />
+
+
 ## Additional Documentation
 
 * [Apps SDK overview & guides](https://developers.openai.com/apps-sdk) — general reference for defining MCP servers, tools, prompts, and widgets for ChatGPT, organized around the Plan (research use cases), Build (MCP server + tools + widget runtime), and Deploy stages.
