@@ -11,6 +11,106 @@ Follow the [Apps SDK quickstart](https://developers.openai.com/apps-sdk/quicksta
 *   **`frontend`**: A React application built with Adobe React Spectrum. It renders the UI widgets (like the office list) inside ChatGPT's sandbox and handles the client-side application of personalization decisions, following the [custom UX guidance](https://developers.openai.com/apps-sdk/build/custom-ux).
 *   **`backend`**: A Node.js application using Hono that serves as the Model Context Protocol (MCP) server (built with the [TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)). It exposes the [Apps SDK tools](https://developers.openai.com/apps-sdk/plan/tools) (`office-list`, `office-details`, `request-visit`) to ChatGPT and orchestrates the connection to Adobe Edge.
 
+## High-level dataflow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant ChatGPT
+    participant Frontend as ChatGPT App<br>(Frontend Widget)
+    participant Backend as MCP Server<br>(Backend)
+    participant Edge as AEP Edge Network
+    
+    Note over Backend,Edge: App authenticates with Adobe
+    
+    User->>ChatGPT: "Show me the most pet-friendly Adobe office"
+    
+    Note over ChatGPT: Understands intent:<br>"List all offices first"
+    
+    ChatGPT->>Backend: Request office list
+    
+    Backend->>Edge: ✓ Track "office list viewed" event<br>✓ Request personalization content<br>✓ Maintain user identity (FPID → ECID)
+    Edge-->>Backend: ✓ Analytics recorded<br>✓ Personalized content returned<br>✓ User identity established
+    
+    Backend-->>ChatGPT: Office data + personalization
+    
+    ChatGPT->>Frontend: Display offices with personalization
+    
+    Note over Frontend: Shows list of offices<br>Applies personalized content<br>(e.g., targeted banners, recommendations)
+    
+    Frontend-->>User: Interactive office list displayed
+    
+    Note over ChatGPT: Analyzes data:<br>"Seattle is pet-friendly"
+    
+    ChatGPT->>Backend: Request Seattle office details
+    
+    Backend->>Edge: ✓ Track "office details viewed" event<br>✓ Include office ID (Seattle)<br>✓ Request personalization content<br>✓ Continue same user session
+    Edge-->>Backend: ✓ Analytics recorded<br>✓ Personalized content returned<br>✓ User journey tracked
+    
+    Backend-->>ChatGPT: Seattle office details + personalization
+    
+    ChatGPT->>Frontend: Display Seattle office with personalization
+    
+    Note over Frontend: Shows detailed view with:<br>- Office information<br>- Personalized recommendations<br>- Request tour form
+    
+    Frontend-->>User: Seattle office details displayed
+    
+    ChatGPT-->>User: "The Seattle office is the most pet-friendly!<br>It features pet-friendly amenities and is located<br>in downtown Seattle."
+    Note over User,Edge: ✓ Complete user journey tracked in Adobe Analytics<br>✓ Cross-session personalization enabled<br>✓ Real-time behavioral data captured
+```
+
+## Technical dataflow
+```mermaid
+sequenceDiagram
+    actor User
+    participant ChatGPT
+    participant Frontend as ChatGPT App<br>(Frontend Widget)
+    participant Backend as MCP Server<br>(Backend)
+    participant IMS as Adobe IMS
+    participant Edge as AEP Edge Network
+    
+    Note over Backend,IMS: Initial Authentication
+    Backend->>IMS: Client credentials auth request
+    IMS-->>Backend: Access token
+    
+    User->>ChatGPT: "Use the Adobe Office Information tool to show me<br>the details about the office that is most pet friendly"
+    
+    Note over ChatGPT: Invokes office_list tool
+    ChatGPT->>Backend: MCP tool call: office_list<br>(includes openai/subject as FPID)
+    
+    Note over Backend: Backend creates IdentityMap with FPID<br>and retrieves cluster hint from StateStore
+    Backend->>Edge: POST /interact<br>- Authorization: Bearer {access_token}<br>- identityMap: {FPID}<br>- xdm: {eventType: "office.list.view"}<br>- query: {personalization: {decisionScopes: ["__view__"]}}<br>- meta: {state: {entries: [cluster, ECID]}}
+    
+    Edge-->>Backend: Response with handles:<br>- state:store (ECID, cluster hint)<br>- personalization:decisions<br>- identity:result
+    
+    Note over Backend: StateStore persists ECID & cluster hint<br>keyed by session ID (FPID)
+    Backend-->>ChatGPT: structuredContent:<br>- offices: [...]<br>- _adobe: {handles: [...]}<br>content: "Displayed the list of offices."
+    
+    ChatGPT->>Frontend: Render office-list-widget with:<br>- offices data<br>- _adobe.handles
+    
+    Note over Frontend: Widget calls alloy("applyResponse", {<br>  renderDecisions: true,<br>  responseBody: {handle: _adobe.handles}<br>})
+    Frontend->>Frontend: Alloy processes handles:<br>- Stores ECID in cookies<br>- Renders personalizations<br>- Displays office list
+    
+    Note over ChatGPT: Analyzes offices array from structuredContent,<br>identifies "Seattle" as pet-friendly<br>(amenities includes "Pet Friendly")
+    
+    ChatGPT->>Backend: MCP tool call: office-details<br>{officeId: "seattle"}<br>(includes openai/subject as FPID)
+    
+    Note over Backend: Retrieves ECID & cluster from StateStore<br>using FPID as session key<br>Fetches office data from datastore
+    Backend->>Edge: POST /interact<br>- Authorization: Bearer {access_token}<br>- identityMap: {FPID}<br>- xdm: {eventType: "office.details.view",<br>        _unifiedJsLab: {details: {officeId: "seattle"}},<br>        query: {personalization: {decisionScopes: ["__view__"]}}}<br>- meta: {state: {entries: [cluster, ECID]}}
+    
+    Edge-->>Backend: Response with handles:<br>- state:store (updated state)<br>- personalization:decisions<br>- identity:result
+    
+    Note over Backend: StateStore updates session state<br>Filters relevant handles
+    Backend-->>ChatGPT: structuredContent:<br>- office: {id: "seattle", name: "Seattle", ...}<br>- _adobe: {handles: [...]}<br>content: "Displayed details for office seattle"
+    
+    ChatGPT->>Frontend: Render office-details-widget with:<br>- office data<br>- _adobe.handles
+    
+    Note over Frontend: Widget calls alloy("applyResponse", {<br>  renderDecisions: true,<br>  responseBody: {handle: _adobe.handles}<br>})
+    Frontend->>Frontend: Alloy processes handles:<br>- Updates ECID cookies<br>- Renders personalizations<br>- Displays office details with image,<br>  amenities, and "Request Tour" form
+    
+    ChatGPT-->>User: "The Seattle office is the most pet-friendly!<br>It features [amenities] and is located at [location]."<br>[Shows office-details-widget]
+```
+
 ## Backend Architecture & Adobe Edge Connection
 
 The `backend` is the core orchestrator of this application. It implements the [Model Context Protocol (MCP)](https://developers.openai.com/apps-sdk/concepts/mcp-server) to provide tools that ChatGPT can invoke.
