@@ -4,6 +4,9 @@ import { createAepEdgeClient, getAepCookieName } from "./aepEdgeClient.js";
 import { createImsClient } from "./imsAuthentication.js";
 import { StateStore } from "./stateStore.js";
 
+const LOG_PREFIX = "[alloy-server-sdk] ";
+const log = (...args) => console.log(LOG_PREFIX, ...args);
+
 const isDomainName = (val) => {
   // must be a valid domain name, without the protocol or path
   const url = new URL(`https://${val}`);
@@ -15,7 +18,6 @@ const createEdgeRequestHeaders = (accessToken, { orgId, clientId }) => ({
   "x-gw-ims-org-id": orgId,
   "x-api-key": clientId,
 });
-
 
 /**
  * Server-side Alloy SDK instance for Adobe Experience Platform Edge Network.
@@ -67,8 +69,8 @@ export class AlloyServerInstance {
   }
 
   /**
-   * 
-   * @param {Object} args 
+   *
+   * @param {Object} args
    * @param {Object} args.identityMap
    * @param {Object} args.xdm
    * @param {Object} args.data
@@ -76,9 +78,17 @@ export class AlloyServerInstance {
    * @param {Object} args.meta
    * @param {string} args.sessionId
    * @param {"interact" | "collect"} args.endpoint
-   * @returns 
+   * @returns
    */
-  async sendEvent({ identityMap, xdm = {}, data, query, meta, sessionId, endpoint = "interact" }) {
+  async sendEvent({
+    identityMap,
+    xdm = {},
+    data,
+    query,
+    meta,
+    sessionId,
+    endpoint = "interact",
+  }) {
     const accessToken = await this.#accessTokenPromise;
 
     const event = {
@@ -121,14 +131,39 @@ export class AlloyServerInstance {
 
     const headers = createEdgeRequestHeaders(accessToken, this.config);
 
+    // Log outgoing request info
+    log(
+      `[OUT] Edge ${endpoint} - eventType: ${
+        xdm.eventType || "none"
+      }, sessionId: ${sessionId?.substring(0, 8)}...`
+    );
+    if (query?.personalization) {
+      log(
+        `    Query: personalization scopes=${
+          query.personalization.decisionScopes?.join(",") || "none"
+        }`
+      );
+    }
+    if (identityMap) {
+      const identityTypes = Object.keys(identityMap);
+      log(`    IdentityMap: ${identityTypes.join(", ")}`);
+    }
+
     const result = await this.#aepEdgeClient[endpoint](
       requestBody,
       headers,
       cluster
     );
-    
-    // Persist any state handles returned by the server
+
+    // Log incoming response info
     const handles = result.response?.body?.handle || [];
+    const handleTypes = handles.map((h) => h.type).join(", ");
+    log(`[IN]  Edge ${endpoint} - handles: [${handleTypes || "none"}]`);
+    if (handles.length > 0) {
+      log(`    ${handles.length} handle(s) received`);
+    }
+
+    // Persist any state handles returned by the server
     if (sessionId) {
       this.#stateStore.update(sessionId, handles);
     }

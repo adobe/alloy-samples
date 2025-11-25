@@ -15,6 +15,9 @@ governing permissions and limitations under the License.
 import { isNotBlank } from "@adobe/target-tools";
 import { randomUUID as uuidv4 } from "node:crypto";
 
+const LOG_PREFIX = "[alloy-server-sdk/aepEdgeClient] ";
+const log = (...args) => console.log(LOG_PREFIX, ...args);
+
 const PAGE_WIDE_SCOPE = "__view__";
 const AEP_COOKIE_PREFIX = "kndctr";
 
@@ -154,7 +157,12 @@ function createAepEdgeClient(
   debugValidationSession = undefined,
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD
 ) {
-  function edgeRequest(endpoint, requestBody, requestHeaders = {}, edgeCluster = "") {
+  function edgeRequest(
+    endpoint,
+    requestBody,
+    requestHeaders = {},
+    edgeCluster = ""
+  ) {
     const requestId = uuidv4();
 
     let domain = edgeDomain;
@@ -186,6 +194,9 @@ function createAepEdgeClient(
       headers[HEADER_AEP_VALIDATION_TOKEN] = debugValidationSession;
     }
 
+    log(`Fetch ${endpoint} -> ${requestUrl.substring(0, 100)}...`);
+    const start = Date.now();
+
     return fetch(requestUrl, {
       headers,
       body: JSON.stringify(requestBody),
@@ -195,7 +206,15 @@ function createAepEdgeClient(
       .then(checkForErrors)
       .then(prepareAepResponse(headers, requestBody))
       .then(logResult(`AEP EDGE REQUEST: ${requestUrl}`))
+      .then((result) => {
+        const elapsed = Date.now() - start;
+        const statusCode = result.response?.headers?.status || "unknown";
+        log(`Response ${endpoint} - status: ${statusCode}, ${elapsed}ms`);
+        return result;
+      })
       .catch((err) => {
+        const elapsed = Date.now() - start;
+        log(`Error ${endpoint} - ${err.message}, ${elapsed}ms`);
         throw err;
       });
   }
