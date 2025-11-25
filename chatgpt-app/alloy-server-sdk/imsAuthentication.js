@@ -18,7 +18,7 @@ export function createImsClient(
   clientSecret,
   scopes = "openid, AdobeID, read_organizations, additional_info.projectedProductContext, session",
   host = "ims-na1.adobelogin.com",
-  path = "/ims/token/v3"
+  path = "/ims/token/v3",
 ) {
   let imsToken = null;
   let imsTokenGenerationTimestamp;
@@ -52,7 +52,7 @@ export function createImsClient(
 
     if (status !== 200) {
       throw new Error(
-        `The server responded with a status code ${status} and ${body}`
+        `The server responded with a status code ${status} and ${body}`,
       );
     } else {
       imsToken = body;

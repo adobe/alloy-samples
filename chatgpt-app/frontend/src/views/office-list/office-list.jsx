@@ -124,5 +124,5 @@ createRoot(document.getElementById("root")).render(
     <SpectrumProvider theme={defaultTheme}>
       <App />
     </SpectrumProvider>
-  </StrictMode>
+  </StrictMode>,
 );

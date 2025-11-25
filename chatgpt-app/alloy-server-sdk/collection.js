@@ -58,7 +58,7 @@ export function collect(aepEdgeClient, req, identity, xdm, authInfo = null) {
         },
       ],
     },
-    headers
+    headers,
   );
 }
 

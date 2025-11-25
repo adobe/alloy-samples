@@ -4,21 +4,26 @@ import { useRef } from "react";
 
 const AlloyConfigSchema = z
   .object({
-    datastreamId: z.string().min(1).optional().describe("Adobe Experience Platform datastream ID (legacy)"),
+    datastreamId: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("Adobe Experience Platform datastream ID (legacy)"),
     orgId: z.string().min(1).max(50).describe("Adobe organization ID"),
-    edgeConfigId: z.string().min(1).optional().describe("Edge configuration ID (preferred over datastreamId)"),
+    edgeConfigId: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("Edge configuration ID (preferred over datastreamId)"),
     debugEnabled: z.boolean().optional().default(false),
     clickCollectionEnabled: z.boolean().optional().default(true),
     context: z.array(z.string()).optional(),
     defaultConsent: z.enum(["in", "out", "pending"]).optional(),
   })
-  .refine(
-    (data) => data.edgeConfigId || data.datastreamId,
-    {
-      message: "Either edgeConfigId or datastreamId must be provided",
-      path: ["edgeConfigId"],
-    }
-  );
+  .refine((data) => data.edgeConfigId || data.datastreamId, {
+    message: "Either edgeConfigId or datastreamId must be provided",
+    path: ["edgeConfigId"],
+  });
 
 /**
  * Gets alloy configuration from environment variables (injected at build-time)
@@ -28,8 +33,12 @@ const AlloyConfigSchema = z
 const getConfig = () => {
   // These are injected at build time via esbuild define
   // esbuild replaces these with JSON.stringify'd values, so empty strings become ""
-  const datastreamId = process.env.DATASTREAM_ID && process.env.DATASTREAM_ID !== "" ? process.env.DATASTREAM_ID : null;
-  const orgId = process.env.ORG_ID && process.env.ORG_ID !== "" ? process.env.ORG_ID : null;
+  const datastreamId =
+    process.env.DATASTREAM_ID && process.env.DATASTREAM_ID !== ""
+      ? process.env.DATASTREAM_ID
+      : null;
+  const orgId =
+    process.env.ORG_ID && process.env.ORG_ID !== "" ? process.env.ORG_ID : null;
 
   if ((datastreamId || edgeConfigId) && orgId) {
     const envConfig = {
@@ -40,13 +49,15 @@ const getConfig = () => {
     try {
       return AlloyConfigSchema.parse(envConfig);
     } catch (error) {
-      console.error("[alloy] Invalid configuration from environment variables:", error);
+      console.error(
+        "[alloy] Invalid configuration from environment variables:",
+        error,
+      );
       return null;
     }
   }
   return null;
 };
-
 
 /**
  * Creates and configures an alloy instance with validated configuration
@@ -57,7 +68,7 @@ export const createAlloyInstance = () => {
 
   if (!config) {
     console.warn(
-      "[alloy] Configuration not found. Set environment variables (DATASTREAM_ID, ORG_ID)."
+      "[alloy] Configuration not found. Set environment variables (DATASTREAM_ID, ORG_ID).",
     );
     return null;
   }
@@ -68,7 +79,7 @@ export const createAlloyInstance = () => {
 
     const configureOptions = {
       orgId: validatedConfig.orgId,
-      debugEnabled: true
+      debugEnabled: true,
     };
 
     if (validatedConfig.edgeConfigId) {
@@ -78,7 +89,8 @@ export const createAlloyInstance = () => {
     }
 
     if (validatedConfig.clickCollectionEnabled !== undefined) {
-      configureOptions.clickCollectionEnabled = validatedConfig.clickCollectionEnabled;
+      configureOptions.clickCollectionEnabled =
+        validatedConfig.clickCollectionEnabled;
     }
 
     if (validatedConfig.context) {
@@ -93,7 +105,10 @@ export const createAlloyInstance = () => {
 
     return alloy;
   } catch (error) {
-    console.error("[alloy] Failed to create and configure alloy instance:", error);
+    console.error(
+      "[alloy] Failed to create and configure alloy instance:",
+      error,
+    );
     return null;
   }
 };

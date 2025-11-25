@@ -35,7 +35,7 @@ export function useOpenAiGlobal(key) {
         window.removeEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal);
       };
     },
-    () => OpenAI[key]
+    () => OpenAI[key],
   );
 }
 

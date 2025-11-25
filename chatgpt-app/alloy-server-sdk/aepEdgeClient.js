@@ -78,8 +78,8 @@ function checkForErrors(response) {
       : `no response body.`;
     return Promise.reject(
       new Error(
-        `The server responded with a status code ${statusCode} and ${messageSuffix}`
-      )
+        `The server responded with a status code ${statusCode} and ${messageSuffix}`,
+      ),
     );
   }
 
@@ -119,14 +119,14 @@ function logResult(message) {
 
 function extractEdgeCluster(
   [statusCode, responseHeaders, responseBody],
-  aepEdgeCluster
+  aepEdgeCluster,
 ) {
   if (!responseBody.handle) {
     return aepEdgeCluster;
   }
 
   const locationHintHandle = responseBody.handle.find(
-    (item) => item.type === TYPE_LOCATION_HINT
+    (item) => item.type === TYPE_LOCATION_HINT,
   );
 
   if (!locationHintHandle) {
@@ -155,13 +155,13 @@ function createAepEdgeClient(
   dataStreamId,
   edgeDomain = AEP_EDGE_DOMAIN,
   debugValidationSession = undefined,
-  edgeBasePath = EXP_EDGE_BASE_PATH_PROD
+  edgeBasePath = EXP_EDGE_BASE_PATH_PROD,
 ) {
   function edgeRequest(
     endpoint,
     requestBody,
     requestHeaders = {},
-    edgeCluster = ""
+    edgeCluster = "",
   ) {
     const requestId = uuidv4();
 
@@ -275,7 +275,7 @@ function getAepCookieName(organizationId, name) {
 function getDebugSessionCookie(organizationId, req) {
   const cookieName = getAepCookieName(
     organizationId,
-    COOKIE_NAME_VALIDATION_TOKEN
+    COOKIE_NAME_VALIDATION_TOKEN,
   );
   return req.cookies[cookieName];
 }
@@ -283,7 +283,7 @@ function getDebugSessionCookie(organizationId, req) {
 function getAepEdgeClusterCookie(organizationId, req) {
   const cookieName = getAepCookieName(
     organizationId,
-    COOKIE_NAME_AEP_EDGE_CLUSTER
+    COOKIE_NAME_AEP_EDGE_CLUSTER,
   );
 
   return req.cookies[cookieName];
@@ -292,7 +292,7 @@ function getAepEdgeClusterCookie(organizationId, req) {
 function createIdentityPayload(
   id,
   authenticatedState = "ambiguous",
-  primary = true
+  primary = true,
 ) {
   if (id.length === 0) {
     return undefined;

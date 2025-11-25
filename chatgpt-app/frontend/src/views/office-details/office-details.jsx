@@ -73,7 +73,7 @@ const App = () => {
         }).catch((error) => {
           console.error(
             "[alloy] Failed to apply response from visit request:",
-            error
+            error,
           );
         });
       }
@@ -175,5 +175,5 @@ createRoot(document.getElementById("root")).render(
       <ToastContainer />
       <App />
     </SpectrumProvider>
-  </StrictMode>
+  </StrictMode>,
 );

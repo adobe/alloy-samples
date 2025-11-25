@@ -57,13 +57,13 @@ export class AlloyServerInstance {
     this.config = AlloyServerInstance.InstanceConfigSchema.parse(config);
     this.#aepEdgeClient = createAepEdgeClient(
       this.config.datastreamId,
-      this.config.edgeDomain
+      this.config.edgeDomain,
     );
     this.#imsClient = createImsClient(
       this.config.clientId,
       this.config.clientSecret,
       this.config.accessScopes,
-      this.config.imsHost
+      this.config.imsHost,
     );
     this.#accessTokenPromise = this.#imsClient.generateAccessToken();
   }
@@ -135,13 +135,13 @@ export class AlloyServerInstance {
     log(
       `[OUT] Edge ${endpoint} - eventType: ${
         xdm.eventType || "none"
-      }, sessionId: ${sessionId?.substring(0, 8)}...`
+      }, sessionId: ${sessionId?.substring(0, 8)}...`,
     );
     if (query?.personalization) {
       log(
         `    Query: personalization scopes=${
           query.personalization.decisionScopes?.join(",") || "none"
-        }`
+        }`,
       );
     }
     if (identityMap) {
@@ -152,7 +152,7 @@ export class AlloyServerInstance {
     const result = await this.#aepEdgeClient[endpoint](
       requestBody,
       headers,
-      cluster
+      cluster,
     );
 
     // Log incoming response info

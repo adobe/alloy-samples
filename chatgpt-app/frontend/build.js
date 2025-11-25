@@ -7,7 +7,6 @@ import { configDotenv } from "dotenv";
 
 configDotenv({ path: ["../.env", "./.env"], quiet: true });
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,7 +16,7 @@ const files = fg.sync(`${__dirname}/src/views/**/*.jsx`, { dot: false });
 
 /** @type {Record<string, string>} */
 const entryPoints = Object.fromEntries(
-  files.map((f) => [path.basename(path.dirname(f)), path.resolve(f)])
+  files.map((f) => [path.basename(path.dirname(f)), path.resolve(f)]),
 );
 
 console.log("Building entry points:", Object.keys(entryPoints));
@@ -26,7 +25,6 @@ console.log("Building entry points:", Object.keys(entryPoints));
 const define = {
   "process.env.DATASTREAM_ID": JSON.stringify(process.env.DATASTREAM_ID || ""),
   "process.env.ORG_ID": JSON.stringify(process.env.ORG_ID || ""),
-
 };
 
 /** @type {esbuild.BuildOptions} */

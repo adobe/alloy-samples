@@ -143,7 +143,7 @@ mcpServer.registerResource(
         },
       },
     ],
-  })
+  }),
 );
 
 mcpServer.registerTool(
@@ -201,7 +201,7 @@ mcpServer.registerTool(
       const relevantHandles = handles.filter(
         (handle) =>
           handle.type === "personalization:decisions" ||
-          handle.type === "state:store"
+          handle.type === "state:store",
       );
       return {
         structuredContent: {
@@ -225,7 +225,7 @@ mcpServer.registerTool(
         content: [{ type: "text", text: "Displayed the list of offices." }],
       };
     }
-  }
+  },
 );
 
 mcpServer.registerResource(
@@ -257,7 +257,7 @@ mcpServer.registerResource(
         },
       },
     ],
-  })
+  }),
 );
 
 mcpServer.registerTool(
@@ -340,7 +340,7 @@ mcpServer.registerTool(
       const relevantHandles = handles.filter(
         (handle) =>
           handle.type === "personalization:decisions" ||
-          handle.type === "state:store"
+          handle.type === "state:store",
       );
       return {
         structuredContent: {
@@ -367,7 +367,7 @@ mcpServer.registerTool(
         ],
       };
     }
-  }
+  },
 );
 
 mcpServer.registerTool(
@@ -421,8 +421,8 @@ mcpServer.registerTool(
               email: Buffer.from(
                 await crypto.subtle.digest(
                   "SHA-256",
-                  new TextEncoder().encode(email)
-                )
+                  new TextEncoder().encode(email),
+                ),
               ).toString("hex"),
             },
           },
@@ -437,7 +437,7 @@ mcpServer.registerTool(
       const relevantHandles = handles.filter(
         (handle) =>
           handle.type === "personalization:decisions" ||
-          handle.type === "state:store"
+          handle.type === "state:store",
       );
 
       return {
@@ -469,7 +469,7 @@ mcpServer.registerTool(
         ],
       };
     }
-  }
+  },
 );
 
 const LOG_PREFIX = "[alloy-vacations-backend] ";
@@ -543,7 +543,7 @@ app.get("/", (c) => {
 app.get("/favicon.ico", (c) => {
   c.header("Content-Type", "image/svg+xml");
   return c.text(
-    String.raw`<?xml version="1.0" encoding="UTF-8"?><svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 501.71 444.05"><defs><style>.cls-1 {fill: #eb1000;stroke-width: 0px;}</style></defs><g id="Layer_1-2" data-name="Layer 1"><polygon class="cls-1" points="297.58 444.05 261.13 342.65 169.67 342.65 246.54 149.12 363.19 444.05 501.71 444.05 316.8 0 186.23 0 0 444.05 297.58 444.05 297.58 444.05"/></g></svg>`
+    String.raw`<?xml version="1.0" encoding="UTF-8"?><svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 501.71 444.05"><defs><style>.cls-1 {fill: #eb1000;stroke-width: 0px;}</style></defs><g id="Layer_1-2" data-name="Layer 1"><polygon class="cls-1" points="297.58 444.05 261.13 342.65 169.67 342.65 246.54 149.12 363.19 444.05 501.71 444.05 316.8 0 186.23 0 0 444.05 297.58 444.05 297.58 444.05"/></g></svg>`,
   );
 });
 
