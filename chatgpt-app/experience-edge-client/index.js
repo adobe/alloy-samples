@@ -35,7 +35,6 @@ export class ExperienceEdgeClient {
       .string()
       .refine(isDomainName, { message: "Invalid domain name" })
       .default("server.adobedc.net"),
-    edgeRegion: z.string().min(1).default("irl1"),
     imsHost: z
       .string()
       .refine(isDomainName, { message: "Invalid domain name" })

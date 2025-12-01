@@ -24,17 +24,11 @@ const AEP_COOKIE_PREFIX = "kndctr";
 const TYPE_STATE_STORE = "state:store";
 const TYPE_IDENTITY_RESULT = "identity:result";
 const TYPE_PERSONALIZATION = "personalization:decisions";
-const TYPE_LOCATION_HINT = "locationHint:result";
 
-const COOKIE_NAME_AEP_EDGE_CLUSTER = "cluster";
 const COOKIE_NAME_VALIDATION_TOKEN = "validation_token";
 
 const EXP_EDGE_BASE_PATH_PROD = "ee";
 const EXP_EDGE_BASE_PATH_STAGE = "ee-pre-prd";
-
-const CLUSTER_HINT_EDGE = "EdgeNetwork";
-const CLUSTER_HINT_AAM = "AAM";
-const CLUSTER_HINT_TARGET = "Target";
 
 const DEFAULT_REQUEST_HEADERS = {
   accept: "*/*",
@@ -64,7 +58,7 @@ const SCHEMAS_PERSONALIZATION = [
 const NO_CONTENT = 204;
 
 function checkForErrors(response) {
-  const [statusCode, responseHeaders, responseBody] = response;
+  const [statusCode,, responseBody] = response;
 
   if (
     statusCode < 200 ||
@@ -99,7 +93,7 @@ function convertHeadersToSimpleJson(res) {
 }
 
 function prepareAepResponse(requestHeaders, requestBody) {
-  return ([statusCode, responseHeaders, responseBody]) => ({
+  return ([, responseHeaders, responseBody]) => ({
     request: {
       headers: requestHeaders,
       body: requestBody,
@@ -117,36 +111,9 @@ function logResult(message) {
   };
 }
 
-function extractEdgeCluster(
-  [statusCode, responseHeaders, responseBody],
-  aepEdgeCluster,
-) {
-  if (!responseBody.handle) {
-    return aepEdgeCluster;
-  }
-
-  const locationHintHandle = responseBody.handle.find(
-    (item) => item.type === TYPE_LOCATION_HINT,
-  );
-
-  if (!locationHintHandle) {
-    return aepEdgeCluster;
-  }
-
-  const { payload = [] } = locationHintHandle;
-  const edgeHint = payload.find((item) => item.scope === CLUSTER_HINT_EDGE);
-
-  if (!edgeHint) {
-    return aepEdgeCluster;
-  }
-
-  return edgeHint.hint;
-}
-
 /**
  *
  * @param {string} dataStreamId
- * @param {string} aepEdgeCluster cluster hint
  * @param {string} edgeDomain edge domain
  * @param debugValidationSession validation session id (created by debugger browser extension)
  * @param {string} edgeBasePath
@@ -161,24 +128,14 @@ function createAepEdgeClient(
     endpoint,
     requestBody,
     requestHeaders = {},
-    edgeCluster = "",
   ) {
     const requestId = uuidv4();
 
     let domain = edgeDomain;
-    let region = edgeCluster;
-
-    if (edgeDomain === "server.adobedc.net") {
-      if (edgeCluster) {
-        domain = `${edgeCluster}.${edgeDomain}`;
-      }
-      region = "";
-    }
 
     const requestUrl = [
       `https://${domain}`,
       edgeBasePath,
-      region,
       "v2",
       `${endpoint}?dataStreamId=${dataStreamId}&requestId=${requestId}`,
     ]
@@ -219,12 +176,12 @@ function createAepEdgeClient(
       });
   }
 
-  function interact(requestBody, requestHeaders = {}, edgeCluster = "") {
-    return edgeRequest("interact", requestBody, requestHeaders, edgeCluster);
+  function interact(requestBody, requestHeaders = {}) {
+    return edgeRequest("interact", requestBody, requestHeaders);
   }
 
-  function collect(requestBody, requestHeaders = {}, edgeCluster = "") {
-    return edgeRequest("collect", requestBody, requestHeaders, edgeCluster);
+  function collect(requestBody, requestHeaders = {}) {
+    return edgeRequest("collect", requestBody, requestHeaders);
   }
 
   function getPropositions({
@@ -280,15 +237,6 @@ function getDebugSessionCookie(organizationId, req) {
   return req.cookies[cookieName];
 }
 
-function getAepEdgeClusterCookie(organizationId, req) {
-  const cookieName = getAepCookieName(
-    organizationId,
-    COOKIE_NAME_AEP_EDGE_CLUSTER,
-  );
-
-  return req.cookies[cookieName];
-}
-
 function createIdentityPayload(
   id,
   authenticatedState = "ambiguous",
@@ -315,11 +263,9 @@ function getResponseHandles(aepEdgeResult) {
 export {
   getAepCookieName,
   getDebugSessionCookie,
-  getAepEdgeClusterCookie,
   createAepEdgeClient,
   AEP_COOKIE_PREFIX,
   PAGE_WIDE_SCOPE,
-  COOKIE_NAME_AEP_EDGE_CLUSTER as COOKIE_NAME_AEP_EDGE_PATH,
   TYPE_PERSONALIZATION,
   TYPE_STATE_STORE,
   TYPE_IDENTITY_RESULT,

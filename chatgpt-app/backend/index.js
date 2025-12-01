@@ -60,7 +60,6 @@ const EnvSchema = z.object({
   ACCESS_SCOPES: ExperienceEdgeClient.InstanceConfigSchema.shape.accessScopes,
   DATASTREAM_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.datastreamId,
   AEP_EDGE_DOMAIN: ExperienceEdgeClient.InstanceConfigSchema.shape.edgeDomain,
-  AEP_EDGE_REGION: ExperienceEdgeClient.InstanceConfigSchema.shape.edgeRegion,
   TIMEOUT: z.coerce
     .number()
     .pipe(ExperienceEdgeClient.InstanceConfigSchema.shape.timeout),
@@ -68,7 +67,6 @@ const EnvSchema = z.object({
 const env = EnvSchema.parse(process.env);
 const edgeClient = new ExperienceEdgeClient({
   edgeDomain: env.AEP_EDGE_DOMAIN,
-  edgeRegion: env.AEP_EDGE_REGION,
   imsHost: env.IMS_HOST,
   clientId: env.CLIENT_ID,
   clientSecret: env.CLIENT_SECRET,
