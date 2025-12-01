@@ -149,6 +149,7 @@ A hybrid implementation is preferred because for a few reasons:
 
 ## Development/Usage
 
+0. Clone the repository: `git clone https://github.com/adobe/alloy-samples.git` and navigate to the `chatgpt-app` directory (i.e. `cd alloy-samples/chatgpt-app`).
 1. Install dependencies: `pnpm install`
 2. Set up the environment variables: `cp .env.example .env` and fill in the values, including IMS token (for server-to-server auth) and datastream ID. All fields are required.
 3. Start dev server in the `chatgpt-app` directory: `pnpm run dev`.
