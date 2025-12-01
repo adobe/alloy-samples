@@ -1,4 +1,4 @@
-import React, { StrictMode, useEffect } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   defaultTheme,
@@ -12,7 +12,7 @@ import {
   Image,
 } from "@adobe/react-spectrum";
 import "./office-list.css";
-import { useToolOutput, useWidgetState } from "../../openai-hooks";
+import { useToolOutput } from "../../openai-hooks";
 import { useAlloy } from "../../resources";
 
 const OfficeCard = ({ office }) => {

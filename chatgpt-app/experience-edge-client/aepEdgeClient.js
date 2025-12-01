@@ -105,7 +105,7 @@ function prepareAepResponse(requestHeaders, requestBody) {
   });
 }
 
-function logResult(message) {
+function logResult() {
   return (result) => {
     return result;
   };

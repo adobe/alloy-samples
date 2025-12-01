@@ -40,7 +40,7 @@ const getConfig = () => {
   const orgId =
     process.env.ORG_ID && process.env.ORG_ID !== "" ? process.env.ORG_ID : null;
 
-  if ((datastreamId || edgeConfigId) && orgId) {
+  if (datastreamId && orgId) {
     const envConfig = {
       datastreamId: datastreamId || undefined,
       orgId: orgId,

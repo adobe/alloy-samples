@@ -1,18 +1,18 @@
-import React, { StrictMode, useState, useEffect } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Button,
+  Divider,
+  Flex,
   Heading,
+  Image,
   defaultTheme,
   Provider as SpectrumProvider,
-  View,
   Text,
-  Flex,
-  Divider,
   TextField,
-  Image,
-  ToastQueue,
   ToastContainer,
+  ToastQueue,
+  View,
 } from "@adobe/react-spectrum";
 import "./office-details.css";
 import { useToolOutput, useTool } from "../../openai-hooks";

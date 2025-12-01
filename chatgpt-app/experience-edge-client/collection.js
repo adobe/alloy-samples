@@ -11,8 +11,6 @@ governing permissions and limitations under the License.
 */
 /** same as ../../common/collection.js but as an ES module and inside our own monorepo */
 
-import { randomUUID as uuid } from "node:crypto";
-
 /**
  * Returns the request address, extracted from client request URL
  * @param {Request} req -  request object
@@ -60,24 +58,4 @@ export function collect(aepEdgeClient, req, identity, xdm, authInfo = null) {
     },
     headers,
   );
-}
-
-const cookieName = "customer-defined-cookie";
-const cookieOptions = {
-  httpOnly: true,
-  sameSite: "lax",
-  secure: true,
-};
-
-function getOrSetFPIDCookie(req, res) {
-  let fpid;
-
-  if (req.cookies[cookieName] === undefined) {
-    fpid = uuid.v4();
-    res.cookie(cookieName, fpid, cookieOptions);
-  } else {
-    fpid = req.cookies[cookieName];
-  }
-
-  return fpid;
 }

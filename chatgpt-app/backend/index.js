@@ -520,7 +520,7 @@ app.use(async (c, next) => {
           log("    Body (text):", text.substring(0, 500));
         }
       }
-    } catch (e) {
+    } catch {
       log("    Body: (could not read)");
     }
   }

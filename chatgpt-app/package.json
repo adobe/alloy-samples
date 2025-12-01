@@ -6,16 +6,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm run --recursive --parallel --stream dev",
+    "dev": "pnpm run --recursive --parallel --sslitream dev",
     "debug": "mcp-inspector",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lint": "eslint --fix .",
+    "check": "pnpm run lint && pnpm run format"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@modelcontextprotocol/inspector": "^0.17.2",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.5.0",
     "prettier": "3.7.3"
   }
 }
