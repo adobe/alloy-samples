@@ -6,7 +6,7 @@ Follow the [Apps SDK quickstart](https://developers.openai.com/apps-sdk/quicksta
 
 ## Package Overview
 
-- **`datastore`**: Contains shared data models (offices) and Zod schemas used by both the backend and frontend to ensure type safety.
+- **`datastore`**: Contains shared data models (offices) and Zod schemas used by both the backend and frontend to ensure type safety. This is a demo application, so the data is just a static variable, but in a real application, this would be a database.
 - **`experience-edge-client`**: A server-side library that handles authentication with Adobe IMS and communicates directly with the AEP Edge Network. It mimics the capabilities of the client-side Alloy SDK but for server-side environments.
 - **`frontend`**: A React application built with Adobe React Spectrum. It renders the UI widgets (like the office list) inside ChatGPT's sandbox and handles the client-side application of personalization decisions, following the [custom UX guidance](https://developers.openai.com/apps-sdk/build/custom-ux).
 - **`backend`**: A Node.js application using Hono that serves as the Model Context Protocol (MCP) server (built with the [TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)). It exposes the [Apps SDK tools](https://developers.openai.com/apps-sdk/plan/tools) (`office-list`, `office-details`, `request-visit`) to ChatGPT and orchestrates the connection to Adobe Edge.
