@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 /** same as ../../common/aepEdgeClient but as an ES module and inside our own monorepo */
 
-import { isNotBlank } from "@adobe/target-tools";
+import { isNotBlank } from "./utils.js";
 import { randomUUID as uuidv4 } from "node:crypto";
 
 const LOG_PREFIX = "[experience-edge-client/aepEdgeClient] ";

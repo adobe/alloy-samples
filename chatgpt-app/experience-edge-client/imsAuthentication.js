@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 /** same as ../../common/authentication.js but as an ES module and inside our own monorepo */
 
-import { isNotBlank } from "@adobe/target-tools";
+import { isNotBlank } from "./utils.js";
 
 export function createImsClient(
   clientId,

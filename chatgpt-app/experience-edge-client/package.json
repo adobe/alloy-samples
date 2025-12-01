@@ -12,7 +12,6 @@
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "dependencies": {
-    "@adobe/target-tools": "^1.7.2",
     "aep-edge-samples-common": "file:../../common",
     "zod": "^3.25.76"
   }
