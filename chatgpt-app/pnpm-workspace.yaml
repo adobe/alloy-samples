@@ -2,5 +2,5 @@ packages:
   - frontend
   - backend
   - datastore
-  - alloy-server-sdk
+  - experience-edge-client
 linkWorkspacePackages: true

@@ -7,7 +7,7 @@ Follow the [Apps SDK quickstart](https://developers.openai.com/apps-sdk/quicksta
 ## Package Overview
 
 - **`datastore`**: Contains shared data models (offices) and Zod schemas used by both the backend and frontend to ensure type safety.
-- **`alloy-server-sdk`**: A server-side library that handles authentication with Adobe IMS and communicates directly with the AEP Edge Network. It mimics the capabilities of the client-side Alloy SDK but for server-side environments.
+- **`experience-edge-client`**: A server-side library that handles authentication with Adobe IMS and communicates directly with the AEP Edge Network. It mimics the capabilities of the client-side Alloy SDK but for server-side environments.
 - **`frontend`**: A React application built with Adobe React Spectrum. It renders the UI widgets (like the office list) inside ChatGPT's sandbox and handles the client-side application of personalization decisions, following the [custom UX guidance](https://developers.openai.com/apps-sdk/build/custom-ux).
 - **`backend`**: A Node.js application using Hono that serves as the Model Context Protocol (MCP) server (built with the [TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)). It exposes the [Apps SDK tools](https://developers.openai.com/apps-sdk/plan/tools) (`office-list`, `office-details`, `request-visit`) to ChatGPT and orchestrates the connection to Adobe Edge.
 
@@ -118,12 +118,12 @@ The `backend` is the core orchestrator of this application. It implements the [M
 
 ### Connection to Adobe Edge
 
-The backend connects to the Adobe Edge Network using the `alloy-server-sdk`. Here is the flow:
+The backend connects to the Adobe Edge Network using the `experience-edge-client`. Here is the flow:
 
 1.  **Authentication**: On startup, the backend authenticates with Adobe Identity Management System (IMS) using a Client ID and Secret to obtain an access token.
 2.  **Tool Invocation**: When a user asks ChatGPT to "list offices", ChatGPT invokes the `office-list` tool on the backend.
     - The MCP request metadata carries `openai/subject`, which the backend reuses as the First-Party Device ID (FPID) to keep the Adobe session tied to the ChatGPT user identity.
-3.  **Server-Side Event**: The backend uses `AlloyServerInstance` to send an experience event to AEP Edge.
+3.  **Server-Side Event**: The backend uses `ExperienceEdgeClient` to send an experience event to AEP Edge.
     - It generates a First-Party Device ID (FPID) based on the OpenAI user subject to maintain session continuity.
     - It sends an XDM (Experience Data Model) payload describing the event (e.g., `office.list.view`).
 4.  **Edge Response**: AEP Edge processes the event and returns "handles"—instructions for personalization (e.g., "show this specific banner") or state updates (e.g., "set this cookie").

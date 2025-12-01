@@ -15,7 +15,7 @@ governing permissions and limitations under the License.
 import { isNotBlank } from "@adobe/target-tools";
 import { randomUUID as uuidv4 } from "node:crypto";
 
-const LOG_PREFIX = "[alloy-server-sdk/aepEdgeClient] ";
+const LOG_PREFIX = "[experience-edge-client/aepEdgeClient] ";
 const log = (...args) => console.log(LOG_PREFIX, ...args);
 
 const PAGE_WIDE_SCOPE = "__view__";

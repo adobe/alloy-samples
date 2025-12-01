@@ -1,10 +1,8 @@
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { createAepEdgeClient, getAepCookieName } from "./aepEdgeClient.js";
+import { createAepEdgeClient } from "./aepEdgeClient.js";
 import { createImsClient } from "./imsAuthentication.js";
-import { StateStore } from "./stateStore.js";
 
-const LOG_PREFIX = "[alloy-server-sdk] ";
+const LOG_PREFIX = "[experience-edge-client] ";
 const log = (...args) => console.log(LOG_PREFIX, ...args);
 
 const isDomainName = (val) => {
@@ -20,10 +18,10 @@ const createEdgeRequestHeaders = (accessToken, { orgId, clientId }) => ({
 });
 
 /**
- * Server-side Alloy SDK instance for Adobe Experience Platform Edge Network.
+ * Server-side Experience Edge client instance for Adobe Experience Platform Edge Network.
  * For client-side integration, see frontend/src/resources.js which uses @adobe/alloy.
  */
-export class AlloyServerInstance {
+export class ExperienceEdgeClient {
   /**
    * @typedef {z.infer<typeof InstanceConfigSchema>} InstanceConfig
    * @type {InstanceConfig}
@@ -32,7 +30,6 @@ export class AlloyServerInstance {
   #aepEdgeClient = null;
   #imsClient = null;
   #accessTokenPromise = null;
-  #stateStore = new StateStore();
   static InstanceConfigSchema = z.object({
     edgeDomain: z
       .string()
@@ -54,7 +51,7 @@ export class AlloyServerInstance {
    * @param {InstanceConfig} config
    */
   constructor(config) {
-    this.config = AlloyServerInstance.InstanceConfigSchema.parse(config);
+    this.config = ExperienceEdgeClient.InstanceConfigSchema.parse(config);
     this.#aepEdgeClient = createAepEdgeClient(
       this.config.datastreamId,
       this.config.edgeDomain,
@@ -76,7 +73,6 @@ export class AlloyServerInstance {
    * @param {Object} args.data
    * @param {Object} args.query
    * @param {Object} args.meta
-   * @param {string} args.sessionId
    * @param {"interact" | "collect"} args.endpoint
    * @returns
    */
@@ -86,7 +82,6 @@ export class AlloyServerInstance {
     data,
     query,
     meta,
-    sessionId,
     endpoint = "interact",
   }) {
     const accessToken = await this.#accessTokenPromise;
@@ -113,29 +108,11 @@ export class AlloyServerInstance {
       requestBody.meta = meta;
     }
 
-    // Inject state store entries if available for this session
-    const stateEntries = sessionId
-      ? this.#stateStore.toMetaEntries(sessionId)
-      : [];
-    if (stateEntries.length > 0) {
-      requestBody.meta = requestBody.meta || {};
-      requestBody.meta.state = {
-        entries: stateEntries,
-      };
-    }
-
-    const clusterCookieName = getAepCookieName(this.config.orgId, "cluster");
-    const cluster = sessionId
-      ? this.#stateStore.get(sessionId).get(clusterCookieName)
-      : undefined;
-
     const headers = createEdgeRequestHeaders(accessToken, this.config);
 
     // Log outgoing request info
     log(
-      `[OUT] Edge ${endpoint} - eventType: ${
-        xdm.eventType || "none"
-      }, sessionId: ${sessionId?.substring(0, 8)}...`,
+      `[OUT] Edge ${endpoint} - eventType: ${xdm.eventType || "none"}`,
     );
     if (query?.personalization) {
       log(
@@ -152,7 +129,6 @@ export class AlloyServerInstance {
     const result = await this.#aepEdgeClient[endpoint](
       requestBody,
       headers,
-      cluster,
     );
 
     // Log incoming response info
@@ -161,11 +137,6 @@ export class AlloyServerInstance {
     log(`[IN]  Edge ${endpoint} - handles: [${handleTypes || "none"}]`);
     if (handles.length > 0) {
       log(`    ${handles.length} handle(s) received`);
-    }
-
-    // Persist any state handles returned by the server
-    if (sessionId) {
-      this.#stateStore.update(sessionId, handles);
     }
 
     return result;

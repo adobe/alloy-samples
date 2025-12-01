@@ -1,7 +1,7 @@
 import { StreamableHTTPTransport } from "@hono/mcp";
 import { serve } from "@hono/node-server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { AlloyServerInstance } from "alloy-server-sdk";
+import { ExperienceEdgeClient } from "experience-edge-client";
 import { OfficeIdSchema, officeData } from "datastore";
 import { configDotenv } from "dotenv";
 import { Hono } from "hono";
@@ -53,20 +53,20 @@ const readAsset = (name) => {
 };
 
 const EnvSchema = z.object({
-  IMS_HOST: AlloyServerInstance.InstanceConfigSchema.shape.imsHost,
-  ORG_ID: AlloyServerInstance.InstanceConfigSchema.shape.orgId,
-  CLIENT_ID: AlloyServerInstance.InstanceConfigSchema.shape.clientId,
-  CLIENT_SECRET: AlloyServerInstance.InstanceConfigSchema.shape.clientSecret,
-  ACCESS_SCOPES: AlloyServerInstance.InstanceConfigSchema.shape.accessScopes,
-  DATASTREAM_ID: AlloyServerInstance.InstanceConfigSchema.shape.datastreamId,
-  AEP_EDGE_DOMAIN: AlloyServerInstance.InstanceConfigSchema.shape.edgeDomain,
-  AEP_EDGE_REGION: AlloyServerInstance.InstanceConfigSchema.shape.edgeRegion,
+  IMS_HOST: ExperienceEdgeClient.InstanceConfigSchema.shape.imsHost,
+  ORG_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.orgId,
+  CLIENT_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.clientId,
+  CLIENT_SECRET: ExperienceEdgeClient.InstanceConfigSchema.shape.clientSecret,
+  ACCESS_SCOPES: ExperienceEdgeClient.InstanceConfigSchema.shape.accessScopes,
+  DATASTREAM_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.datastreamId,
+  AEP_EDGE_DOMAIN: ExperienceEdgeClient.InstanceConfigSchema.shape.edgeDomain,
+  AEP_EDGE_REGION: ExperienceEdgeClient.InstanceConfigSchema.shape.edgeRegion,
   TIMEOUT: z.coerce
     .number()
-    .pipe(AlloyServerInstance.InstanceConfigSchema.shape.timeout),
+    .pipe(ExperienceEdgeClient.InstanceConfigSchema.shape.timeout),
 });
 const env = EnvSchema.parse(process.env);
-const alloy = new AlloyServerInstance({
+const edgeClient = new ExperienceEdgeClient({
   edgeDomain: env.AEP_EDGE_DOMAIN,
   edgeRegion: env.AEP_EDGE_REGION,
   imsHost: env.IMS_HOST,
@@ -184,9 +184,8 @@ mcpServer.registerTool(
     const identityMap = buildIdentityMap(fpid);
 
     try {
-      const result = await alloy.sendEvent({
+      const result = await edgeClient.sendEvent({
         identityMap,
-        sessionId: fpid,
         xdm: {
           ...createCommonXdmFields(),
           eventType: "office.list.view",
@@ -316,9 +315,8 @@ mcpServer.registerTool(
     const identityMap = buildIdentityMap(fpid);
 
     try {
-      const result = await alloy.sendEvent({
+      const result = await edgeClient.sendEvent({
         identityMap,
-        sessionId: fpid,
         xdm: {
           ...createCommonXdmFields(),
           eventType: "office.details.view",
@@ -409,9 +407,8 @@ mcpServer.registerTool(
     const identityMap = buildIdentityMap(fpid);
 
     try {
-      const result = await alloy.sendEvent({
+      const result = await edgeClient.sendEvent({
         identityMap,
-        sessionId: fpid,
         xdm: {
           ...createCommonXdmFields(),
           eventType: "office.visit.request",
@@ -472,7 +469,7 @@ mcpServer.registerTool(
   },
 );
 
-const LOG_PREFIX = "[alloy-vacations-backend] ";
+const LOG_PREFIX = "[adobe-office-backend] ";
 const log = (...args) => console.log(LOG_PREFIX, ...args);
 /**
  *
