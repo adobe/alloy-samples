@@ -110,9 +110,7 @@ export class ExperienceEdgeClient {
     const headers = createEdgeRequestHeaders(accessToken, this.config);
 
     // Log outgoing request info
-    log(
-      `[OUT] Edge ${endpoint} - eventType: ${xdm.eventType || "none"}`,
-    );
+    log(`[OUT] Edge ${endpoint} - eventType: ${xdm.eventType || "none"}`);
     if (query?.personalization) {
       log(
         `    Query: personalization scopes=${
@@ -125,10 +123,7 @@ export class ExperienceEdgeClient {
       log(`    IdentityMap: ${identityTypes.join(", ")}`);
     }
 
-    const result = await this.#aepEdgeClient[endpoint](
-      requestBody,
-      headers,
-    );
+    const result = await this.#aepEdgeClient[endpoint](requestBody, headers);
 
     // Log incoming response info
     const handles = result.response?.body?.handle || [];

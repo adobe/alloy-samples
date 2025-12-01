@@ -58,7 +58,7 @@ const SCHEMAS_PERSONALIZATION = [
 const NO_CONTENT = 204;
 
 function checkForErrors(response) {
-  const [statusCode,, responseBody] = response;
+  const [statusCode, , responseBody] = response;
 
   if (
     statusCode < 200 ||
@@ -124,11 +124,7 @@ function createAepEdgeClient(
   debugValidationSession = undefined,
   edgeBasePath = EXP_EDGE_BASE_PATH_PROD,
 ) {
-  function edgeRequest(
-    endpoint,
-    requestBody,
-    requestHeaders = {},
-  ) {
+  function edgeRequest(endpoint, requestBody, requestHeaders = {}) {
     const requestId = uuidv4();
 
     let domain = edgeDomain;
