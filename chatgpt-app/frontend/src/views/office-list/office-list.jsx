@@ -27,8 +27,8 @@ const OfficeCard = ({ office }) => {
       overflow="hidden"
       backgroundColor="gray-50"
     >
-      <View width="space-200">
-        <Image src={imageUrl} alt={office.name} />
+      <View width="space-200" height={`${imageSize}px`}>
+        <Image src={imageUrl} alt={office.name} objectFit="cover" />
       </View>
       <View padding="size-200">
         <Heading level={3} marginBottom="size-50">

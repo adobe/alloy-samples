@@ -91,26 +91,46 @@ const resourceAssets = Object.freeze({
   "office-details": createResourceAssets("office-details"),
 });
 
-const buildIdentityMap = (fpid) => {
-  if (!fpid) return undefined;
-  return {
-    FPID: [
-      {
-        id: fpid,
-        authenticatedState: "ambiguous",
-        primary: true,
-      },
-    ],
-  };
+const SessionIdSchema = z
+  .string()
+  .trim()
+  .nonempty({ message: "Session ID cannot be empty" })
+  .max(256, { message: "Session ID must be 256 characters or fewer" })
+  .describe("Session identifier issued by the office list tool.");
+const SessionIdOptionalSchema = SessionIdSchema.describe(
+  "Reuse this value to continue a session; omit or null to start a new one.",
+).nullish();
+
+const ensureSessionId = (value) => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  // UUIDv7 is used because it is randomly generated as well as sortable - it
+  // contains the timestamp of creation inside.
+  return uuidv7();
 };
 
-const deriveFpid = (_meta) => {
-  // Apps SDK reference: `_meta["openai/subject"]` is only an anonymized user hint for rate limiting.
+const buildIdentityMap = (_meta, sessionId) => {
+  const identityMap = {};
   // https://developers.openai.com/apps-sdk/reference#_meta-fields-the-client-provides
+  // Apps SDK reference: `_meta["openai/subject"]` is "an anonymized user hint for rate limiting."
   if (_meta?.["openai/subject"]) {
-    return _meta["openai/subject"];
+    identityMap.OPENAI_SUBJECT = [
+      {
+        id: _meta["openai/subject"],
+        primary: true,
+      },
+    ];
   }
-
+  identityMap.SESSION_ID = [
+    {
+      id: sessionId || uuidv7(),
+      primary: !("OPENAI_SUBJECT" in identityMap),
+    },
+  ];
   // When OAuth 2.1 auth linking is enabled (per https://developers.openai.com/apps-sdk/build/auth):
   // 1. Read the request's `Authorization: Bearer <token>` header (sent automatically once ChatGPT finishes the OAuth code+PKCE flow).
   // 2. Validate the JWT: download JWKS, verify the signature, then enforce `iss`, `aud` (or `resource`), `exp`, `nbf`, and the scopes declared in `securitySchemes`.
@@ -126,14 +146,21 @@ const deriveFpid = (_meta) => {
   //   if (match) {
   //     const token = match[1];
   //     const payload = await verifyJwt(token, jwksUri);
-  //     return `${payload.orgId}:${payload.sub}:${payload.email}`; // Anything stable would work as an FPID.
+  //     identityMap.EMAIL = [
+  //       {
+  //         id: payload.email,
+  //         authenticatedState: "authenticated",
+  //         primary: true,
+  //       },
+  //     ];
+  //     // set email to primary
+  //     for (const namespace of Object.keys(identityMap)) {
+  //       if (namespace !== "EMAIL") {
+  //         identityMap[namespace]?.[0].primary = false;
+  //       }
+  //     }
   //   }
-
-  // In the absence of OAuth, we use a fallback UUIDv7 simply as a convenient, sortable random string.
-  // FPID can be any opaque value—feel free to swap this for another unique token generator.
-  // Using a random UUID is not recommended in production because it will generate a new
-  // FPID for each event.
-  return uuidv7();
+  return identityMap;
 };
 
 const createCommonXdmFields = () => ({
@@ -178,7 +205,9 @@ mcpServer.registerTool(
   "office-list",
   {
     title: "List offices",
-    inputSchema: {},
+    inputSchema: {
+      sessionId: SessionIdOptionalSchema,
+    },
     // Authentication Notes (Hypothetical):
     // If we implemented OAuth 2.1, we could extract the following metadata from the access token:
     // - User Identity (sub): Unique identifier for the user.
@@ -207,9 +236,9 @@ mcpServer.registerTool(
       "openai/toolInvocation/invoked": "Listed offices",
     },
   },
-  async (_, { _meta } = {}) => {
-    const fpid = deriveFpid(_meta);
-    const identityMap = buildIdentityMap(fpid);
+  async ({ sessionId } = {}, { _meta } = {}) => {
+    const activeSessionId = ensureSessionId(sessionId);
+    const identityMap = buildIdentityMap(_meta, activeSessionId);
 
     try {
       const result = await edgeClient.sendEvent({
@@ -232,24 +261,36 @@ mcpServer.registerTool(
       );
       return {
         structuredContent: {
+          sessionId: activeSessionId,
           offices: Object.values(officeData),
           _adobe: {
             handles: relevantHandles,
           },
         },
-        content: [{ type: "text", text: "Displayed the list of offices." }],
+        content: [
+          {
+            type: "text",
+            text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+          },
+        ],
       };
     } catch (error) {
       console.error("Failed to collect analytics:", error);
       // Even if analytics/personalization fails, return the content
       return {
         structuredContent: {
+          sessionId: activeSessionId,
           offices: Object.values(officeData),
           _adobe: {
             handles: [],
           },
         },
-        content: [{ type: "text", text: "Displayed the list of offices." }],
+        content: [
+          {
+            type: "text",
+            text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+          },
+        ],
       };
     }
   },
@@ -293,6 +334,7 @@ mcpServer.registerTool(
     title: "Show details for a specific office",
     inputSchema: {
       officeId: OfficeIdSchema,
+      sessionId: SessionIdSchema,
     },
     // Authentication Notes (Hypothetical):
     // With OAuth 2.1, we could validate:
@@ -321,8 +363,8 @@ mcpServer.registerTool(
   /** @param {object} params
    * @param {keyof typeof officeData} params.officeId
    */
-  async ({ officeId }, { _meta } = {}) => {
-    const fpid = deriveFpid(_meta);
+  async ({ officeId, sessionId } = {}, { _meta } = {}) => {
+    const activeSessionId = ensureSessionId(sessionId);
     try {
       if (!(officeId in officeData)) {
         throw new Error(`Office with ID ${officeId} not found`);
@@ -330,17 +372,19 @@ mcpServer.registerTool(
     } catch (error) {
       console.error(error);
       return {
-        structuredContent: {},
+        structuredContent: {
+          sessionId: activeSessionId,
+        },
         content: [
           {
             type: "text",
-            text: `Error displaying office details: ${error.message}`,
+            text: `Error displaying office details: ${error.message}. Session ID: ${activeSessionId}`,
           },
         ],
       };
     }
     const office = officeData[officeId];
-    const identityMap = buildIdentityMap(fpid);
+    const identityMap = buildIdentityMap(_meta, activeSessionId);
 
     try {
       const result = await edgeClient.sendEvent({
@@ -370,26 +414,34 @@ mcpServer.registerTool(
       );
       return {
         structuredContent: {
+          sessionId: activeSessionId,
           office,
           _adobe: {
             handles: relevantHandles,
           },
         },
         content: [
-          { type: "text", text: `Displayed details for office ${officeId}` },
+          {
+            type: "text",
+            text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+          },
         ],
       };
     } catch (error) {
       console.error("Failed to collect analytics:", error);
       return {
         structuredContent: {
+          sessionId: activeSessionId,
           office,
           _adobe: {
             handles: [],
           },
         },
         content: [
-          { type: "text", text: `Displayed details for office ${officeId}` },
+          {
+            type: "text",
+            text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+          },
         ],
       };
     }
@@ -403,6 +455,7 @@ mcpServer.registerTool(
     inputSchema: {
       officeId: OfficeIdSchema,
       email: z.string().email().describe("The email address of the user"),
+      sessionId: SessionIdSchema,
     },
     // Authentication Notes (Hypothetical):
     // This write action is a prime candidate for mandatory authentication.
@@ -428,11 +481,11 @@ mcpServer.registerTool(
       "openai/toolInvocation/invoked": "Visit requested.",
     },
   },
-  async ({ officeId, email }, { _meta } = {}) => {
-    const fpid = deriveFpid(_meta);
+  async ({ officeId, email, sessionId } = {}, { _meta } = {}) => {
+    const activeSessionId = ensureSessionId(sessionId);
     const office = officeData[officeId];
     const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
-    const identityMap = buildIdentityMap(fpid);
+    const identityMap = buildIdentityMap(_meta, activeSessionId);
 
     try {
       const result = await edgeClient.sendEvent({
@@ -467,6 +520,7 @@ mcpServer.registerTool(
 
       return {
         structuredContent: {
+          sessionId: activeSessionId,
           _adobe: {
             handles: relevantHandles,
           },
@@ -474,7 +528,7 @@ mcpServer.registerTool(
         content: [
           {
             type: "text",
-            text: `Email sent! Message: "${emailMessage}"`,
+            text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
           },
         ],
       };
@@ -482,6 +536,7 @@ mcpServer.registerTool(
       console.error("Failed to collect analytics:", error);
       return {
         structuredContent: {
+          sessionId: activeSessionId,
           _adobe: {
             handles: [],
           },
@@ -489,7 +544,7 @@ mcpServer.registerTool(
         content: [
           {
             type: "text",
-            text: `Email sent! Message: "${emailMessage}"`,
+            text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
           },
         ],
       };
