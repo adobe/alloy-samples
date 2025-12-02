@@ -122,12 +122,16 @@ The backend connects to the Adobe Edge Network using the `experience-edge-client
 
 1.  **Authentication**: On startup, the backend authenticates with Adobe Identity Management System (IMS) using a Client ID and Secret to obtain an access token.
 2.  **Tool Invocation**: When a user asks ChatGPT to "list offices", ChatGPT invokes the `office-list` tool on the backend.
-    - The MCP request metadata carries `openai/subject`, which the backend reuses as the First-Party Device ID (FPID) to keep the Adobe session tied to the ChatGPT user identity.
 3.  **Server-Side Event**: The backend uses `ExperienceEdgeClient` to send an experience event to AEP Edge.
-    - It generates a First-Party Device ID (FPID) based on the OpenAI user subject to maintain session continuity.
     - It sends an XDM (Experience Data Model) payload describing the event (e.g., `office.list.view`).
 4.  **Edge Response**: AEP Edge processes the event and returns "handles"—instructions for personalization (e.g., "show this specific banner") or state updates (e.g., "set this cookie").
 5.  **Response Passthrough**: The backend packages these handles into the tool response and sends them back to ChatGPT, along with the actual data (the list of offices).
+
+## Identity Management
+
+[ChatGPT/OpenAI sends an `_meta.openai/subject` field in the MCP request metadata](https://developers.openai.com/apps-sdk/reference#_meta-fields-the-client-provides). This is a pseudonymous user ID that is stable across devices and sessions for a user. In this example, we use it as the FPID when communicating with the Adobe Edge Network, as the edge network requires either an FPID or an ECID for the first hit. If that is not available (e.g. for users connecting with an MCP client other than ChatGPT), we use a fallback UUIDv7. This will not be stable across sessions or across analytics events (1 event = 1 session) and should not be used in production.
+
+If you are creating an authenticated application–ChatGPT and MCP servers [specify OAuth 2.1](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)–you can extract information from the JWT token in the `Authorization: Bearer` header. Hashed emails or the `sub` claim are all excellent candidates for FPID.
 
 ## Hybrid Implementation
 

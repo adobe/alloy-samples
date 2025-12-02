@@ -18,10 +18,11 @@
     "@hono/mcp": "^0.1.5",
     "@hono/node-server": "^1.19.6",
     "@modelcontextprotocol/sdk": "^1.21.0",
-    "experience-edge-client": "workspace:^",
     "datastore": "workspace:*",
     "dotenv": "^17.2.3",
+    "experience-edge-client": "workspace:^",
     "hono": "^4.10.4",
+    "uuid": "^13.0.0",
     "zod": "^3.24.1"
   }
 }

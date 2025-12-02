@@ -9,12 +9,10 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
+import { v7 as uuidv7, v4 as randomUUID } from "uuid";
 import { z } from "zod";
 
 configDotenv({ path: ["../.env", "./.env"], quiet: true });
-
-const FALLBACK_SESSION_ID = randomUUID();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -106,6 +104,38 @@ const buildIdentityMap = (fpid) => {
   };
 };
 
+const deriveFpid = (_meta) => {
+  // Apps SDK reference: `_meta["openai/subject"]` is only an anonymized user hint for rate limiting.
+  // https://developers.openai.com/apps-sdk/reference#_meta-fields-the-client-provides
+  if (_meta?.["openai/subject"]) {
+    return _meta["openai/subject"];
+  }
+
+  // When OAuth 2.1 auth linking is enabled (per https://developers.openai.com/apps-sdk/build/auth):
+  // 1. Read the request's `Authorization: Bearer <token>` header (sent automatically once ChatGPT finishes the OAuth code+PKCE flow).
+  // 2. Validate the JWT: download JWKS, verify the signature, then enforce `iss`, `aud` (or `resource`), `exp`, `nbf`, and the scopes declared in `securitySchemes`.
+  // 3. Extract trusted identity attributes from the verified payload; minimally `sub`, but often also `email`, `orgId`, or tenant identifiers depending on your IdP. Adobe only needs a stable string, so `sub` (or `tenantId:sub`) can be used directly—no hashing or UUID formatting required.
+  // 4. Set `authenticatedState: "authenticated"` when populating the IdentityMap
+  // 5. Optional enhancements:
+  //    - Cache the decoded token or jot down `jti` to prevent replay.
+  //    - Reuse other claims (e.g., verified `email`) to skip user-supplied fields for write actions.
+  //
+  // Reference outline you could drop into this helper once you wire in an OAuth library:
+  //   const authHeader = c.req.header("authorization") ?? "";
+  //   const match = authHeader.match(/^Bearer (.+)$/i);
+  //   if (match) {
+  //     const token = match[1];
+  //     const payload = await verifyJwt(token, jwksUri);
+  //     return `${payload.orgId}:${payload.sub}:${payload.email}`; // Anything stable would work as an FPID.
+  //   }
+
+  // In the absence of OAuth, we use a fallback UUIDv7 simply as a convenient, sortable random string.
+  // FPID can be any opaque value—feel free to swap this for another unique token generator.
+  // Using a random UUID is not recommended in production because it will generate a new
+  // FPID for each event.
+  return uuidv7();
+};
+
 const createCommonXdmFields = () => ({
   _id: randomUUID(),
   eventMergeId: randomUUID(),
@@ -178,7 +208,7 @@ mcpServer.registerTool(
     },
   },
   async (_, { _meta } = {}) => {
-    const fpid = _meta?.["openai/subject"] || FALLBACK_SESSION_ID;
+    const fpid = deriveFpid(_meta);
     const identityMap = buildIdentityMap(fpid);
 
     try {
@@ -292,7 +322,7 @@ mcpServer.registerTool(
    * @param {keyof typeof officeData} params.officeId
    */
   async ({ officeId }, { _meta } = {}) => {
-    const fpid = _meta?.["openai/subject"] || FALLBACK_SESSION_ID;
+    const fpid = deriveFpid(_meta);
     try {
       if (!(officeId in officeData)) {
         throw new Error(`Office with ID ${officeId} not found`);
@@ -399,7 +429,7 @@ mcpServer.registerTool(
     },
   },
   async ({ officeId, email }, { _meta } = {}) => {
-    const fpid = _meta?.["openai/subject"] || FALLBACK_SESSION_ID;
+    const fpid = deriveFpid(_meta);
     const office = officeData[officeId];
     const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
     const identityMap = buildIdentityMap(fpid);

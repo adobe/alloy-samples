@@ -6,7 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm run --recursive --parallel --sslitream dev",
+    "dev": "pnpm run --recursive --parallel --stream dev",
     "debug": "mcp-inspector",
     "format": "prettier --write .",
     "lint": "eslint --fix .",
