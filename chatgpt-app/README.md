@@ -1,8 +1,6 @@
 # ChatGPT App + Adobe Experience Platform Edge
 
-This is a reference implementation of a [ChatGPT App](https://developers.openai.com/apps-sdk) that integrates with the Adobe Experience Platform (AEP) Edge Network. It demonstrates a "hybrid" architecture where analytics and personalization logic is shared between a server-side backend and a client-side frontend.
-
-Follow the [Apps SDK quickstart](https://developers.openai.com/apps-sdk/quickstart) to configure your MCP server and widgets, and consult the [design guidelines](https://developers.openai.com/apps-sdk/design/guidelines) to keep the experience native to ChatGPT.
+This is a reference implementation of a [ChatGPT App](https://developers.openai.com/apps-sdk) (MCP server + web UI) that integrates with the Adobe Experience Platform (AEP) Edge Network for analytics and personalization. It demonstrates a "hybrid" architecture where analytics and personalization logic is shared between a server-side backend and a client-side frontend.
 
 ## Package Overview
 
