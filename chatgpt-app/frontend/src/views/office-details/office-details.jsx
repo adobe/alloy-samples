@@ -33,9 +33,24 @@ const App = () => {
         responseBody: {
           handle: output._adobe.handles,
         },
-      }).catch((error) => {
-        console.error("[alloy] Failed to apply response:", error);
-      });
+      })
+        .then(() =>
+          alloy("sendEvent", {
+            xdm: {
+              eventType: "web.webPageDetails.pageViews",
+              web: {
+                webPageDetails: {
+                  name: output?.office?.name
+                    ? `Office Details - ${output.office.name}`
+                    : "Office Details",
+                },
+              },
+            },
+          }),
+        )
+        .catch((error) => {
+          console.error("[alloy] Failed to apply response:", error);
+        });
     }
   }, [alloy, output?._adobe?.handles]);
 
