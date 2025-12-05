@@ -1,0 +1,5 @@
+- The documentation for the ChatGPT Apps SDK is available [online](https://developers.openai.com/apps-sdk).
+- The backend of this application is a JavaScript + [Hono](https://hono.dev/llms.txt) API via Node.js and pnpm, using [`@modelcontextprotocol/sdk` for the MCP server](https://github.com/modelcontextprotocol/typescript-sdk), [zod v4](https://zod.dev/llms.txt) for validation
+- The frontend uses React with [Adobe React Spectrum](https://react-spectrum.adobe.com/react-spectrum/getting-started.html) for the UI components.
+- The frontend is integrated with the [Adobe Experience Platform Web SDK (`alloy`)](https://github.com/adobe/alloy) ([user documentation](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/home#)) and the backend is integrated with the `/v2` Konductor APIs (documented in the Swagger file [`./konductor-api.yaml`](./konductor-api.yaml)).
+- Read the README.md for architecture, dataflow, and developer instructions.

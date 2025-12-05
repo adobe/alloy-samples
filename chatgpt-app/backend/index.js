@@ -1,0 +1,661 @@
+import { StreamableHTTPTransport } from "@hono/mcp";
+import { serve } from "@hono/node-server";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ExperienceEdgeClient } from "experience-edge-client";
+import { OfficeIdSchema, officeData } from "datastore";
+import { configDotenv } from "dotenv";
+import { Hono } from "hono";
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { v7 as uuidv7, v4 as randomUUID } from "uuid";
+import { z } from "zod";
+
+configDotenv({ path: ["../.env", "./.env"], quiet: true });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const ROOT_DIR = resolve(__dirname, "..");
+const ASSETS_DIR = resolve(ROOT_DIR, "frontend", "dist");
+
+const app = new Hono();
+
+const mcpServer = new McpServer({
+  name: "adobe-office-information",
+  version: "1.0.0",
+});
+
+/**
+ * @param {object} params
+ * @param {string} params.js
+ * @param {string} params.css
+ * @returns {string}
+ */
+const generateHtml = ({ js, css }) =>
+  [
+    `<div id="root"></div>`,
+    css && `<style>${css}</style>`,
+    js && `<script type="module">${js}</script>`,
+  ]
+    .filter(Boolean)
+    .join("");
+
+/**
+ * @param {string} name
+ * @returns {string | null}
+ */
+const readAsset = (name) => {
+  return readFileSync(join(ASSETS_DIR, name), "utf8");
+};
+
+const EnvSchema = z.object({
+  IMS_HOST: ExperienceEdgeClient.InstanceConfigSchema.shape.imsHost,
+  ORG_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.orgId,
+  CLIENT_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.clientId,
+  CLIENT_SECRET: ExperienceEdgeClient.InstanceConfigSchema.shape.clientSecret,
+  ACCESS_SCOPES: ExperienceEdgeClient.InstanceConfigSchema.shape.accessScopes,
+  DATASTREAM_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.datastreamId,
+  AEP_EDGE_DOMAIN: ExperienceEdgeClient.InstanceConfigSchema.shape.edgeDomain,
+  TIMEOUT: z.coerce
+    .number()
+    .pipe(ExperienceEdgeClient.InstanceConfigSchema.shape.timeout),
+});
+const env = EnvSchema.parse(process.env);
+const edgeClient = new ExperienceEdgeClient({
+  edgeDomain: env.AEP_EDGE_DOMAIN,
+  imsHost: env.IMS_HOST,
+  clientId: env.CLIENT_ID,
+  clientSecret: env.CLIENT_SECRET,
+  accessScopes: env.ACCESS_SCOPES,
+  timeout: env.TIMEOUT,
+  datastreamId: env.DATASTREAM_ID,
+  orgId: env.ORG_ID,
+});
+
+/**
+ * @param {string} name
+ * @returns { html: string, uri: string };
+ */
+const createResourceAssets = (name) => {
+  const css = readAsset(`${name}.css`) || "";
+  const js = readAsset(`${name}.js`) || "";
+  const html = generateHtml({ css, js });
+  const uri = `ui://widget/${name}.html`;
+  return { uri, html };
+};
+
+const resourceAssets = Object.freeze({
+  "office-list": createResourceAssets("office-list"),
+  "office-details": createResourceAssets("office-details"),
+});
+
+const SessionIdSchema = z
+  .string()
+  .trim()
+  .nonempty({ message: "Session ID cannot be empty" })
+  .max(256, { message: "Session ID must be 256 characters or fewer" })
+  .describe("Session identifier issued by the office list tool.");
+const SessionIdOptionalSchema = SessionIdSchema.describe(
+  "Reuse this value to continue a session; omit or null to start a new one.",
+).nullish();
+
+const ensureSessionId = (value) => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  // UUIDv7 is used because it is randomly generated as well as sortable - it
+  // contains the timestamp of creation inside.
+  return uuidv7();
+};
+
+const buildIdentityMap = (_meta, sessionId) => {
+  const identityMap = {};
+  // https://developers.openai.com/apps-sdk/reference#_meta-fields-the-client-provides
+  // Apps SDK reference: `_meta["openai/subject"]` is "an anonymized user hint for rate limiting."
+  if (_meta?.["openai/subject"]) {
+    identityMap.OPENAI_SUBJECT = [
+      {
+        id: _meta["openai/subject"],
+        primary: true,
+      },
+    ];
+  }
+  identityMap.SESSION_ID = [
+    {
+      id: sessionId || uuidv7(),
+      primary: !("OPENAI_SUBJECT" in identityMap),
+    },
+  ];
+  // When OAuth 2.1 auth linking is enabled (per https://developers.openai.com/apps-sdk/build/auth):
+  // 1. Read the request's `Authorization: Bearer <token>` header (sent automatically once ChatGPT finishes the OAuth code+PKCE flow).
+  // 2. Validate the JWT: download JWKS, verify the signature, then enforce `iss`, `aud` (or `resource`), `exp`, `nbf`, and the scopes declared in `securitySchemes`.
+  // 3. Extract trusted identity attributes from the verified payload; minimally `sub`, but often also `email`, `orgId`, or tenant identifiers depending on your IdP. Adobe only needs a stable string, so `sub` (or `tenantId:sub`) can be used directly—no hashing or UUID formatting required.
+  // 4. Set `authenticatedState: "authenticated"` when populating the IdentityMap
+  // 5. Optional enhancements:
+  //    - Cache the decoded token or jot down `jti` to prevent replay.
+  //    - Reuse other claims (e.g., verified `email`) to skip user-supplied fields for write actions.
+  //
+  // Reference outline you could drop into this helper once you wire in an OAuth library:
+  //   const authHeader = c.req.header("authorization") ?? "";
+  //   const match = authHeader.match(/^Bearer (.+)$/i);
+  //   if (match) {
+  //     const token = match[1];
+  //     const payload = await verifyJwt(token, jwksUri);
+  //     identityMap.EMAIL = [
+  //       {
+  //         id: payload.email,
+  //         authenticatedState: "authenticated",
+  //         primary: true,
+  //       },
+  //     ];
+  //     // set email to primary
+  //     for (const namespace of Object.keys(identityMap)) {
+  //       if (namespace !== "EMAIL") {
+  //         identityMap[namespace]?.[0].primary = false;
+  //       }
+  //     }
+  //   }
+  return identityMap;
+};
+
+const createCommonXdmFields = () => ({
+  _id: randomUUID(),
+  eventMergeId: randomUUID(),
+  producedBy: "chatgpt-app",
+});
+
+mcpServer.registerResource(
+  "office-list-widget",
+  resourceAssets["office-list"].uri,
+  {
+    title: "Office List Widget",
+    description: "Renders an interactive list of available Adobe offices",
+  },
+  async () => ({
+    contents: [
+      {
+        uri: resourceAssets["office-list"].uri,
+        text: resourceAssets["office-list"].html,
+        mimeType: "text/html+skybridge",
+        _meta: {
+          "openai/widgetDescription":
+            "Renders an interactive list of available Adobe offices with location details and photos.",
+          "openai/widgetPrefersBorder": true,
+          "openai/widgetDomain": "https://chatgpt.com",
+          "openai/widgetCSP": {
+            connect_domains: ["https://chatgpt.com"],
+            resource_domains: [
+              "https://*.oaistatic.com",
+              "https://fastly.picsum.photos",
+              "https://picsum.photos",
+            ],
+          },
+        },
+      },
+    ],
+  }),
+);
+
+mcpServer.registerTool(
+  "office-list",
+  {
+    title: "List offices",
+    inputSchema: {
+      sessionId: SessionIdOptionalSchema,
+    },
+    // Authentication Notes (Hypothetical):
+    // If we implemented OAuth 2.1, we could extract the following metadata from the access token:
+    // - User Identity (sub): Unique identifier for the user.
+    // - Scopes (scope): Permissions granted (e.g., 'offices:read').
+    // - Client ID (client_id): Identifies the ChatGPT client instance.
+    // - Issuer (iss) & Audience (aud): Verifies token origin and intended target.
+    //
+    // FPID Generation:
+    // 1. Extract the 'sub' claim from the verified JWT.
+    // 2. Hash this value to generate a deterministic UUID.
+    // 3. Use this UUID as the FPID in the IdentityMap, setting authenticatedState to 'authenticated'.
+    //
+    // Email Extraction:
+    // 1. Request the 'email' scope in securitySchemes.
+    // 2. Access the 'email' claim from the decoded access token or ID token.
+    // 3. Use this trusted email instead of the user input to prevent spoofing.
+    //
+    // Configuration would include:
+    // securitySchemes: [
+    //   { type: "noauth" }, // Optional auth
+    //   { type: "oauth2", scopes: ["offices:read", "email"] }
+    // ],
+    _meta: {
+      "openai/outputTemplate": resourceAssets["office-list"].uri,
+      "openai/toolInvocation/invoking": "Listing offices",
+      "openai/toolInvocation/invoked": "Listed offices",
+    },
+  },
+  async ({ sessionId } = {}, { _meta } = {}) => {
+    const activeSessionId = ensureSessionId(sessionId);
+    const identityMap = buildIdentityMap(_meta, activeSessionId);
+
+    try {
+      const result = await edgeClient.sendEvent({
+        identityMap,
+        xdm: {
+          ...createCommonXdmFields(),
+          eventType: "office.list.view",
+        },
+        query: {
+          personalization: {
+            decisionScopes: ["__view__"],
+          },
+        },
+      });
+      const handles = result.response?.body?.handle || [];
+      const relevantHandles = handles.filter(
+        (handle) =>
+          handle.type === "personalization:decisions" ||
+          handle.type === "state:store",
+      );
+      return {
+        structuredContent: {
+          sessionId: activeSessionId,
+          offices: Object.values(officeData),
+          _adobe: {
+            handles: relevantHandles,
+          },
+        },
+        content: [
+          {
+            type: "text",
+            text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("Failed to collect analytics:", error);
+      // Even if analytics/personalization fails, return the content
+      return {
+        structuredContent: {
+          sessionId: activeSessionId,
+          offices: Object.values(officeData),
+          _adobe: {
+            handles: [],
+          },
+        },
+        content: [
+          {
+            type: "text",
+            text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+          },
+        ],
+      };
+    }
+  },
+);
+
+mcpServer.registerResource(
+  "office-details-widget",
+  resourceAssets["office-details"].uri,
+  {
+    title: "Office Details Widget",
+    description: "Displays detailed information about a specific Adobe office",
+  },
+  async () => ({
+    contents: [
+      {
+        uri: resourceAssets["office-details"].uri,
+        text: resourceAssets["office-details"].html,
+        mimeType: "text/html+skybridge",
+        _meta: {
+          "openai/widgetDescription":
+            "Displays detailed information about a specific Adobe office including amenities, photos, and contact options.",
+          "openai/widgetPrefersBorder": true,
+          "openai/widgetDomain": "https://chatgpt.com",
+          "openai/widgetCSP": {
+            connect_domains: ["https://chatgpt.com"],
+            resource_domains: [
+              "https://*.oaistatic.com",
+              "https://fastly.picsum.photos",
+              "https://picsum.photos",
+            ],
+          },
+        },
+      },
+    ],
+  }),
+);
+
+mcpServer.registerTool(
+  "office-details",
+  {
+    title: "Show details for a specific office",
+    inputSchema: {
+      officeId: OfficeIdSchema,
+      sessionId: SessionIdSchema,
+    },
+    // Authentication Notes (Hypothetical):
+    // With OAuth 2.1, we could validate:
+    // - Token Expiry (exp): Ensure the session is active.
+    // - Authorization: Verify 'offices:read' scope is present.
+    // - User Context: Use the 'sub' claim to fetch user preferences or history.
+    //
+    // FPID Generation:
+    // 1. Extract the 'sub' claim from the verified JWT.
+    // 2. Hash this value to generate a deterministic UUID.
+    // 3. Use this UUID as the FPID in the IdentityMap, setting authenticatedState to 'authenticated'.
+    //
+    // Email Extraction:
+    // 1. Request the 'email' scope in securitySchemes.
+    // 2. Access the 'email' claim from the decoded access token or ID token.
+    // 3. Use this trusted email instead of the user input to prevent spoofing.
+    //
+    // Configuration:
+    // securitySchemes: [{ type: "oauth2", scopes: ["offices:read", "email"] }],
+    _meta: {
+      "openai/outputTemplate": resourceAssets["office-details"].uri,
+      "openai/toolInvocation/invoking": "Loading office details",
+      "openai/toolInvocation/invoked": "Displayed office details",
+    },
+  },
+  /** @param {object} params
+   * @param {keyof typeof officeData} params.officeId
+   */
+  async ({ officeId, sessionId } = {}, { _meta } = {}) => {
+    const activeSessionId = ensureSessionId(sessionId);
+    try {
+      if (!(officeId in officeData)) {
+        throw new Error(`Office with ID ${officeId} not found`);
+      }
+    } catch (error) {
+      console.error(error);
+      return {
+        structuredContent: {
+          sessionId: activeSessionId,
+        },
+        content: [
+          {
+            type: "text",
+            text: `Error displaying office details: ${error.message}. Session ID: ${activeSessionId}`,
+          },
+        ],
+      };
+    }
+    const office = officeData[officeId];
+    const identityMap = buildIdentityMap(_meta, activeSessionId);
+
+    try {
+      const result = await edgeClient.sendEvent({
+        identityMap,
+        xdm: {
+          ...createCommonXdmFields(),
+          eventType: "office.details.view",
+          details: {
+            _unifiedJsLab: {
+              details: {
+                officeId: officeId,
+              },
+            },
+          },
+          query: {
+            personalization: {
+              decisionScopes: ["__view__"],
+            },
+          },
+        },
+      });
+      const handles = result.response?.body?.handle || [];
+      const relevantHandles = handles.filter(
+        (handle) =>
+          handle.type === "personalization:decisions" ||
+          handle.type === "state:store",
+      );
+      return {
+        structuredContent: {
+          sessionId: activeSessionId,
+          office,
+          _adobe: {
+            handles: relevantHandles,
+          },
+        },
+        content: [
+          {
+            type: "text",
+            text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("Failed to collect analytics:", error);
+      return {
+        structuredContent: {
+          sessionId: activeSessionId,
+          office,
+          _adobe: {
+            handles: [],
+          },
+        },
+        content: [
+          {
+            type: "text",
+            text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+          },
+        ],
+      };
+    }
+  },
+);
+
+mcpServer.registerTool(
+  "request-visit",
+  {
+    title: "Notify Adobe that you would like to visit an office.",
+    inputSchema: {
+      officeId: OfficeIdSchema,
+      email: z.string().email().describe("The email address of the user"),
+      sessionId: SessionIdSchema,
+    },
+    // Authentication Notes (Hypothetical):
+    // This write action is a prime candidate for mandatory authentication.
+    // We could extract:
+    // - Verified Email: Potentially from ID token claims if 'email' scope is granted, avoiding manual input.
+    // - User Identity: Confirm who is requesting the visit.
+    // - Replay Protection: Via 'jti' (JWT ID) and nonce.
+    //
+    // FPID Generation:
+    // 1. Extract the 'sub' claim from the verified JWT.
+    // 2. Hash this value to generate a deterministic UUID.
+    // 3. Use this UUID as the FPID in the IdentityMap, setting authenticatedState to 'authenticated'.
+    //
+    // Email Extraction:
+    // 1. Request the 'email' scope in securitySchemes.
+    // 2. Access the 'email' claim from the decoded access token or ID token.
+    // 3. Use this trusted email instead of the user input to prevent spoofing.
+    //
+    // Configuration:
+    // securitySchemes: [{ type: "oauth2", scopes: ["visit:request", "email"] }],
+    _meta: {
+      "openai/toolInvocation/invoking": "Requesting visit",
+      "openai/toolInvocation/invoked": "Visit requested.",
+    },
+  },
+  async ({ officeId, email, sessionId } = {}, { _meta } = {}) => {
+    const activeSessionId = ensureSessionId(sessionId);
+    const office = officeData[officeId];
+    const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
+    const identityMap = buildIdentityMap(_meta, activeSessionId);
+
+    try {
+      const result = await edgeClient.sendEvent({
+        identityMap,
+        xdm: {
+          ...createCommonXdmFields(),
+          eventType: "office.visit.request",
+          _unifiedJsLab: {
+            details: {
+              officeId: officeId,
+              email: Buffer.from(
+                await crypto.subtle.digest(
+                  "SHA-256",
+                  new TextEncoder().encode(email),
+                ),
+              ).toString("hex"),
+            },
+          },
+        },
+        query: {
+          personalization: {
+            decisionScopes: ["__view__"],
+          },
+        },
+      });
+      const handles = result.response?.body?.handle || [];
+      const relevantHandles = handles.filter(
+        (handle) =>
+          handle.type === "personalization:decisions" ||
+          handle.type === "state:store",
+      );
+
+      return {
+        structuredContent: {
+          sessionId: activeSessionId,
+          _adobe: {
+            handles: relevantHandles,
+          },
+        },
+        content: [
+          {
+            type: "text",
+            text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("Failed to collect analytics:", error);
+      return {
+        structuredContent: {
+          sessionId: activeSessionId,
+          _adobe: {
+            handles: [],
+          },
+        },
+        content: [
+          {
+            type: "text",
+            text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
+          },
+        ],
+      };
+    }
+  },
+);
+
+const LOG_PREFIX = "[adobe-office-backend] ";
+const log = (...args) => console.log(LOG_PREFIX, ...args);
+/**
+ *
+ * @param {string | number} status
+ */
+const colorStatus = (status) => {
+  const s = typeof status === "string" ? Number.parseInt(status, 10) : status;
+  switch (
+    (status / 100) |
+    0 // most significant digit
+  ) {
+    case 5: // red -- error
+      return `\x1b[31m${s}\x1b[0m`;
+    case 4: // yellow -- warning
+      return `\x1b[33m${s}\x1b[0m`;
+    case 3: // cyan -- redirect
+      return `\x1b[36m${s}\x1b[0m`;
+    case 2: // green -- success
+      return `\x1b[32m${s}\x1b[0m`;
+    default: // 1
+      return `${s}`;
+  }
+};
+
+app.use(async (c, next) => {
+  const method = c.req.method;
+  const path = c.req.path;
+
+  log(`[IN]  ${method} ${path}`);
+
+  // Log important headers
+  const acceptHeader = c.req.header("accept");
+  const contentType = c.req.header("content-type");
+  const userAgent = c.req.header("user-agent");
+
+  if (acceptHeader) log("    Accept:", acceptHeader);
+  if (contentType) log("    Content-Type:", contentType);
+  if (userAgent) log("    User-Agent:", userAgent);
+
+  // Log body for POST/PUT/PATCH by cloning the request
+  if (method !== "GET" && method !== "HEAD") {
+    try {
+      const cloned = c.req.raw.clone();
+      const text = await cloned.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text);
+          log("    Body:", JSON.stringify(json, null, 2));
+        } catch {
+          log("    Body (text):", text.substring(0, 500));
+        }
+      }
+    } catch {
+      log("    Body: (could not read)");
+    }
+  }
+
+  const start = Date.now();
+  await next();
+  const elapsed = Date.now() - start;
+  log(`[OUT] ${method} ${path} ${colorStatus(c.res.status)} ${elapsed}ms`);
+});
+
+app.get("/", (c) => {
+  return c.text("Hello, World!");
+});
+
+app.get("/favicon.ico", (c) => {
+  c.header("Content-Type", "image/svg+xml");
+  return c.text(
+    String.raw`<?xml version="1.0" encoding="UTF-8"?><svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 501.71 444.05"><defs><style>.cls-1 {fill: #eb1000;stroke-width: 0px;}</style></defs><g id="Layer_1-2" data-name="Layer 1"><polygon class="cls-1" points="297.58 444.05 261.13 342.65 169.67 342.65 246.54 149.12 363.19 444.05 501.71 444.05 316.8 0 186.23 0 0 444.05 297.58 444.05 297.58 444.05"/></g></svg>`,
+  );
+});
+
+app.all("/mcp", async (c) => {
+  const transport = new StreamableHTTPTransport();
+  await mcpServer.connect(transport);
+  return transport.handleRequest(c);
+});
+
+const server = serve(app, (addressInfo) => {
+  const address = `http://${
+    addressInfo.address === "::" ? "[::1]" : addressInfo.address
+  }:${addressInfo.port}`;
+  log("listening on", address);
+});
+log("valid endpoints are:");
+for (const route of app.routes) {
+  log(`  - [${route.method}] ${route.path}`);
+}
+
+process.on("SIGINT", () => {
+  server.close();
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
+  server.close((err) => {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
+    process.exit(0);
+  });
+});
+
+export default app;

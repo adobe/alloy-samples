@@ -1,0 +1,6 @@
+packages:
+  - frontend
+  - backend
+  - datastore
+  - experience-edge-client
+linkWorkspacePackages: true
