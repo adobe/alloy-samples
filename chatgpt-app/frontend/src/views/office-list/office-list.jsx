@@ -12,7 +12,7 @@ import {
   Image,
 } from "@adobe/react-spectrum";
 import "./office-list.css";
-import { useToolOutput } from "../../openai-hooks";
+import { McpAppProvider, useToolOutput } from "../../mcp-app";
 import { useAlloy } from "../../resources";
 
 const OfficeCard = ({ office }) => {
@@ -134,8 +134,10 @@ export default App;
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <SpectrumProvider theme={defaultTheme}>
-      <App />
-    </SpectrumProvider>
+    <McpAppProvider>
+      <SpectrumProvider theme={defaultTheme}>
+        <App />
+      </SpectrumProvider>
+    </McpAppProvider>
   </StrictMode>,
 );
