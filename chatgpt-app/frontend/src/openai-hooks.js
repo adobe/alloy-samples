@@ -78,7 +78,7 @@ export function useWidgetState() {
   return [widgetState, setWidgetState];
 }
 
-export function useTool(name) {
+export function createToolCaller(name) {
   const callTool = OpenAI.callTool;
   return (params) => callTool(name, params);
 }

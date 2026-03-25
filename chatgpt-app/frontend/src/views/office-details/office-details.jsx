@@ -15,13 +15,13 @@ import {
   View,
 } from "@adobe/react-spectrum";
 import "./office-details.css";
-import { useToolOutput, useTool } from "../../openai-hooks";
+import { useToolOutput, createToolCaller } from "../../openai-hooks";
 import { useAlloy } from "../../resources";
 
 const App = () => {
   /** @type {import("datastore").Office} */
   const output = useToolOutput();
-  const requestVisit = useTool("request-visit");
+  const requestVisit = createToolCaller("request-visit");
   const alloy = useAlloy();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +52,7 @@ const App = () => {
           console.error("[alloy] Failed to apply response:", error);
         });
     }
-  }, [alloy, output?._adobe?.handles]);
+  }, [alloy, output?._adobe?.handles, output?.office?.name]);
 
   if (!output?.office) {
     return (
