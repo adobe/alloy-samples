@@ -84,7 +84,7 @@ const resourceAssets = Object.freeze({
   "office-details": createResourceAssets("office-details"),
 });
 
-const mcpServer = createMcpServer({ edgeClient, resourceAssets });
+const mcpServerOptions = { edgeClient, resourceAssets };
 
 const LOG_PREFIX = "[adobe-office-backend] ";
 const log = (...args) => console.log(LOG_PREFIX, ...args);
@@ -163,7 +163,8 @@ app.get("/favicon.ico", (c) => {
 
 app.all("/mcp", async (c) => {
   const transport = new StreamableHTTPTransport();
-  await mcpServer.connect(transport);
+  const server = createMcpServer(mcpServerOptions);
+  await server.connect(transport);
   return transport.handleRequest(c);
 });
 
