@@ -10,7 +10,8 @@
     "debug": "mcp-inspector",
     "format": "prettier --write .",
     "lint": "eslint --fix .",
-    "check": "pnpm run lint && pnpm run format"
+    "check": "pnpm run lint && pnpm run format",
+    "test": "pnpm run --recursive --if-present test"
   },
   "keywords": [],
   "author": "",
