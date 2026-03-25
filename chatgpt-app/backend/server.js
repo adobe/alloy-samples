@@ -89,7 +89,11 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             ui: {
               prefersBorder: true,
               csp: {
-                connectDomains: ["https://chatgpt.com"],
+                connectDomains: [
+                  "https://chatgpt.com",
+                  "https://*.demdex.net",
+                  "https://*.adobedc.net",
+                ],
                 resourceDomains: [
                   "https://*.oaistatic.com",
                   "https://fastly.picsum.photos",
@@ -193,7 +197,11 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             ui: {
               prefersBorder: true,
               csp: {
-                connectDomains: ["https://chatgpt.com"],
+                connectDomains: [
+                  "https://chatgpt.com",
+                  "https://*.demdex.net",
+                  "https://*.adobedc.net",
+                ],
                 resourceDomains: [
                   "https://*.oaistatic.com",
                   "https://fastly.picsum.photos",
