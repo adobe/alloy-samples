@@ -15,13 +15,13 @@ import {
   View,
 } from "@adobe/react-spectrum";
 import "./office-details.css";
-import { useToolOutput, createToolCaller } from "../../openai-hooks";
+import { McpAppProvider, useToolOutput, useCallTool } from "../../mcp-app";
 import { useAlloy } from "../../resources";
 
 const App = () => {
   /** @type {import("datastore").Office} */
   const output = useToolOutput();
-  const requestVisit = createToolCaller("request-visit");
+  const callTool = useCallTool();
   const alloy = useAlloy();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,14 +76,17 @@ const App = () => {
     setIsSubmitting(true);
 
     try {
-      const result = await requestVisit({ officeId: office.id, email });
+      const result = await callTool("request-visit", {
+        officeId: office.id,
+        email,
+      });
 
       // Apply any personalization/state returned by the tool
-      if (alloy && result?.structuredContent?.handles) {
+      if (alloy && result?.structuredContent?._adobe?.handles) {
         alloy("applyResponse", {
           renderDecisions: true,
           responseBody: {
-            handle: result.structuredContent.handles,
+            handle: result.structuredContent._adobe.handles,
           },
         }).catch((error) => {
           console.error(
@@ -186,9 +189,11 @@ export default App;
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <SpectrumProvider theme={defaultTheme}>
-      <ToastContainer />
-      <App />
-    </SpectrumProvider>
+    <McpAppProvider>
+      <SpectrumProvider theme={defaultTheme}>
+        <ToastContainer />
+        <App />
+      </SpectrumProvider>
+    </McpAppProvider>
   </StrictMode>,
 );

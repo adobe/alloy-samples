@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
 import {
   createMcpServer,
   ensureSessionId,
@@ -70,6 +71,14 @@ describe("tool listing", () => {
       expect(tool.inputSchema).toBeDefined();
     }
   });
+
+  it("app tools carry ui metadata with resourceUri", async () => {
+    const { tools } = await client.listTools();
+    for (const tool of tools) {
+      const uiMeta = tool._meta?.ui;
+      expect(uiMeta?.resourceUri).toBeTruthy();
+    }
+  });
 });
 
 describe("resource listing", () => {
@@ -84,22 +93,33 @@ describe("resource listing", () => {
 });
 
 describe("resource reading", () => {
-  it("returns HTML with skybridge mime type for office-list-widget", async () => {
+  it("returns HTML with MCP App MIME type for office-list-widget", async () => {
     const result = await client.readResource({
       uri: testResourceAssets["office-list"].uri,
     });
     expect(result.contents).toHaveLength(1);
     expect(result.contents[0].text).toContain("office-list");
-    expect(result.contents[0].mimeType).toBe("text/html+skybridge");
+    expect(result.contents[0].mimeType).toBe(RESOURCE_MIME_TYPE);
   });
 
-  it("returns HTML with skybridge mime type for office-details-widget", async () => {
+  it("returns HTML with MCP App MIME type for office-details-widget", async () => {
     const result = await client.readResource({
       uri: testResourceAssets["office-details"].uri,
     });
     expect(result.contents).toHaveLength(1);
     expect(result.contents[0].text).toContain("office-details");
-    expect(result.contents[0].mimeType).toBe("text/html+skybridge");
+    expect(result.contents[0].mimeType).toBe(RESOURCE_MIME_TYPE);
+  });
+
+  it("includes ui metadata with CSP configuration", async () => {
+    const result = await client.readResource({
+      uri: testResourceAssets["office-list"].uri,
+    });
+    const uiMeta = result.contents[0]._meta?.ui;
+    expect(uiMeta).toBeDefined();
+    expect(uiMeta.prefersBorder).toBe(true);
+    expect(uiMeta.csp?.connectDomains).toBeInstanceOf(Array);
+    expect(uiMeta.csp?.resourceDomains).toBeInstanceOf(Array);
   });
 });
 

@@ -1,3 +1,8 @@
+import {
+  registerAppTool,
+  registerAppResource,
+  RESOURCE_MIME_TYPE,
+} from "@modelcontextprotocol/ext-apps/server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { OfficeIdSchema, officeData } from "datastore";
 import { v7 as uuidv7, v4 as randomUUID } from "uuid";
@@ -66,31 +71,31 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     version: "1.0.0",
   });
 
-  mcpServer.registerResource(
+  registerAppResource(
+    mcpServer,
     "office-list-widget",
     resourceAssets["office-list"].uri,
     {
-      title: "Office List Widget",
-      description: "Renders an interactive list of available Adobe offices",
+      description:
+        "Renders an interactive list of available Adobe offices with location details and photos.",
     },
     async () => ({
       contents: [
         {
           uri: resourceAssets["office-list"].uri,
+          mimeType: RESOURCE_MIME_TYPE,
           text: resourceAssets["office-list"].html,
-          mimeType: "text/html+skybridge",
           _meta: {
-            "openai/widgetDescription":
-              "Renders an interactive list of available Adobe offices with location details and photos.",
-            "openai/widgetPrefersBorder": true,
-            "openai/widgetDomain": "https://chatgpt.com",
-            "openai/widgetCSP": {
-              connect_domains: ["https://chatgpt.com"],
-              resource_domains: [
-                "https://*.oaistatic.com",
-                "https://fastly.picsum.photos",
-                "https://picsum.photos",
-              ],
+            ui: {
+              prefersBorder: true,
+              csp: {
+                connectDomains: ["https://chatgpt.com"],
+                resourceDomains: [
+                  "https://*.oaistatic.com",
+                  "https://fastly.picsum.photos",
+                  "https://picsum.photos",
+                ],
+              },
             },
           },
         },
@@ -98,7 +103,8 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     }),
   );
 
-  mcpServer.registerTool(
+  registerAppTool(
+    mcpServer,
     "office-list",
     {
       title: "List offices",
@@ -106,9 +112,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         sessionId: SessionIdOptionalSchema,
       },
       _meta: {
-        "openai/outputTemplate": resourceAssets["office-list"].uri,
-        "openai/toolInvocation/invoking": "Listing offices",
-        "openai/toolInvocation/invoked": "Listed offices",
+        ui: { resourceUri: resourceAssets["office-list"].uri },
       },
     },
     async ({ sessionId } = {}, { _meta } = {}) => {
@@ -171,32 +175,31 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     },
   );
 
-  mcpServer.registerResource(
+  registerAppResource(
+    mcpServer,
     "office-details-widget",
     resourceAssets["office-details"].uri,
     {
-      title: "Office Details Widget",
       description:
-        "Displays detailed information about a specific Adobe office",
+        "Displays detailed information about a specific Adobe office including amenities, photos, and contact options.",
     },
     async () => ({
       contents: [
         {
           uri: resourceAssets["office-details"].uri,
+          mimeType: RESOURCE_MIME_TYPE,
           text: resourceAssets["office-details"].html,
-          mimeType: "text/html+skybridge",
           _meta: {
-            "openai/widgetDescription":
-              "Displays detailed information about a specific Adobe office including amenities, photos, and contact options.",
-            "openai/widgetPrefersBorder": true,
-            "openai/widgetDomain": "https://chatgpt.com",
-            "openai/widgetCSP": {
-              connect_domains: ["https://chatgpt.com"],
-              resource_domains: [
-                "https://*.oaistatic.com",
-                "https://fastly.picsum.photos",
-                "https://picsum.photos",
-              ],
+            ui: {
+              prefersBorder: true,
+              csp: {
+                connectDomains: ["https://chatgpt.com"],
+                resourceDomains: [
+                  "https://*.oaistatic.com",
+                  "https://fastly.picsum.photos",
+                  "https://picsum.photos",
+                ],
+              },
             },
           },
         },
@@ -204,7 +207,8 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     }),
   );
 
-  mcpServer.registerTool(
+  registerAppTool(
+    mcpServer,
     "office-details",
     {
       title: "Show details for a specific office",
@@ -213,9 +217,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         sessionId: SessionIdSchema,
       },
       _meta: {
-        "openai/outputTemplate": resourceAssets["office-details"].uri,
-        "openai/toolInvocation/invoking": "Loading office details",
-        "openai/toolInvocation/invoked": "Displayed office details",
+        ui: { resourceUri: resourceAssets["office-details"].uri },
       },
     },
     /** @param {object} params
@@ -306,7 +308,8 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     },
   );
 
-  mcpServer.registerTool(
+  registerAppTool(
+    mcpServer,
     "request-visit",
     {
       title: "Notify Adobe that you would like to visit an office.",
@@ -316,8 +319,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         sessionId: SessionIdSchema,
       },
       _meta: {
-        "openai/toolInvocation/invoking": "Requesting visit",
-        "openai/toolInvocation/invoked": "Visit requested.",
+        ui: { resourceUri: resourceAssets["office-details"].uri },
       },
     },
     async ({ officeId, email, sessionId } = {}, { _meta } = {}) => {
