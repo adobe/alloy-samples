@@ -17,9 +17,9 @@
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@modelcontextprotocol/inspector": "^0.17.2",
-    "eslint": "^9.39.1",
+    "@eslint/js": "^9.39.4",
+    "@modelcontextprotocol/inspector": "^0.17.5",
+    "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.5.0",
     "prettier": "3.7.3"
