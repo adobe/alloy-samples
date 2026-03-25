@@ -17,11 +17,11 @@
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint-react/eslint-plugin": "^3.0.0",
+    "@eslint/js": "^10.0.1",
     "@modelcontextprotocol/inspector": "^0.17.5",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react": "^7.37.5",
-    "globals": "^16.5.0",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
     "prettier": "3.7.3"
   }
 }
