@@ -37,6 +37,7 @@ const App = () => {
         .then(() =>
           alloy("sendEvent", {
             xdm: {
+              identityMap: output._adobe.identityMap,
               eventType: "web.webPageDetails.pageViews",
               web: {
                 webPageDetails: {

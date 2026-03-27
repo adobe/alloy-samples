@@ -115,6 +115,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             offices: Object.values(officeData),
             _adobe: {
               handles: relevantHandles,
+              identityMap,
             },
           },
           content: [
@@ -132,6 +133,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             offices: Object.values(officeData),
             _adobe: {
               handles: [],
+              identityMap,
             },
           },
           content: [
@@ -246,6 +248,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             office,
             _adobe: {
               handles: relevantHandles,
+              identityMap,
             },
           },
           content: [
@@ -262,6 +265,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             office,
             _adobe: {
               handles: [],
+              identityMap,
             },
           },
           content: [
@@ -328,6 +332,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           structuredContent: {
             _adobe: {
               handles: relevantHandles,
+              identityMap,
             },
           },
           content: [
@@ -343,6 +348,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           structuredContent: {
             _adobe: {
               handles: [],
+              identityMap,
             },
           },
           content: [

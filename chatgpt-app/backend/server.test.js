@@ -140,6 +140,7 @@ describe("office-list tool", () => {
         Object.keys(officeData).length,
       );
       expect(result.structuredContent._adobe.handles).toEqual([]);
+      expect(result.structuredContent._adobe.identityMap).toEqual({});
     }
   });
 });
@@ -160,6 +161,7 @@ describe("office-details tool", () => {
     if (result.structuredContent?.office) {
       expect(result.structuredContent.office.name).toBe("San Francisco");
       expect(result.structuredContent.office.amenities).toBeInstanceOf(Array);
+      expect(result.structuredContent._adobe.identityMap).toEqual({});
     }
   });
 
@@ -192,6 +194,10 @@ describe("request-visit tool", () => {
     });
     const text = result.content.find((c) => c.type === "text")?.text;
     expect(text).toContain("San Francisco");
+
+    if (result.structuredContent) {
+      expect(result.structuredContent._adobe.identityMap).toEqual({});
+    }
   });
 });
 
