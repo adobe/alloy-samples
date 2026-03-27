@@ -5,33 +5,10 @@ import {
 } from "@modelcontextprotocol/ext-apps/server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { OfficeIdSchema, officeData } from "datastore";
-import { v7 as uuidv7, v4 as randomUUID } from "uuid";
+import { v4 as randomUUID } from "uuid";
 import { z } from "zod";
 
-export const SessionIdSchema = z
-  .string()
-  .trim()
-  .nonempty({ message: "Session ID cannot be empty" })
-  .max(256, { message: "Session ID must be 256 characters or fewer" })
-  .describe("Session identifier issued by the office list tool.");
-
-export const SessionIdOptionalSchema = SessionIdSchema.describe(
-  "Reuse this value to continue a session; omit or null to start a new one.",
-).nullish();
-
-export const ensureSessionId = (value) => {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed) {
-      return trimmed;
-    }
-  }
-  // UUIDv7 is used because it is randomly generated as well as sortable - it
-  // contains the timestamp of creation inside.
-  return uuidv7();
-};
-
-export const buildIdentityMap = (_meta, sessionId) => {
+export const buildIdentityMap = (_meta) => {
   const identityMap = {};
   // https://developers.openai.com/apps-sdk/reference#_meta-fields-the-client-provides
   // Apps SDK reference: `_meta["openai/subject"]` is "an anonymized user hint for rate limiting."
@@ -43,12 +20,6 @@ export const buildIdentityMap = (_meta, sessionId) => {
       },
     ];
   }
-  identityMap.SESSION_ID = [
-    {
-      id: sessionId || uuidv7(),
-      primary: !("OPENAI_SUBJECT" in identityMap),
-    },
-  ];
   return identityMap;
 };
 
@@ -112,16 +83,13 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     "office-list",
     {
       title: "List offices",
-      inputSchema: {
-        sessionId: SessionIdOptionalSchema,
-      },
+      inputSchema: {},
       _meta: {
         ui: { resourceUri: resourceAssets["office-list"].uri },
       },
     },
-    async ({ sessionId } = {}, { _meta } = {}) => {
-      const activeSessionId = ensureSessionId(sessionId);
-      const identityMap = buildIdentityMap(_meta, activeSessionId);
+    async (_args = {}, { _meta } = {}) => {
+      const identityMap = buildIdentityMap(_meta);
 
       try {
         const result = await edgeClient.sendEvent({
@@ -144,7 +112,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         );
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             offices: Object.values(officeData),
             _adobe: {
               handles: relevantHandles,
@@ -153,7 +120,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           content: [
             {
               type: "text",
-              text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+              text: "Displayed the list of offices.",
             },
           ],
         };
@@ -162,7 +129,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         // Even if analytics/personalization fails, return the content
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             offices: Object.values(officeData),
             _adobe: {
               handles: [],
@@ -171,7 +137,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           content: [
             {
               type: "text",
-              text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+              text: "Displayed the list of offices.",
             },
           ],
         };
@@ -222,7 +188,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
       title: "Show details for a specific office",
       inputSchema: {
         officeId: OfficeIdSchema,
-        sessionId: SessionIdSchema,
       },
       _meta: {
         ui: { resourceUri: resourceAssets["office-details"].uri },
@@ -231,8 +196,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     /** @param {object} params
      * @param {keyof typeof officeData} params.officeId
      */
-    async ({ officeId, sessionId } = {}, { _meta } = {}) => {
-      const activeSessionId = ensureSessionId(sessionId);
+    async ({ officeId } = {}, { _meta } = {}) => {
       try {
         if (!(officeId in officeData)) {
           throw new Error(`Office with ID ${officeId} not found`);
@@ -240,19 +204,16 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
       } catch (error) {
         console.error(error);
         return {
-          structuredContent: {
-            sessionId: activeSessionId,
-          },
           content: [
             {
               type: "text",
-              text: `Error displaying office details: ${error.message}. Session ID: ${activeSessionId}`,
+              text: `Error displaying office details: ${error.message}`,
             },
           ],
         };
       }
       const office = officeData[officeId];
-      const identityMap = buildIdentityMap(_meta, activeSessionId);
+      const identityMap = buildIdentityMap(_meta);
 
       try {
         const result = await edgeClient.sendEvent({
@@ -282,7 +243,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         );
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             office,
             _adobe: {
               handles: relevantHandles,
@@ -291,7 +251,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           content: [
             {
               type: "text",
-              text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+              text: `Displayed details for office ${officeId}.`,
             },
           ],
         };
@@ -299,7 +259,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         console.error("Failed to collect analytics:", error);
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             office,
             _adobe: {
               handles: [],
@@ -308,7 +267,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           content: [
             {
               type: "text",
-              text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+              text: `Displayed details for office ${officeId}.`,
             },
           ],
         };
@@ -324,17 +283,15 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
       inputSchema: {
         officeId: OfficeIdSchema,
         email: z.string().email().describe("The email address of the user"),
-        sessionId: SessionIdSchema,
       },
       _meta: {
         ui: { resourceUri: resourceAssets["office-details"].uri },
       },
     },
-    async ({ officeId, email, sessionId } = {}, { _meta } = {}) => {
-      const activeSessionId = ensureSessionId(sessionId);
+    async ({ officeId, email } = {}, { _meta } = {}) => {
       const office = officeData[officeId];
       const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
-      const identityMap = buildIdentityMap(_meta, activeSessionId);
+      const identityMap = buildIdentityMap(_meta);
 
       try {
         const result = await edgeClient.sendEvent({
@@ -369,7 +326,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
 
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             _adobe: {
               handles: relevantHandles,
             },
@@ -377,7 +333,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           content: [
             {
               type: "text",
-              text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
+              text: `Email sent! Message: "${emailMessage}"`,
             },
           ],
         };
@@ -385,7 +341,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         console.error("Failed to collect analytics:", error);
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             _adobe: {
               handles: [],
             },
@@ -393,7 +348,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           content: [
             {
               type: "text",
-              text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
+              text: `Email sent! Message: "${emailMessage}"`,
             },
           ],
         };

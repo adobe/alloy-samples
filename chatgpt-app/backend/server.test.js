@@ -4,7 +4,6 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
 import {
   createMcpServer,
-  ensureSessionId,
   buildIdentityMap,
   createCommonXdmFields,
 } from "./server.js";
@@ -128,43 +127,19 @@ describe("resource reading", () => {
 // ---------------------------------------------------------------------------
 
 describe("office-list tool", () => {
-  it("returns all offices and a session ID", async () => {
+  it("returns all offices", async () => {
     const result = await client.callTool({
       name: "office-list",
       arguments: {},
     });
     const text = result.content.find((c) => c.type === "text")?.text;
-    expect(text).toContain("Session ID:");
+    expect(text).toContain("Displayed the list of offices.");
 
     if (result.structuredContent) {
       expect(result.structuredContent.offices).toHaveLength(
         Object.keys(officeData).length,
       );
-      expect(result.structuredContent.sessionId).toBeTruthy();
       expect(result.structuredContent._adobe.handles).toEqual([]);
-    }
-  });
-
-  it("generates a new session ID when none provided", async () => {
-    const result = await client.callTool({
-      name: "office-list",
-      arguments: {},
-    });
-    const text = result.content.find((c) => c.type === "text")?.text;
-    // Session ID is a UUIDv7 — at minimum a non-empty string
-    expect(text).toMatch(/Session ID: \S+/);
-  });
-
-  it("preserves a provided session ID", async () => {
-    const result = await client.callTool({
-      name: "office-list",
-      arguments: { sessionId: "my-session-42" },
-    });
-    const text = result.content.find((c) => c.type === "text")?.text;
-    expect(text).toContain("my-session-42");
-
-    if (result.structuredContent) {
-      expect(result.structuredContent.sessionId).toBe("my-session-42");
     }
   });
 });
@@ -177,11 +152,10 @@ describe("office-details tool", () => {
   it("returns details for a valid office", async () => {
     const result = await client.callTool({
       name: "office-details",
-      arguments: { officeId: "sf", sessionId: "test-session" },
+      arguments: { officeId: "sf" },
     });
     const text = result.content.find((c) => c.type === "text")?.text;
     expect(text).toContain("sf");
-    expect(text).toContain("test-session");
 
     if (result.structuredContent?.office) {
       expect(result.structuredContent.office.name).toBe("San Francisco");
@@ -193,7 +167,7 @@ describe("office-details tool", () => {
     for (const [id, office] of Object.entries(officeData)) {
       const result = await client.callTool({
         name: "office-details",
-        arguments: { officeId: id, sessionId: "test" },
+        arguments: { officeId: id },
       });
       if (result.structuredContent?.office) {
         expect(result.structuredContent.office.name).toBe(office.name);
@@ -214,52 +188,10 @@ describe("request-visit tool", () => {
       arguments: {
         officeId: "sf",
         email: "test@example.com",
-        sessionId: "visit-session",
       },
     });
     const text = result.content.find((c) => c.type === "text")?.text;
     expect(text).toContain("San Francisco");
-    expect(text).toContain("visit-session");
-  });
-
-  it("includes the session ID in structured content", async () => {
-    const result = await client.callTool({
-      name: "request-visit",
-      arguments: {
-        officeId: "nyc",
-        email: "visitor@example.com",
-        sessionId: "nyc-visit",
-      },
-    });
-    if (result.structuredContent) {
-      expect(result.structuredContent.sessionId).toBe("nyc-visit");
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Pure business logic — ensureSessionId
-// ---------------------------------------------------------------------------
-
-describe("ensureSessionId", () => {
-  it("returns the trimmed input when given a valid string", () => {
-    expect(ensureSessionId("abc")).toBe("abc");
-    expect(ensureSessionId("  abc  ")).toBe("abc");
-  });
-
-  it("generates a UUIDv7 for null / undefined / empty string", () => {
-    const ids = [
-      ensureSessionId(null),
-      ensureSessionId(undefined),
-      ensureSessionId(""),
-      ensureSessionId("   "),
-    ];
-    for (const id of ids) {
-      expect(typeof id).toBe("string");
-      expect(id.length).toBeGreaterThan(0);
-    }
-    // Each call produces a unique ID
-    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 
@@ -269,23 +201,21 @@ describe("ensureSessionId", () => {
 
 describe("buildIdentityMap", () => {
   it("includes OPENAI_SUBJECT when _meta has openai/subject", () => {
-    const map = buildIdentityMap({ "openai/subject": "user-abc" }, "sess-1");
+    const map = buildIdentityMap({ "openai/subject": "user-abc" });
     expect(map.OPENAI_SUBJECT).toEqual([{ id: "user-abc", primary: true }]);
-    // SESSION_ID should not be primary when OPENAI_SUBJECT is present
-    expect(map.SESSION_ID[0].primary).toBe(false);
   });
 
-  it("sets SESSION_ID as primary when no openai/subject", () => {
-    const map = buildIdentityMap({}, "sess-2");
+  it("returns empty map when no openai/subject", () => {
+    const map = buildIdentityMap({});
     expect(map.OPENAI_SUBJECT).toBeUndefined();
-    expect(map.SESSION_ID).toEqual([{ id: "sess-2", primary: true }]);
+    expect(Object.keys(map)).toHaveLength(0);
   });
 
   it("handles null or undefined _meta gracefully", () => {
-    const map1 = buildIdentityMap(null, "sess-3");
-    const map2 = buildIdentityMap(undefined, "sess-4");
-    expect(map1.SESSION_ID[0].primary).toBe(true);
-    expect(map2.SESSION_ID[0].primary).toBe(true);
+    const map1 = buildIdentityMap(null);
+    const map2 = buildIdentityMap(undefined);
+    expect(Object.keys(map1)).toHaveLength(0);
+    expect(Object.keys(map2)).toHaveLength(0);
   });
 });
 
