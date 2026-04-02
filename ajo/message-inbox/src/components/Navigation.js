@@ -15,7 +15,15 @@ const shopOptions = [
 ];
 const promotionOptions = ["Weekly Deals", "Clearance", "Holiday Specials"];
 
-export default function Navigation({ setSelectedNotification, notifications }) {
+export default function Navigation({
+  setSelectedNotification,
+  notifications,
+  inboxConfig,
+  readNotificationIds,
+  setReadNotificationIds,
+  deletedNotificationIds,
+  setDeletedNotificationIds,
+}) {
   // Render menu trigger buttons
   const shopTrigger = (
     <button className="flex items-center space-x-2 hover:text-blue-200 transition-colors">
@@ -31,9 +39,24 @@ export default function Navigation({ setSelectedNotification, notifications }) {
     </button>
   );
 
+  const hasUnread = notifications.some(
+    (n) => !deletedNotificationIds.has(n.id) && !readNotificationIds.has(n.id),
+  );
+
+  const inboxLabel = inboxConfig?.title ?? "Notifications";
+
   const notificationsTrigger = (
-    <button className="flex items-center space-x-2 hover:text-blue-200 transition-colors">
+    <button
+      className="relative flex items-center justify-center hover:text-blue-200 transition-colors"
+      aria-label={hasUnread ? `${inboxLabel} (unread)` : inboxLabel}
+    >
       <FaBell className="text-xl" />
+      {hasUnread && (
+        <span
+          className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full ring-2 ring-blue-600"
+          aria-hidden
+        />
+      )}
     </button>
   );
 
@@ -60,7 +83,12 @@ export default function Navigation({ setSelectedNotification, notifications }) {
             <NotificationList
               setSelectedNotification={setSelectedNotification}
               notifications={notifications}
+              inboxConfig={inboxConfig}
               setIsOpen={setIsOpen}
+              readNotificationIds={readNotificationIds}
+              setReadNotificationIds={setReadNotificationIds}
+              deletedNotificationIds={deletedNotificationIds}
+              setDeletedNotificationIds={setDeletedNotificationIds}
             />
           )}
         />
