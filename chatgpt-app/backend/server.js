@@ -99,8 +99,15 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             eventType: "office.list.view",
           },
           query: {
+            identity: { fetch: ["ECID"] },
             personalization: {
+              schemas: [
+                "https://ns.adobe.com/personalization/json-content-item",
+                "https://ns.adobe.com/personalization/html-content-item",
+                "https://ns.adobe.com/personalization/default-content-item",
+              ],
               decisionScopes: ["__view__"],
+              surfaces: ["service://chatgpt-app/office-list"],
             },
           },
         });
@@ -108,6 +115,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         const relevantHandles = handles.filter(
           (handle) =>
             handle.type === "personalization:decisions" ||
+            handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
         return {
@@ -223,17 +231,16 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           xdm: {
             ...createCommonXdmFields(),
             eventType: "office.details.view",
-            details: {
-              _unifiedJsLab: {
-                details: {
-                  officeId: officeId,
-                },
+            _unifiedJsLab: {
+              details: {
+                officeId: officeId,
               },
             },
-            query: {
-              personalization: {
-                decisionScopes: ["__view__"],
-              },
+          },
+          query: {
+            personalization: {
+              decisionScopes: ["__view__"],
+              surfaces: ["service://chatgpt-app/office-details"],
             },
           },
         });
@@ -241,6 +248,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         const relevantHandles = handles.filter(
           (handle) =>
             handle.type === "personalization:decisions" ||
+            handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
         return {
@@ -318,6 +326,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           query: {
             personalization: {
               decisionScopes: ["__view__"],
+              surfaces: ["service://chatgpt-app/office-details"],
             },
           },
         });
@@ -325,6 +334,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         const relevantHandles = handles.filter(
           (handle) =>
             handle.type === "personalization:decisions" ||
+            handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
 
