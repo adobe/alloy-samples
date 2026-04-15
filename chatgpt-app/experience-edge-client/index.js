@@ -115,6 +115,8 @@ export class ExperienceEdgeClient {
       log(
         `    Query: personalization scopes=${
           query.personalization.decisionScopes?.join(",") || "none"
+        }, surfaces=${
+          query.personalization.surfaces?.join(",") || "none"
         }`,
       );
     }
@@ -129,8 +131,26 @@ export class ExperienceEdgeClient {
     const handles = result.response?.body?.handle || [];
     const handleTypes = handles.map((h) => h.type).join(", ");
     log(`[IN]  Edge ${endpoint} - handles: [${handleTypes || "none"}]`);
-    if (handles.length > 0) {
-      log(`    ${handles.length} handle(s) received`);
+    for (const handle of handles) {
+      const count = handle.payload?.length ?? 0;
+      if (handle.type === "personalization:decisions" && count > 0) {
+        for (const decision of handle.payload) {
+          log(
+            `    [decision] scope=${decision.scope}, provider=${decision.scopeDetails?.decisionProvider}, items=${decision.items?.length ?? 0}`,
+          );
+          for (const item of decision.items ?? []) {
+            log(
+              `      [item] schema=${item.schema}, content=${JSON.stringify(item.data?.content).slice(0, 200)}`,
+            );
+          }
+        }
+      } else if (handle.type === "identity:result" && count > 0) {
+        for (const id of handle.payload) {
+          log(`    [identity] ${id.namespace?.code}=${id.id}`);
+        }
+      } else {
+        log(`    [${handle.type}] ${count} payload(s)`);
+      }
     }
 
     return result;
