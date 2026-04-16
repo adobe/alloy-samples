@@ -173,6 +173,26 @@ Example usage:
 
 <img width="357" height="652" alt="image" src="https://github.com/user-attachments/assets/67ac03bd-a97d-41f5-bacc-3fc9ab9942b6" />
 
+## AEP / AJO Configuration
+
+The reference setup for this sample lives in the `unifiedjslab` AEP org.
+
+- **AEP Organization:** `unifiedjslab`
+- **Datastream:** [ChatGPT Hotel App Sample](https://experience.adobe.com/#/@unifiedjslab/sname:prod/data-collection/scramjet/ca4e85a3-bfb4-464d-8176-222630136a96/) (`ca4e85a3-bfb4-464d-8176-222630136a96`)
+  - Event dataset: "MCP alloy-sample events" (profile: no, identity: no, primary: yes)
+  - Profile dataset: "Carter's Event & Profile Dataset" (primary: yes)
+  - Services: Offer Decisioning, Personalization Destinations, AJO (Edge Segmentation off)
+- **[AEP Profiles](https://experience.adobe.com/#/@unifiedjslab/sname:prod/platform/profile/overview)**
+  - Default merge policy "Default timebased"; attribute merge timestamp-ordered
+  - ID stitching private graph: `_xdm.context.profile`
+  - ID stitching none: `_experience.customerjourneymanagement.ajoentity`, `_experience.customerjourneymanagement.ajoEntity`, `_xdm.context.segmentdefinition`
+- **AJO Channels** (both code-based experience, platform: other, marketing action: Onsite Personalization)
+  - [chatgpt-app-offices](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/configui/message-preset/edit/inbound/af92321c-cf89-490e-bbc3-5d50cf1b5caf) — JSON content, surface `service://chatgpt-app/office-list`
+  - [chatgpt-offices-html](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/configui/message-preset/edit/inbound/3e454ccb-2344-4a3c-a10f-11208b66dbda) — HTML content
+- **AJO Campaigns**
+  - [ChatGPT Office Promo 2](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/campaigns/summary/582e700e-2542-45b0-8298-faa38f179f1f) (`c8a5f48d-a357-4124-ad32-0f68824fd2d5`) — identity type: OpenAI Subject; content type: `promo-banner` (JSON code-based experience)
+  - [ChatGPT Office Promo 3 - html](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/campaigns/summary/f552b722-7434-4d29-a9fe-2ceb30d0fdaf) — HTML code-based experience, served via `chatgpt-offices-html` channel
+
 ## Additional Documentation
 
 - [Apps SDK overview & guides](https://developers.openai.com/apps-sdk) — general reference for defining MCP servers, tools, prompts, and widgets for ChatGPT, organized around the Plan (research use cases), Build (MCP server + tools + widget runtime), and Deploy stages.
