@@ -2,11 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
-import {
-  createMcpServer,
-  buildIdentityMap,
-  createCommonXdmFields,
-} from "./server.js";
+import { createMcpServer, buildIdentityMap, createCommonXdmFields } from "./server.js";
 import { officeData } from "datastore";
 
 // A real edge client that is simply unreachable — exercises the error-handling
@@ -37,8 +33,7 @@ beforeAll(async () => {
     resourceAssets: testResourceAssets,
   });
   client = new Client({ name: "test-client", version: "1.0.0" });
-  const [clientTransport, serverTransport] =
-    InMemoryTransport.createLinkedPair();
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await mcpServer.connect(serverTransport);
   await client.connect(clientTransport);
 });
@@ -136,9 +131,7 @@ describe("office-list tool", () => {
     expect(text).toContain("Displayed the list of offices.");
 
     if (result.structuredContent) {
-      expect(result.structuredContent.offices).toHaveLength(
-        Object.keys(officeData).length,
-      );
+      expect(result.structuredContent.offices).toHaveLength(Object.keys(officeData).length);
       expect(result.structuredContent._adobe.handles).toEqual([]);
       expect(result.structuredContent._adobe.identityMap).toEqual({});
     }
