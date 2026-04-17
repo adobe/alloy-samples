@@ -81,8 +81,7 @@ const PromoBannerSchema = z.object({
     .optional(),
 });
 
-const JSON_CONTENT_ITEM_SCHEMA =
-  "https://ns.adobe.com/personalization/json-content-item";
+const JSON_CONTENT_ITEM_SCHEMA = "https://ns.adobe.com/personalization/json-content-item";
 
 const getPromoBanners = (handles) => {
   if (!handles) return [];
@@ -102,12 +101,7 @@ const getPromoBanners = (handles) => {
 };
 
 const PromoBanner = ({ content }) => (
-  <View
-    backgroundColor="blue-100"
-    padding="size-200"
-    borderRadius="medium"
-    marginBottom="size-300"
-  >
+  <View backgroundColor="blue-400" padding="size-200" borderRadius="medium" marginBottom="size-300">
     <Heading level={3} marginBottom="size-50">
       {content.headline}
     </Heading>
@@ -116,7 +110,7 @@ const PromoBanner = ({ content }) => (
 );
 
 const App = () => {
-  /** @type {import("datastore").Office[]} */
+  /** @type {{ offices: import("datastore").Office[], _adobe?: { handles?: any[], identityMap?: any } } | null} */
   const output = useToolOutput();
   const alloy = useAlloy();
 

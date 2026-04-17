@@ -51,9 +51,7 @@ const EnvSchema = z.object({
   ACCESS_SCOPES: ExperienceEdgeClient.InstanceConfigSchema.shape.accessScopes,
   DATASTREAM_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.datastreamId,
   AEP_EDGE_DOMAIN: ExperienceEdgeClient.InstanceConfigSchema.shape.edgeDomain,
-  TIMEOUT: z.coerce
-    .number()
-    .pipe(ExperienceEdgeClient.InstanceConfigSchema.shape.timeout),
+  TIMEOUT: z.coerce.number().pipe(ExperienceEdgeClient.InstanceConfigSchema.shape.timeout),
 });
 const env = EnvSchema.parse(process.env);
 const edgeClient = new ExperienceEdgeClient({
@@ -69,7 +67,7 @@ const edgeClient = new ExperienceEdgeClient({
 
 /**
  * @param {string} name
- * @returns { html: string, uri: string };
+ * @returns {{ html: string, uri: string }}
  */
 const createResourceAssets = (name) => {
   const css = readAsset(`${name}.css`) || "";
@@ -95,7 +93,7 @@ const log = (...args) => console.log(LOG_PREFIX, ...args);
 const colorStatus = (status) => {
   const s = typeof status === "string" ? Number.parseInt(status, 10) : status;
   switch (
-    (status / 100) |
+    (s / 100) |
     0 // most significant digit
   ) {
     case 5: // red -- error

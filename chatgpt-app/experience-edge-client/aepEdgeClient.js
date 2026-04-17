@@ -67,13 +67,9 @@ function checkForErrors(response) {
     (responseBody && !Array.isArray(responseBody.handle) && statusCode !== 202)
   ) {
     const bodyToLog = responseBody ? JSON.stringify(responseBody, null, 2) : "";
-    const messageSuffix = bodyToLog
-      ? `response body:\n${bodyToLog}`
-      : `no response body.`;
+    const messageSuffix = bodyToLog ? `response body:\n${bodyToLog}` : `no response body.`;
     return Promise.reject(
-      new Error(
-        `The server responded with a status code ${statusCode} and ${messageSuffix}`,
-      ),
+      new Error(`The server responded with a status code ${statusCode} and ${messageSuffix}`),
     );
   }
 
@@ -105,7 +101,7 @@ function prepareAepResponse(requestHeaders, requestBody) {
   });
 }
 
-function logResult() {
+function logResult(_label) {
   return (result) => {
     return result;
   };
@@ -226,18 +222,11 @@ function getAepCookieName(organizationId, name) {
 }
 
 function getDebugSessionCookie(organizationId, req) {
-  const cookieName = getAepCookieName(
-    organizationId,
-    COOKIE_NAME_VALIDATION_TOKEN,
-  );
+  const cookieName = getAepCookieName(organizationId, COOKIE_NAME_VALIDATION_TOKEN);
   return req.cookies[cookieName];
 }
 
-function createIdentityPayload(
-  id,
-  authenticatedState = "ambiguous",
-  primary = true,
-) {
+function createIdentityPayload(id, authenticatedState = "ambiguous", primary = true) {
   if (id.length === 0) {
     return undefined;
   }

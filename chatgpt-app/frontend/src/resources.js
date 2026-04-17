@@ -37,8 +37,7 @@ const getConfig = () => {
     process.env.DATASTREAM_ID && process.env.DATASTREAM_ID !== ""
       ? process.env.DATASTREAM_ID
       : null;
-  const orgId =
-    process.env.ORG_ID && process.env.ORG_ID !== "" ? process.env.ORG_ID : null;
+  const orgId = process.env.ORG_ID && process.env.ORG_ID !== "" ? process.env.ORG_ID : null;
 
   if (datastreamId && orgId) {
     const envConfig = {
@@ -49,10 +48,7 @@ const getConfig = () => {
     try {
       return AlloyConfigSchema.parse(envConfig);
     } catch (error) {
-      console.error(
-        "[alloy] Invalid configuration from environment variables:",
-        error,
-      );
+      console.error("[alloy] Invalid configuration from environment variables:", error);
       return null;
     }
   }
@@ -61,7 +57,7 @@ const getConfig = () => {
 
 /**
  * Creates and configures an alloy instance with validated configuration
- * @returns {import("@adobe/alloy").AlloyInstance | null}
+ * @returns {ReturnType<typeof import("@adobe/alloy").createInstance> | null}
  */
 export const createAlloyInstance = () => {
   const config = getConfig();
@@ -89,8 +85,7 @@ export const createAlloyInstance = () => {
     }
 
     if (validatedConfig.clickCollectionEnabled !== undefined) {
-      configureOptions.clickCollectionEnabled =
-        validatedConfig.clickCollectionEnabled;
+      configureOptions.clickCollectionEnabled = validatedConfig.clickCollectionEnabled;
     }
 
     if (validatedConfig.context) {
@@ -105,23 +100,20 @@ export const createAlloyInstance = () => {
 
     return alloy;
   } catch (error) {
-    console.error(
-      "[alloy] Failed to create and configure alloy instance:",
-      error,
-    );
+    console.error("[alloy] Failed to create and configure alloy instance:", error);
     return null;
   }
 };
 
 /**
  * Default alloy instance (lazy initialized)
- * @type {import("@adobe/alloy").AlloyInstance | null}
+ * @type {ReturnType<typeof import("@adobe/alloy").createInstance> | null}
  */
 let alloyInstance = null;
 
 /**
  * Gets or creates the default alloy instance
- * @returns {import("@adobe/alloy").AlloyInstance | null}
+ * @returns {ReturnType<typeof import("@adobe/alloy").createInstance> | null}
  */
 export const getAlloy = () => {
   if (!alloyInstance) {
@@ -132,7 +124,7 @@ export const getAlloy = () => {
 
 /**
  * React hook to access the Alloy instance
- * @returns {import("@adobe/alloy").AlloyInstance | null}
+ * @returns {ReturnType<typeof import("@adobe/alloy").createInstance> | null}
  */
 export const useAlloy = () => {
   const alloyRef = useRef(null);

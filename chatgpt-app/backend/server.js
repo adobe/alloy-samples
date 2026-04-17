@@ -88,7 +88,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         ui: { resourceUri: resourceAssets["office-list"].uri },
       },
     },
-    async (_args = {}, { _meta } = {}) => {
+    async (_args, { _meta }) => {
       const identityMap = buildIdentityMap(_meta);
 
       try {
@@ -206,7 +206,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     /** @param {object} params
      * @param {keyof typeof officeData} params.officeId
      */
-    async ({ officeId } = {}, { _meta } = {}) => {
+    async ({ officeId }, { _meta }) => {
       try {
         if (!(officeId in officeData)) {
           throw new Error(`Office with ID ${officeId} not found`);
@@ -300,7 +300,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         ui: { resourceUri: resourceAssets["office-details"].uri },
       },
     },
-    async ({ officeId, email } = {}, { _meta } = {}) => {
+    async ({ officeId, email }, { _meta }) => {
       const office = officeData[officeId];
       const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
       const identityMap = buildIdentityMap(_meta);
@@ -315,10 +315,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
               details: {
                 officeId: officeId,
                 email: Buffer.from(
-                  await crypto.subtle.digest(
-                    "SHA-256",
-                    new TextEncoder().encode(email),
-                  ),
+                  await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)),
                 ).toString("hex"),
               },
             },

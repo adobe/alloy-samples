@@ -11,6 +11,10 @@ const isDomainName = (val) => {
   return url.hostname === val;
 };
 
+/**
+ * @param {string} accessToken
+ * @param {{ orgId?: string, clientId?: string }} creds
+ */
 const createEdgeRequestHeaders = (accessToken, { orgId, clientId }) => ({
   Authorization: `Bearer ${accessToken}`,
   "x-gw-ims-org-id": orgId,
@@ -23,7 +27,7 @@ const createEdgeRequestHeaders = (accessToken, { orgId, clientId }) => ({
  */
 export class ExperienceEdgeClient {
   /**
-   * @typedef {z.infer<typeof InstanceConfigSchema>} InstanceConfig
+   * @typedef {z.infer<typeof ExperienceEdgeClient.InstanceConfigSchema>} InstanceConfig
    * @type {InstanceConfig}
    */
   config = null;
@@ -51,10 +55,7 @@ export class ExperienceEdgeClient {
    */
   constructor(config) {
     this.config = ExperienceEdgeClient.InstanceConfigSchema.parse(config);
-    this.#aepEdgeClient = createAepEdgeClient(
-      this.config.datastreamId,
-      this.config.edgeDomain,
-    );
+    this.#aepEdgeClient = createAepEdgeClient(this.config.datastreamId, this.config.edgeDomain);
     this.#imsClient = createImsClient(
       this.config.clientId,
       this.config.clientSecret,
@@ -75,14 +76,7 @@ export class ExperienceEdgeClient {
    * @param {"interact" | "collect"} args.endpoint
    * @returns
    */
-  async sendEvent({
-    identityMap,
-    xdm = {},
-    data,
-    query,
-    meta,
-    endpoint = "interact",
-  }) {
+  async sendEvent({ identityMap, xdm = {}, data, query, meta, endpoint = "interact" }) {
     const accessToken = await this.#accessTokenPromise;
 
     const event = {
@@ -115,9 +109,7 @@ export class ExperienceEdgeClient {
       log(
         `    Query: personalization scopes=${
           query.personalization.decisionScopes?.join(",") || "none"
-        }, surfaces=${
-          query.personalization.surfaces?.join(",") || "none"
-        }`,
+        }, surfaces=${query.personalization.surfaces?.join(",") || "none"}`,
       );
     }
     if (identityMap) {

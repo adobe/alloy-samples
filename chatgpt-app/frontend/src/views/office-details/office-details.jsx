@@ -19,7 +19,7 @@ import { McpAppProvider, useToolOutput, useCallTool } from "../../mcp-app";
 import { useAlloy } from "../../resources";
 
 const App = () => {
-  /** @type {import("datastore").Office} */
+  /** @type {{ office: import("datastore").Office, _adobe?: { handles?: any[], identityMap?: any } } | null} */
   const output = useToolOutput();
   const callTool = useCallTool();
   const alloy = useAlloy();
@@ -90,10 +90,7 @@ const App = () => {
             handle: result.structuredContent._adobe.handles,
           },
         }).catch((error) => {
-          console.error(
-            "[alloy] Failed to apply response from visit request:",
-            error,
-          );
+          console.error("[alloy] Failed to apply response from visit request:", error);
         });
       }
 
@@ -172,11 +169,7 @@ const App = () => {
               isRequired
               width="100%"
             />
-            <Button
-              variant="cta"
-              onPress={handleRequestTour}
-              isDisabled={isSubmitting || !email}
-            >
+            <Button variant="cta" onPress={handleRequestTour} isDisabled={isSubmitting || !email}>
               {isSubmitting ? "Submitting..." : "Request Tour"}
             </Button>
           </Flex>

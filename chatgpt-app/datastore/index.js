@@ -24,8 +24,7 @@ export const officeData = Object.freeze({
     id: "nyc",
     name: "New York",
     location: "Times Square, NYC",
-    description:
-      "East coast hub with great amenities and public transit access",
+    description: "East coast hub with great amenities and public transit access",
     amenities: ["Cafe", "Gym", "Conference Rooms", "Rooftop Deck"],
     phone: "+1 (212) 555-0200",
   },
@@ -33,10 +32,11 @@ export const officeData = Object.freeze({
     id: "seattle",
     name: "Seattle",
     location: "Downtown Seattle",
-    description:
-      "Pacific Northwest office near the waterfront with mountain views",
+    description: "Pacific Northwest office near the waterfront with mountain views",
     amenities: ["Cafe", "Gym", "Bike Storage", "Pet Friendly"],
     phone: "+1 (206) 555-0300",
   },
 });
-export const OfficeIdSchema = z.enum(Object.keys(officeData));
+export const OfficeIdSchema = z.enum(
+  /** @type {[string, ...string[]]} */ (Object.keys(officeData)),
+);
