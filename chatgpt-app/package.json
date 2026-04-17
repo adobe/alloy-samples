@@ -11,7 +11,8 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "lint": "oxlint --fix",
-    "check": "pnpm run lint && pnpm run format",
+    "typecheck": "tsc -p jsconfig.json",
+    "check": "pnpm run lint && pnpm run format && pnpm run typecheck",
     "test": "pnpm run --recursive --if-present test"
   },
   "keywords": [],
@@ -20,7 +21,11 @@
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
     "@modelcontextprotocol/inspector": "^0.17.5",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "oxfmt": "^0.45.0",
-    "oxlint": "^1.60.0"
+    "oxlint": "^1.60.0",
+    "typescript": "^6.0.2"
   }
 }

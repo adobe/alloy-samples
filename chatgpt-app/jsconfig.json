@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false
+  },
+  "include": [
+    "backend/**/*.js",
+    "backend/**/*.jsx",
+    "datastore/**/*.js",
+    "experience-edge-client/**/*.js",
+    "frontend/build.js",
+    "frontend/src/**/*.js",
+    "frontend/src/**/*.jsx",
+    "types/**/*.d.ts"
+  ],
+  "exclude": ["**/node_modules", "frontend/dist"]
+}
