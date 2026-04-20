@@ -111,6 +111,11 @@ export class ExperienceEdgeClient {
           query.personalization.decisionScopes?.join(",") || "none"
         }, surfaces=${query.personalization.surfaces?.join(",") || "none"}`,
       );
+      log(
+        `    Query: schemas=${
+          query.personalization.schemas?.join(",") || "default"
+        }`,
+      );
     }
     if (identityMap) {
       const identityTypes = Object.keys(identityMap);
@@ -128,7 +133,7 @@ export class ExperienceEdgeClient {
       if (handle.type === "personalization:decisions" && count > 0) {
         for (const decision of handle.payload) {
           log(
-            `    [decision] scope=${decision.scope}, provider=${decision.scopeDetails?.decisionProvider}, items=${decision.items?.length ?? 0}`,
+            `    [decision] scope=${decision.scope}, provider=${decision.scopeDetails?.decisionProvider}, activityId=${decision.scopeDetails?.activity?.id}, items=${decision.items?.length ?? 0}`,
           );
           for (const item of decision.items ?? []) {
             log(

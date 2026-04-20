@@ -110,7 +110,7 @@ const PromoBanner = ({ content }) => (
 );
 
 const App = () => {
-  /** @type {{ offices: import("datastore").Office[], _adobe?: { handles?: any[], identityMap?: any } } | null} */
+  /** @type {{ offices: import("datastore").Office[], _adobe?: { handles?: any[], htmlContent?: string[], identityMap?: any } } | null} */
   const output = useToolOutput();
   const alloy = useAlloy();
 
@@ -151,12 +151,20 @@ const App = () => {
   }
   const { offices } = output;
   const promoBanners = getPromoBanners(output._adobe?.handles);
+  const htmlContent = output._adobe?.htmlContent ?? [];
 
   return (
     <View padding="size-250">
       <Heading level={1} marginBottom="size-300">
         Adobe Offices
       </Heading>
+      {htmlContent.map((html, i) => (
+        <div
+          key={`aep-html-${i}`}
+          className="aep-personalized-html"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      ))}
       {promoBanners.map((content, i) => (
         <PromoBanner key={i} content={content} />
       ))}

@@ -19,7 +19,7 @@ import { McpAppProvider, useToolOutput, useCallTool } from "../../mcp-app";
 import { useAlloy } from "../../resources";
 
 const App = () => {
-  /** @type {{ office: import("datastore").Office, _adobe?: { handles?: any[], identityMap?: any } } | null} */
+  /** @type {{ office: import("datastore").Office, _adobe?: { handles?: any[], htmlContent?: string[], identityMap?: any } } | null} */
   const output = useToolOutput();
   const callTool = useCallTool();
   const alloy = useAlloy();
@@ -65,6 +65,7 @@ const App = () => {
   }
 
   const { office } = output;
+  const htmlContent = output._adobe?.htmlContent ?? [];
   const imageSize = 400;
   const imageUrl = `https://picsum.photos/seed/${office.id}/${imageSize}`;
 
@@ -108,6 +109,14 @@ const App = () => {
       <Heading level={1} marginBottom="size-300">
         {office.name}
       </Heading>
+
+      {htmlContent.map((html, i) => (
+        <div
+          key={`aep-html-${i}`}
+          className="aep-personalized-html"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      ))}
 
       <View
         borderWidth="thin"

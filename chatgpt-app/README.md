@@ -186,12 +186,18 @@ The reference setup for this sample lives in the `unifiedjslab` AEP org.
   - Default merge policy "Default timebased"; attribute merge timestamp-ordered
   - ID stitching private graph: `_xdm.context.profile`
   - ID stitching none: `_experience.customerjourneymanagement.ajoentity`, `_experience.customerjourneymanagement.ajoEntity`, `_xdm.context.segmentdefinition`
-- **AJO Channels** (both code-based experience, platform: other, marketing action: Onsite Personalization)
+- **AJO Channels** (all code-based experience, platform: other, marketing action: Onsite Personalization)
   - [chatgpt-app-offices](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/configui/message-preset/edit/inbound/af92321c-cf89-490e-bbc3-5d50cf1b5caf) — JSON content, surface `service://chatgpt-app/office-list`
-  - [chatgpt-offices-html](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/configui/message-preset/edit/inbound/3e454ccb-2344-4a3c-a10f-11208b66dbda) — HTML content
-- **AJO Campaigns**
-  - [ChatGPT Office Promo 2](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/campaigns/summary/582e700e-2542-45b0-8298-faa38f179f1f) (`c8a5f48d-a357-4124-ad32-0f68824fd2d5`) — identity type: OpenAI Subject; content type: `promo-banner` (JSON code-based experience)
-  - [ChatGPT Office Promo 3 - html](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/campaigns/summary/f552b722-7434-4d29-a9fe-2ceb30d0fdaf) — HTML code-based experience, served via `chatgpt-offices-html` channel
+  - `chatgpt-app-offices-html-dedicated-surface` — HTML content, surface `service://chatgpt-app/office-list/html`
+- **AJO Campaigns** (priority 0, audience "All visitors (Default)", identity type: OpenAI Subject)
+  - [ChatGPT Office Promo 2](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/campaigns/summary/582e700e-2542-45b0-8298-faa38f179f1f) (`c8a5f48d-a357-4124-ad32-0f68824fd2d5`) — JSON `promo-banner` content on `chatgpt-app-offices`
+  - [ChatGPT Office Promo 4 - HTML with unique surface](https://experience.adobe.com/#/@unifiedjslab/sname:prod/journey-optimizer/campaigns/summary/5adec9a1-b955-4d56-a160-d597fd5f90af) (`dd33a36c-c6ac-480e-b662-a6b1a1785c8d`) — HTML content on `chatgpt-app-offices-html-dedicated-surface`
+
+> **Note on conflict resolution:** Two AJO campaigns targeting the same surface URI won't both deliver — [conflict prioritization](https://experienceleague.adobe.com/en/docs/journey-optimizer/using/conflict-prioritization/gs-conflict-prioritization) picks one winner by priority score. To render both JSON and HTML on the office list view, the HTML channel is registered at a sibling surface (`.../office-list/html`) and the backend queries both surfaces in one Edge request.
+
+## Server-side personalization rendering
+
+Alongside the hybrid client-side flow, the backend extracts AJO `html-content-item` payloads server-side and returns them as plain strings in `structuredContent._adobe.htmlContent`. The widget renders each string via `dangerouslySetInnerHTML` at a slot under the view heading — no Alloy `applyResponse` round-trip required for HTML content. JSON `promo-banner` items continue through the existing client-side parse/render path. This lets a single tool response carry both flavors: JSON items that the widget reasons about as structured data, and HTML items the widget drops in verbatim. Sanitization is intentionally omitted in this sample; a real deployment should DOMPurify the HTML before injection.
 
 ## Additional Documentation
 

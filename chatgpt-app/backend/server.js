@@ -29,6 +29,23 @@ export const createCommonXdmFields = () => ({
   producedBy: "chatgpt-app",
 });
 
+const PERSONALIZATION_SCHEMAS_MAP = {
+  html: "https://ns.adobe.com/personalization/html-content-item",
+  json: "https://ns.adobe.com/personalization/json-content-item",
+  default: "https://ns.adobe.com/personalization/default-content-item",
+};
+
+const PERSONALIZATION_SCHEMAS = Object.values(PERSONALIZATION_SCHEMAS_MAP);
+
+export const extractHtmlContent = (handles) =>
+  handles
+    .filter((h) => h.type === "personalization:decisions")
+    .flatMap((h) => h.payload ?? [])
+    .flatMap((d) => d.items ?? [])
+    .filter((item) => item.schema === PERSONALIZATION_SCHEMAS_MAP.html)
+    .map((item) => item.data?.content)
+    .filter((html) => typeof html === "string" && html.length > 0);
+
 /**
  * Creates and configures the MCP server with all tools and resources.
  * @param {object} deps
@@ -101,13 +118,12 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           query: {
             identity: { fetch: ["ECID"] },
             personalization: {
-              schemas: [
-                "https://ns.adobe.com/personalization/json-content-item",
-                "https://ns.adobe.com/personalization/html-content-item",
-                "https://ns.adobe.com/personalization/default-content-item",
-              ],
+              schemas: PERSONALIZATION_SCHEMAS,
               decisionScopes: ["__view__"],
-              surfaces: ["service://chatgpt-app/office-list"],
+              surfaces: [
+                "service://chatgpt-app/office-list",
+                "service://chatgpt-app/office-list/html",
+              ],
             },
           },
         });
@@ -118,11 +134,13 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
+        const htmlContent = extractHtmlContent(relevantHandles);
         return {
           structuredContent: {
             offices: Object.values(officeData),
             _adobe: {
               handles: relevantHandles,
+              htmlContent,
               identityMap,
             },
           },
@@ -141,6 +159,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             offices: Object.values(officeData),
             _adobe: {
               handles: [],
+              htmlContent: [],
               identityMap,
             },
           },
@@ -239,6 +258,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           },
           query: {
             personalization: {
+              schemas: PERSONALIZATION_SCHEMAS,
               decisionScopes: ["__view__"],
               surfaces: ["service://chatgpt-app/office-details"],
             },
@@ -251,11 +271,13 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
+        const htmlContent = extractHtmlContent(relevantHandles);
         return {
           structuredContent: {
             office,
             _adobe: {
               handles: relevantHandles,
+              htmlContent,
               identityMap,
             },
           },
@@ -273,6 +295,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             office,
             _adobe: {
               handles: [],
+              htmlContent: [],
               identityMap,
             },
           },
@@ -322,6 +345,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           },
           query: {
             personalization: {
+              schemas: PERSONALIZATION_SCHEMAS,
               decisionScopes: ["__view__"],
               surfaces: ["service://chatgpt-app/office-details"],
             },
@@ -334,11 +358,13 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
+        const htmlContent = extractHtmlContent(relevantHandles);
 
         return {
           structuredContent: {
             _adobe: {
               handles: relevantHandles,
+              htmlContent,
               identityMap,
             },
           },
@@ -355,6 +381,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           structuredContent: {
             _adobe: {
               handles: [],
+              htmlContent: [],
               identityMap,
             },
           },
