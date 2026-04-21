@@ -13,7 +13,7 @@ governing permissions and limitations under the License.
 
 /**
  * Returns the request address, extracted from client request URL
- * @param {Request} req -  request object
+ * @param {{ protocol: string, headers: { host: string }, originalUrl: string }} req - Express-style request
  * @returns {string} request address
  */
 function getAddress(req) {

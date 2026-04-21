@@ -26,10 +26,7 @@ export function createImsClient(
   async function generateAccessToken() {
     let currentTimestamp = Math.floor(Date.now() / 1000);
 
-    if (
-      imsToken &&
-      currentTimestamp < imsTokenGenerationTimestamp + imsToken["expires_in"]
-    ) {
+    if (imsToken && currentTimestamp < imsTokenGenerationTimestamp + imsToken["expires_in"]) {
       return imsToken["access_token"];
     }
 
@@ -42,18 +39,14 @@ export function createImsClient(
     formData.append("client_secret", clientSecret);
     formData.append("scope", scopes);
 
-    let res = await fetch(requestUrl, {
+    const res = await fetch(requestUrl, {
       method: "POST",
       body: formData,
     });
-    res = await Promise.all([Promise.resolve(res.status), res.json()]);
-
-    let [status, body] = res;
+    const [status, body] = await Promise.all([Promise.resolve(res.status), res.json()]);
 
     if (status !== 200) {
-      throw new Error(
-        `The server responded with a status code ${status} and ${body}`,
-      );
+      throw new Error(`The server responded with a status code ${status} and ${body}`);
     } else {
       imsToken = body;
       imsTokenGenerationTimestamp = Math.floor(Date.now() / 1000);

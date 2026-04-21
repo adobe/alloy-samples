@@ -5,33 +5,11 @@ import {
 } from "@modelcontextprotocol/ext-apps/server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { OfficeIdSchema, officeData } from "datastore";
-import { v7 as uuidv7, v4 as randomUUID } from "uuid";
+import { createLogger } from "evlog";
+import { v4 as randomUUID } from "uuid";
 import { z } from "zod";
 
-export const SessionIdSchema = z
-  .string()
-  .trim()
-  .nonempty({ message: "Session ID cannot be empty" })
-  .max(256, { message: "Session ID must be 256 characters or fewer" })
-  .describe("Session identifier issued by the office list tool.");
-
-export const SessionIdOptionalSchema = SessionIdSchema.describe(
-  "Reuse this value to continue a session; omit or null to start a new one.",
-).nullish();
-
-export const ensureSessionId = (value) => {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed) {
-      return trimmed;
-    }
-  }
-  // UUIDv7 is used because it is randomly generated as well as sortable - it
-  // contains the timestamp of creation inside.
-  return uuidv7();
-};
-
-export const buildIdentityMap = (_meta, sessionId) => {
+export const buildIdentityMap = (_meta) => {
   const identityMap = {};
   // https://developers.openai.com/apps-sdk/reference#_meta-fields-the-client-provides
   // Apps SDK reference: `_meta["openai/subject"]` is "an anonymized user hint for rate limiting."
@@ -43,12 +21,6 @@ export const buildIdentityMap = (_meta, sessionId) => {
       },
     ];
   }
-  identityMap.SESSION_ID = [
-    {
-      id: sessionId || uuidv7(),
-      primary: !("OPENAI_SUBJECT" in identityMap),
-    },
-  ];
   return identityMap;
 };
 
@@ -56,6 +28,50 @@ export const createCommonXdmFields = () => ({
   _id: randomUUID(),
   eventMergeId: randomUUID(),
   producedBy: "chatgpt-app",
+});
+
+const PERSONALIZATION_SCHEMAS_MAP = {
+  html: "https://ns.adobe.com/personalization/html-content-item",
+  json: "https://ns.adobe.com/personalization/json-content-item",
+  default: "https://ns.adobe.com/personalization/default-content-item",
+};
+
+const PERSONALIZATION_SCHEMAS = Object.values(PERSONALIZATION_SCHEMAS_MAP);
+
+export const extractHtmlContent = (handles) =>
+  handles
+    .filter((h) => h.type === "personalization:decisions")
+    .flatMap((h) => h.payload ?? [])
+    .flatMap((d) => d.items ?? [])
+    .filter((item) => item.schema === PERSONALIZATION_SCHEMAS_MAP.html)
+    .map((item) => item.data?.content)
+    .filter((html) => typeof html === "string" && html.length > 0);
+
+/**
+ * Extracts ECID from Edge handles, if present.
+ * @param {Array<any>} handles
+ * @returns {string | undefined}
+ */
+const extractEcid = (handles) => {
+  for (const h of handles) {
+    if (h.type === "identity:result") {
+      const ecid = h.payload?.find?.((p) => p.namespace?.code === "ECID")?.id;
+      if (ecid) return ecid;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Summarizes Edge response handles for wide-event logging.
+ * @param {Array<any>} handles
+ */
+const summarizeHandles = (handles) => ({
+  count: handles.length,
+  types: handles.map((h) => h.type),
+  decisionCount: handles
+    .filter((h) => h.type === "personalization:decisions")
+    .reduce((sum, h) => sum + (h.payload?.length ?? 0), 0),
 });
 
 /**
@@ -112,16 +128,17 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     "office-list",
     {
       title: "List offices",
-      inputSchema: {
-        sessionId: SessionIdOptionalSchema,
-      },
+      inputSchema: {},
       _meta: {
         ui: { resourceUri: resourceAssets["office-list"].uri },
       },
     },
-    async ({ sessionId } = {}, { _meta } = {}) => {
-      const activeSessionId = ensureSessionId(sessionId);
-      const identityMap = buildIdentityMap(_meta, activeSessionId);
+    async (_args, { _meta }) => {
+      const identityMap = buildIdentityMap(_meta);
+      const log = createLogger({
+        tool: { name: "office-list" },
+        user: { subject: _meta?.["openai/subject"] },
+      });
 
       try {
         const result = await edgeClient.sendEvent({
@@ -131,8 +148,14 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             eventType: "office.list.view",
           },
           query: {
+            identity: { fetch: ["ECID"] },
             personalization: {
+              schemas: PERSONALIZATION_SCHEMAS,
               decisionScopes: ["__view__"],
+              surfaces: [
+                "service://chatgpt-app/office-list",
+                "service://chatgpt-app/office-list/html",
+              ],
             },
           },
         });
@@ -140,38 +163,54 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         const relevantHandles = handles.filter(
           (handle) =>
             handle.type === "personalization:decisions" ||
+            handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
+        const htmlContent = extractHtmlContent(relevantHandles);
+        log.set({
+          adobe: {
+            ecid: extractEcid(handles),
+            handles: summarizeHandles(relevantHandles),
+            htmlContentCount: htmlContent.length,
+            officeCount: Object.keys(officeData).length,
+          },
+        });
+        log.emit();
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             offices: Object.values(officeData),
             _adobe: {
               handles: relevantHandles,
+              htmlContent,
+              identityMap,
             },
           },
           content: [
             {
               type: "text",
-              text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+              text: "Displayed the list of offices.",
             },
           ],
         };
       } catch (error) {
-        console.error("Failed to collect analytics:", error);
-        // Even if analytics/personalization fails, return the content
+        log.set({
+          adobe: { edgeError: { message: error.message } },
+          outcome: { status: "edge_error" },
+        });
+        log.emit();
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             offices: Object.values(officeData),
             _adobe: {
               handles: [],
+              htmlContent: [],
+              identityMap,
             },
           },
           content: [
             {
               type: "text",
-              text: `Displayed the list of offices. Session ID: ${activeSessionId}`,
+              text: "Displayed the list of offices.",
             },
           ],
         };
@@ -222,7 +261,6 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
       title: "Show details for a specific office",
       inputSchema: {
         officeId: OfficeIdSchema,
-        sessionId: SessionIdSchema,
       },
       _meta: {
         ui: { resourceUri: resourceAssets["office-details"].uri },
@@ -231,28 +269,25 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     /** @param {object} params
      * @param {keyof typeof officeData} params.officeId
      */
-    async ({ officeId, sessionId } = {}, { _meta } = {}) => {
-      const activeSessionId = ensureSessionId(sessionId);
-      try {
-        if (!(officeId in officeData)) {
-          throw new Error(`Office with ID ${officeId} not found`);
-        }
-      } catch (error) {
-        console.error(error);
+    async ({ officeId }, { _meta }) => {
+      const log = createLogger({
+        tool: { name: "office-details", args: { officeId } },
+        user: { subject: _meta?.["openai/subject"] },
+      });
+      if (!(officeId in officeData)) {
+        log.set({ outcome: { status: "not_found" } });
+        log.emit();
         return {
-          structuredContent: {
-            sessionId: activeSessionId,
-          },
           content: [
             {
               type: "text",
-              text: `Error displaying office details: ${error.message}. Session ID: ${activeSessionId}`,
+              text: `Error displaying office details: Office with ID ${officeId} not found`,
             },
           ],
         };
       }
       const office = officeData[officeId];
-      const identityMap = buildIdentityMap(_meta, activeSessionId);
+      const identityMap = buildIdentityMap(_meta);
 
       try {
         const result = await edgeClient.sendEvent({
@@ -260,17 +295,17 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           xdm: {
             ...createCommonXdmFields(),
             eventType: "office.details.view",
-            details: {
-              _unifiedJsLab: {
-                details: {
-                  officeId: officeId,
-                },
+            _unifiedJsLab: {
+              details: {
+                officeId: officeId,
               },
             },
-            query: {
-              personalization: {
-                decisionScopes: ["__view__"],
-              },
+          },
+          query: {
+            personalization: {
+              schemas: PERSONALIZATION_SCHEMAS,
+              decisionScopes: ["__view__"],
+              surfaces: ["service://chatgpt-app/office-details"],
             },
           },
         });
@@ -278,37 +313,53 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         const relevantHandles = handles.filter(
           (handle) =>
             handle.type === "personalization:decisions" ||
+            handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
+        const htmlContent = extractHtmlContent(relevantHandles);
+        log.set({
+          adobe: {
+            ecid: extractEcid(handles),
+            handles: summarizeHandles(relevantHandles),
+            htmlContentCount: htmlContent.length,
+          },
+        });
+        log.emit();
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             office,
             _adobe: {
               handles: relevantHandles,
+              htmlContent,
+              identityMap,
             },
           },
           content: [
             {
               type: "text",
-              text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+              text: `Displayed details for office ${officeId}.`,
             },
           ],
         };
       } catch (error) {
-        console.error("Failed to collect analytics:", error);
+        log.set({
+          adobe: { edgeError: { message: error.message } },
+          outcome: { status: "edge_error" },
+        });
+        log.emit();
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             office,
             _adobe: {
               handles: [],
+              htmlContent: [],
+              identityMap,
             },
           },
           content: [
             {
               type: "text",
-              text: `Displayed details for office ${officeId}. Session ID: ${activeSessionId}`,
+              text: `Displayed details for office ${officeId}.`,
             },
           ],
         };
@@ -324,17 +375,25 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
       inputSchema: {
         officeId: OfficeIdSchema,
         email: z.string().email().describe("The email address of the user"),
-        sessionId: SessionIdSchema,
       },
       _meta: {
         ui: { resourceUri: resourceAssets["office-details"].uri },
       },
     },
-    async ({ officeId, email, sessionId } = {}, { _meta } = {}) => {
-      const activeSessionId = ensureSessionId(sessionId);
+    async ({ officeId, email }, { _meta }) => {
       const office = officeData[officeId];
       const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
-      const identityMap = buildIdentityMap(_meta, activeSessionId);
+      const identityMap = buildIdentityMap(_meta);
+      const emailHash = Buffer.from(
+        await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)),
+      ).toString("hex");
+      const log = createLogger({
+        tool: {
+          name: "request-visit",
+          args: { officeId, emailHash: emailHash.slice(0, 12) },
+        },
+        user: { subject: _meta?.["openai/subject"] },
+      });
 
       try {
         const result = await edgeClient.sendEvent({
@@ -345,18 +404,15 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             _unifiedJsLab: {
               details: {
                 officeId: officeId,
-                email: Buffer.from(
-                  await crypto.subtle.digest(
-                    "SHA-256",
-                    new TextEncoder().encode(email),
-                  ),
-                ).toString("hex"),
+                email: emailHash,
               },
             },
           },
           query: {
             personalization: {
+              schemas: PERSONALIZATION_SCHEMAS,
               decisionScopes: ["__view__"],
+              surfaces: ["service://chatgpt-app/office-details"],
             },
           },
         });
@@ -364,36 +420,52 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
         const relevantHandles = handles.filter(
           (handle) =>
             handle.type === "personalization:decisions" ||
+            handle.type === "activation:pull" ||
             handle.type === "state:store",
         );
+        const htmlContent = extractHtmlContent(relevantHandles);
+        log.set({
+          adobe: {
+            ecid: extractEcid(handles),
+            handles: summarizeHandles(relevantHandles),
+            htmlContentCount: htmlContent.length,
+          },
+        });
+        log.emit();
 
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             _adobe: {
               handles: relevantHandles,
+              htmlContent,
+              identityMap,
             },
           },
           content: [
             {
               type: "text",
-              text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
+              text: `Email sent! Message: "${emailMessage}"`,
             },
           ],
         };
       } catch (error) {
-        console.error("Failed to collect analytics:", error);
+        log.set({
+          adobe: { edgeError: { message: error.message } },
+          outcome: { status: "edge_error" },
+        });
+        log.emit();
         return {
           structuredContent: {
-            sessionId: activeSessionId,
             _adobe: {
               handles: [],
+              htmlContent: [],
+              identityMap,
             },
           },
           content: [
             {
               type: "text",
-              text: `Email sent! Message: "${emailMessage}" Session ID: ${activeSessionId}`,
+              text: `Email sent! Message: "${emailMessage}"`,
             },
           ],
         };

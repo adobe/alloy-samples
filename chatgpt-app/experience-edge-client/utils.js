@@ -1,8 +1,7 @@
 const objectProto = Object.prototype;
 const hasOwnProperty = objectProto.hasOwnProperty;
 
-export const isBlank = (value) =>
-  isString(value) ? trim(value).length === 0 : isEmpty(value);
+export const isBlank = (value) => (isString(value) ? trim(value).length === 0 : isEmpty(value));
 export const isNotBlank = (value) => !isBlank(value);
 
 export function isEmpty(value) {

@@ -2,8 +2,7 @@ import { z } from "zod";
 import { createAepEdgeClient } from "./aepEdgeClient.js";
 import { createImsClient } from "./imsAuthentication.js";
 
-const LOG_PREFIX = "[experience-edge-client] ";
-const log = (...args) => console.log(LOG_PREFIX, ...args);
+const log = (..._args) => {};
 
 const isDomainName = (val) => {
   // must be a valid domain name, without the protocol or path
@@ -11,6 +10,10 @@ const isDomainName = (val) => {
   return url.hostname === val;
 };
 
+/**
+ * @param {string} accessToken
+ * @param {{ orgId?: string, clientId?: string }} creds
+ */
 const createEdgeRequestHeaders = (accessToken, { orgId, clientId }) => ({
   Authorization: `Bearer ${accessToken}`,
   "x-gw-ims-org-id": orgId,
@@ -23,7 +26,7 @@ const createEdgeRequestHeaders = (accessToken, { orgId, clientId }) => ({
  */
 export class ExperienceEdgeClient {
   /**
-   * @typedef {z.infer<typeof InstanceConfigSchema>} InstanceConfig
+   * @typedef {z.infer<typeof ExperienceEdgeClient.InstanceConfigSchema>} InstanceConfig
    * @type {InstanceConfig}
    */
   config = null;
@@ -51,10 +54,7 @@ export class ExperienceEdgeClient {
    */
   constructor(config) {
     this.config = ExperienceEdgeClient.InstanceConfigSchema.parse(config);
-    this.#aepEdgeClient = createAepEdgeClient(
-      this.config.datastreamId,
-      this.config.edgeDomain,
-    );
+    this.#aepEdgeClient = createAepEdgeClient(this.config.datastreamId, this.config.edgeDomain);
     this.#imsClient = createImsClient(
       this.config.clientId,
       this.config.clientSecret,
@@ -75,14 +75,7 @@ export class ExperienceEdgeClient {
    * @param {"interact" | "collect"} args.endpoint
    * @returns
    */
-  async sendEvent({
-    identityMap,
-    xdm = {},
-    data,
-    query,
-    meta,
-    endpoint = "interact",
-  }) {
+  async sendEvent({ identityMap, xdm = {}, data, query, meta, endpoint = "interact" }) {
     const accessToken = await this.#accessTokenPromise;
 
     const event = {
@@ -115,6 +108,11 @@ export class ExperienceEdgeClient {
       log(
         `    Query: personalization scopes=${
           query.personalization.decisionScopes?.join(",") || "none"
+        }, surfaces=${query.personalization.surfaces?.join(",") || "none"}`,
+      );
+      log(
+        `    Query: schemas=${
+          query.personalization.schemas?.join(",") || "default"
         }`,
       );
     }
@@ -129,8 +127,26 @@ export class ExperienceEdgeClient {
     const handles = result.response?.body?.handle || [];
     const handleTypes = handles.map((h) => h.type).join(", ");
     log(`[IN]  Edge ${endpoint} - handles: [${handleTypes || "none"}]`);
-    if (handles.length > 0) {
-      log(`    ${handles.length} handle(s) received`);
+    for (const handle of handles) {
+      const count = handle.payload?.length ?? 0;
+      if (handle.type === "personalization:decisions" && count > 0) {
+        for (const decision of handle.payload) {
+          log(
+            `    [decision] scope=${decision.scope}, provider=${decision.scopeDetails?.decisionProvider}, activityId=${decision.scopeDetails?.activity?.id}, items=${decision.items?.length ?? 0}`,
+          );
+          for (const item of decision.items ?? []) {
+            log(
+              `      [item] schema=${item.schema}, content=${JSON.stringify(item.data?.content).slice(0, 200)}`,
+            );
+          }
+        }
+      } else if (handle.type === "identity:result" && count > 0) {
+        for (const id of handle.payload) {
+          log(`    [identity] ${id.namespace?.code}=${id.id}`);
+        }
+      } else {
+        log(`    [${handle.type}] ${count} payload(s)`);
+      }
     }
 
     return result;

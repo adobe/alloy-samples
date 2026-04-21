@@ -2,14 +2,14 @@
   "name": "datastore",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "type": "module",
   "keywords": [],
-  "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.20.0",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
   "dependencies": {
     "datastore": "workspace:*",
     "zod": "^3.25.76"
-  }
+  },
+  "packageManager": "pnpm@10.20.0"
 }

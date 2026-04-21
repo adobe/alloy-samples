@@ -2,6 +2,8 @@ import { StreamableHTTPTransport } from "@hono/mcp";
 import { serve } from "@hono/node-server";
 import { ExperienceEdgeClient } from "experience-edge-client";
 import { configDotenv } from "dotenv";
+import { initLogger } from "evlog";
+import { evlog } from "evlog/hono";
 import { Hono } from "hono";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -12,13 +14,21 @@ import { createMcpServer } from "./server.js";
 
 configDotenv({ path: ["../.env", "./.env"], quiet: true });
 
+initLogger({
+  env: { service: "chatgpt-app-backend" },
+  redact: true,
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const ROOT_DIR = resolve(__dirname, "..");
 const ASSETS_DIR = resolve(ROOT_DIR, "frontend", "dist");
 
+/** @type {Hono<import("evlog/hono").EvlogVariables>} */
 const app = new Hono();
+
+app.use(evlog());
 
 /**
  * @param {object} params
@@ -51,9 +61,7 @@ const EnvSchema = z.object({
   ACCESS_SCOPES: ExperienceEdgeClient.InstanceConfigSchema.shape.accessScopes,
   DATASTREAM_ID: ExperienceEdgeClient.InstanceConfigSchema.shape.datastreamId,
   AEP_EDGE_DOMAIN: ExperienceEdgeClient.InstanceConfigSchema.shape.edgeDomain,
-  TIMEOUT: z.coerce
-    .number()
-    .pipe(ExperienceEdgeClient.InstanceConfigSchema.shape.timeout),
+  TIMEOUT: z.coerce.number().pipe(ExperienceEdgeClient.InstanceConfigSchema.shape.timeout),
 });
 const env = EnvSchema.parse(process.env);
 const edgeClient = new ExperienceEdgeClient({
@@ -69,7 +77,7 @@ const edgeClient = new ExperienceEdgeClient({
 
 /**
  * @param {string} name
- * @returns { html: string, uri: string };
+ * @returns {{ html: string, uri: string }}
  */
 const createResourceAssets = (name) => {
   const css = readAsset(`${name}.css`) || "";
@@ -86,68 +94,13 @@ const resourceAssets = Object.freeze({
 
 const mcpServerOptions = { edgeClient, resourceAssets };
 
-const LOG_PREFIX = "[adobe-office-backend] ";
-const log = (...args) => console.log(LOG_PREFIX, ...args);
-/**
- *
- * @param {string | number} status
- */
-const colorStatus = (status) => {
-  const s = typeof status === "string" ? Number.parseInt(status, 10) : status;
-  switch (
-    (status / 100) |
-    0 // most significant digit
-  ) {
-    case 5: // red -- error
-      return `\x1b[31m${s}\x1b[0m`;
-    case 4: // yellow -- warning
-      return `\x1b[33m${s}\x1b[0m`;
-    case 3: // cyan -- redirect
-      return `\x1b[36m${s}\x1b[0m`;
-    case 2: // green -- success
-      return `\x1b[32m${s}\x1b[0m`;
-    default: // 1
-      return `${s}`;
-  }
-};
-
 app.use(async (c, next) => {
-  const method = c.req.method;
-  const path = c.req.path;
-
-  log(`[IN]  ${method} ${path}`);
-
-  // Log important headers
-  const acceptHeader = c.req.header("accept");
-  const contentType = c.req.header("content-type");
-  const userAgent = c.req.header("user-agent");
-
-  if (acceptHeader) log("    Accept:", acceptHeader);
-  if (contentType) log("    Content-Type:", contentType);
-  if (userAgent) log("    User-Agent:", userAgent);
-
-  // Log body for POST/PUT/PATCH by cloning the request
-  if (method !== "GET" && method !== "HEAD") {
-    try {
-      const cloned = c.req.raw.clone();
-      const text = await cloned.text();
-      if (text) {
-        try {
-          const json = JSON.parse(text);
-          log("    Body:", JSON.stringify(json, null, 2));
-        } catch {
-          log("    Body (text):", text.substring(0, 500));
-        }
-      }
-    } catch {
-      log("    Body: (could not read)");
-    }
-  }
-
-  const start = Date.now();
+  c.get("log").set({
+    request: {
+      userAgent: c.req.header("user-agent"),
+    },
+  });
   await next();
-  const elapsed = Date.now() - start;
-  log(`[OUT] ${method} ${path} ${colorStatus(c.res.status)} ${elapsed}ms`);
 });
 
 app.get("/", (c) => {
@@ -162,6 +115,24 @@ app.get("/favicon.ico", (c) => {
 });
 
 app.all("/mcp", async (c) => {
+  const log = c.get("log");
+
+  if (c.req.method === "POST") {
+    try {
+      const body = await c.req.raw.clone().json();
+      log.set({
+        mcp: {
+          jsonrpcId: body?.id,
+          method: body?.method,
+          toolName: body?.params?.name,
+          resourceUri: body?.params?.uri,
+        },
+      });
+    } catch {
+      log.set({ mcp: { parseError: true } });
+    }
+  }
+
   const transport = new StreamableHTTPTransport();
   const server = createMcpServer(mcpServerOptions);
   await server.connect(transport);
@@ -172,12 +143,8 @@ const server = serve(app, (addressInfo) => {
   const address = `http://${
     addressInfo.address === "::" ? "[::1]" : addressInfo.address
   }:${addressInfo.port}`;
-  log("listening on", address);
+  console.log("[adobe-office-backend] listening on", address);
 });
-log("valid endpoints are:");
-for (const route of app.routes) {
-  log(`  - [${route.method}] ${route.path}`);
-}
 
 process.on("SIGINT", () => {
   server.close();
@@ -186,7 +153,6 @@ process.on("SIGINT", () => {
 process.on("SIGTERM", () => {
   server.close((err) => {
     if (err) {
-      console.error(err);
       process.exit(1);
     }
     process.exit(0);

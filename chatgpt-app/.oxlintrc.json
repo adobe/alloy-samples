@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "unicorn", "typescript", "oxc"],
+  "ignorePatterns": ["frontend/dist/**"],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "process": "readonly"
+  },
+  "overrides": [
+    {
+      "files": [
+        "backend/**/*.{js,mjs,cjs,jsx}",
+        "experience-edge-client/**/*.{js,mjs,cjs,jsx}",
+        "datastore/**/*.{js,mjs,cjs,jsx}",
+        "frontend/build.js"
+      ],
+      "env": {
+        "browser": false,
+        "node": true
+      }
+    }
+  ]
+}
