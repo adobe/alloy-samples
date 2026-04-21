@@ -19,6 +19,7 @@
     "@modelcontextprotocol/sdk": "^1.28.0",
     "datastore": "workspace:*",
     "dotenv": "^17.3.1",
+    "evlog": "^2.13.0",
     "experience-edge-client": "workspace:^",
     "hono": "^4.12.9",
     "uuid": "^13.0.0",

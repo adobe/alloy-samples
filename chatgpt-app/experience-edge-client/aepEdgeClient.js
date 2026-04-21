@@ -15,8 +15,7 @@ governing permissions and limitations under the License.
 import { isNotBlank } from "./utils.js";
 import { randomUUID as uuidv4 } from "node:crypto";
 
-const LOG_PREFIX = "[experience-edge-client/aepEdgeClient] ";
-const log = (...args) => console.log(LOG_PREFIX, ...args);
+const log = (..._args) => {};
 
 const PAGE_WIDE_SCOPE = "__view__";
 const AEP_COOKIE_PREFIX = "kndctr";

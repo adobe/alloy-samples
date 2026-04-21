@@ -2,8 +2,7 @@ import { z } from "zod";
 import { createAepEdgeClient } from "./aepEdgeClient.js";
 import { createImsClient } from "./imsAuthentication.js";
 
-const LOG_PREFIX = "[experience-edge-client] ";
-const log = (...args) => console.log(LOG_PREFIX, ...args);
+const log = (..._args) => {};
 
 const isDomainName = (val) => {
   // must be a valid domain name, without the protocol or path

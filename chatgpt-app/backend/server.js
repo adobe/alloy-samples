@@ -5,6 +5,7 @@ import {
 } from "@modelcontextprotocol/ext-apps/server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { OfficeIdSchema, officeData } from "datastore";
+import { createLogger } from "evlog";
 import { v4 as randomUUID } from "uuid";
 import { z } from "zod";
 
@@ -45,6 +46,33 @@ export const extractHtmlContent = (handles) =>
     .filter((item) => item.schema === PERSONALIZATION_SCHEMAS_MAP.html)
     .map((item) => item.data?.content)
     .filter((html) => typeof html === "string" && html.length > 0);
+
+/**
+ * Extracts ECID from Edge handles, if present.
+ * @param {Array<any>} handles
+ * @returns {string | undefined}
+ */
+const extractEcid = (handles) => {
+  for (const h of handles) {
+    if (h.type === "identity:result") {
+      const ecid = h.payload?.find?.((p) => p.namespace?.code === "ECID")?.id;
+      if (ecid) return ecid;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Summarizes Edge response handles for wide-event logging.
+ * @param {Array<any>} handles
+ */
+const summarizeHandles = (handles) => ({
+  count: handles.length,
+  types: handles.map((h) => h.type),
+  decisionCount: handles
+    .filter((h) => h.type === "personalization:decisions")
+    .reduce((sum, h) => sum + (h.payload?.length ?? 0), 0),
+});
 
 /**
  * Creates and configures the MCP server with all tools and resources.
@@ -107,6 +135,10 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
     },
     async (_args, { _meta }) => {
       const identityMap = buildIdentityMap(_meta);
+      const log = createLogger({
+        tool: { name: "office-list" },
+        user: { subject: _meta?.["openai/subject"] },
+      });
 
       try {
         const result = await edgeClient.sendEvent({
@@ -135,6 +167,15 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             handle.type === "state:store",
         );
         const htmlContent = extractHtmlContent(relevantHandles);
+        log.set({
+          adobe: {
+            ecid: extractEcid(handles),
+            handles: summarizeHandles(relevantHandles),
+            htmlContentCount: htmlContent.length,
+            officeCount: Object.keys(officeData).length,
+          },
+        });
+        log.emit();
         return {
           structuredContent: {
             offices: Object.values(officeData),
@@ -152,8 +193,11 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           ],
         };
       } catch (error) {
-        console.error("Failed to collect analytics:", error);
-        // Even if analytics/personalization fails, return the content
+        log.set({
+          adobe: { edgeError: { message: error.message } },
+          outcome: { status: "edge_error" },
+        });
+        log.emit();
         return {
           structuredContent: {
             offices: Object.values(officeData),
@@ -226,17 +270,18 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
      * @param {keyof typeof officeData} params.officeId
      */
     async ({ officeId }, { _meta }) => {
-      try {
-        if (!(officeId in officeData)) {
-          throw new Error(`Office with ID ${officeId} not found`);
-        }
-      } catch (error) {
-        console.error(error);
+      const log = createLogger({
+        tool: { name: "office-details", args: { officeId } },
+        user: { subject: _meta?.["openai/subject"] },
+      });
+      if (!(officeId in officeData)) {
+        log.set({ outcome: { status: "not_found" } });
+        log.emit();
         return {
           content: [
             {
               type: "text",
-              text: `Error displaying office details: ${error.message}`,
+              text: `Error displaying office details: Office with ID ${officeId} not found`,
             },
           ],
         };
@@ -272,6 +317,14 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             handle.type === "state:store",
         );
         const htmlContent = extractHtmlContent(relevantHandles);
+        log.set({
+          adobe: {
+            ecid: extractEcid(handles),
+            handles: summarizeHandles(relevantHandles),
+            htmlContentCount: htmlContent.length,
+          },
+        });
+        log.emit();
         return {
           structuredContent: {
             office,
@@ -289,7 +342,11 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           ],
         };
       } catch (error) {
-        console.error("Failed to collect analytics:", error);
+        log.set({
+          adobe: { edgeError: { message: error.message } },
+          outcome: { status: "edge_error" },
+        });
+        log.emit();
         return {
           structuredContent: {
             office,
@@ -327,6 +384,16 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
       const office = officeData[officeId];
       const emailMessage = `Hi, I am interested in visiting the ${office.name} office.`;
       const identityMap = buildIdentityMap(_meta);
+      const emailHash = Buffer.from(
+        await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)),
+      ).toString("hex");
+      const log = createLogger({
+        tool: {
+          name: "request-visit",
+          args: { officeId, emailHash: emailHash.slice(0, 12) },
+        },
+        user: { subject: _meta?.["openai/subject"] },
+      });
 
       try {
         const result = await edgeClient.sendEvent({
@@ -337,9 +404,7 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             _unifiedJsLab: {
               details: {
                 officeId: officeId,
-                email: Buffer.from(
-                  await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)),
-                ).toString("hex"),
+                email: emailHash,
               },
             },
           },
@@ -359,6 +424,14 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
             handle.type === "state:store",
         );
         const htmlContent = extractHtmlContent(relevantHandles);
+        log.set({
+          adobe: {
+            ecid: extractEcid(handles),
+            handles: summarizeHandles(relevantHandles),
+            htmlContentCount: htmlContent.length,
+          },
+        });
+        log.emit();
 
         return {
           structuredContent: {
@@ -376,7 +449,11 @@ export function createMcpServer({ edgeClient, resourceAssets }) {
           ],
         };
       } catch (error) {
-        console.error("Failed to collect analytics:", error);
+        log.set({
+          adobe: { edgeError: { message: error.message } },
+          outcome: { status: "edge_error" },
+        });
+        log.emit();
         return {
           structuredContent: {
             _adobe: {
