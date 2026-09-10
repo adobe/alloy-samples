@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<!--
+Copyright 2026 Adobe. All rights reserved.
+This file is licensed to you under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License. You may obtain a copy
+of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under
+the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+OF ANY KIND, either express or implied. See the License for the specific language
+governing permissions and limitations under the License.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web SDK vs Node SDK — how the request reaches the Edge</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="edge-arch">
+      <h1>Web SDK vs. Node SDK — how the request reaches the Edge</h1>
+      <p class="subtitle">
+        Both paths use the same server and the same Adobe Experience Platform
+        Edge Network. What changes is <em>when</em> and <em>from where</em> the
+        Edge request is made — and that's the whole story.
+      </p>
+
+      <div class="usecase-tabs" id="usecase-tabs">
+        <button class="usecase-tab active" data-usecase="personalization">
+          <span class="tab-title">Personalization</span>
+          <span class="tab-sub"
+            >Resolve offers before the page paints — no flicker, no lag</span
+          >
+        </button>
+        <button class="usecase-tab" data-usecase="sendEvent">
+          <span class="tab-title">Send Event</span>
+          <span class="tab-sub"
+            >Collect data server-side — invisible to the user, immune to
+            blockers</span
+          >
+        </button>
+      </div>
+
+      <!-- Controls are rendered per use case by script.js. -->
+      <div class="controls" id="controls"></div>
+
+      <div class="diagram" id="diagram">
+        <span class="lane-label web"
+          >Web SDK · request made from the browser</span
+        >
+        <span class="lane-label node"
+          >Node SDK · request made from the server</span
+        >
+
+        <!-- Web SDK lane -->
+        <div class="node-box browser" style="left: 30px; top: 76px">
+          <div class="nb-icon">🌐</div>
+          <div class="nb-title">End-user browser</div>
+          <div class="nb-sub">the visitor</div>
+        </div>
+        <div class="node-box" style="left: 400px; top: 76px">
+          <div class="nb-icon">🖥️</div>
+          <div class="nb-title">Your server</div>
+          <div class="nb-sub">app server / CDN</div>
+        </div>
+        <div
+          class="node-box edge"
+          id="box-edge-web"
+          style="left: 772px; top: 76px"
+        >
+          <div class="nb-icon">⚡</div>
+          <div class="nb-title">Edge Network</div>
+          <div class="nb-sub">edge.adobedc.net</div>
+        </div>
+
+        <!-- Node SDK lane -->
+        <div class="node-box browser" style="left: 30px; top: 300px">
+          <div class="nb-icon">🌐</div>
+          <div class="nb-title">End-user browser</div>
+          <div class="nb-sub">the visitor</div>
+        </div>
+        <div class="node-box highlight" style="left: 400px; top: 300px">
+          <div class="nb-icon">🖥️</div>
+          <div class="nb-title">Your server</div>
+          <div class="nb-sub">+ Node SDK</div>
+        </div>
+        <div
+          class="node-box edge highlight"
+          id="box-edge-node"
+          style="left: 772px; top: 300px"
+        >
+          <div class="nb-icon">⚡</div>
+          <div class="nb-title">Edge Network</div>
+          <div class="nb-sub">server.adobedc.net</div>
+        </div>
+
+        <div class="shield" id="shield-web" hidden>🛡️</div>
+
+        <svg
+          class="wires"
+          viewBox="0 0 960 470"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <marker id="mk-blue" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#1473e6" />
+            </marker>
+            <marker id="mk-grey" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#9aa0a6" />
+            </marker>
+            <marker id="mk-gold" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#e0a500" />
+            </marker>
+            <marker id="mk-green" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#3aa35a" />
+            </marker>
+            <marker id="mk-red" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#d64545" />
+            </marker>
+          </defs>
+
+          <g id="arrows-web"></g>
+          <g id="arrows-node"></g>
+          <circle id="dot-web" class="dot" r="7" cx="0" cy="0" />
+          <circle id="dot-node" class="dot" r="7" cx="0" cy="0" />
+        </svg>
+
+        <div class="tip" id="tip-web" hidden></div>
+        <div class="tip" id="tip-node" hidden></div>
+
+        <div class="lane-caption web" id="cap-web"></div>
+        <div class="lane-caption node" id="cap-node"></div>
+      </div>
+
+      <!-- Send Event only: mock browser network log + reached tally. -->
+      <div class="se-panel" id="se-panel" hidden>
+        <div class="se-log">
+          <div class="se-log-head">
+            🔎 End user's browser — Network tab
+            <span class="se-sub">(what the visitor &amp; their blocker see)</span>
+          </div>
+          <ul class="se-log-list" id="se-log-list">
+            <li class="se-empty">No requests yet — click “Send an event”.</li>
+          </ul>
+        </div>
+        <div class="se-reached">
+          <div class="se-reached-head">✅ Reached Adobe Edge Network</div>
+          <div class="se-count">
+            via Web SDK (browser): <b id="reached-web">0</b>
+          </div>
+          <div class="se-count">
+            via Node SDK (server): <b id="reached-node">0</b>
+          </div>
+          <p class="se-note" id="se-note"></p>
+        </div>
+      </div>
+
+      <div class="value-props">
+        <div class="vp-card web">
+          <h3>
+            <span class="vp-tag">Web SDK</span> Request made from the browser
+          </h3>
+          <ul id="vp-web"></ul>
+        </div>
+        <div class="vp-card node">
+          <h3>
+            <span class="vp-tag">Node SDK</span> Request made from the server
+          </h3>
+          <ul id="vp-node"></ul>
+        </div>
+      </div>
+
+      <pre class="code-hint" id="code-hint"></pre>
+
+      <p class="footnote">
+        This page is an illustration — it makes no real Edge Network calls (the
+        timings and logs are representative, not measured). For runnable,
+        credentialed Node SDK samples, see the sibling <code>node/</code>
+        samples (e.g. <code>node/personalization-hybrid</code> and
+        <code>node/data-collection-server-side</code>).
+      </p>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

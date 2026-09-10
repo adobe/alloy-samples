@@ -1,0 +1,574 @@
+/*
+Copyright 2026 Adobe. All rights reserved.
+This file is licensed to you under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License. You may obtain a copy
+of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under
+the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+OF ANY KIND, either express or implied. See the License for the specific language
+governing permissions and limitations under the License.
+*/
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 40px 32px 72px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  color: #1b1b1b;
+  background: #f7f8fa;
+}
+
+.edge-arch {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.edge-arch h1 {
+  margin-bottom: 4px;
+  font-size: 1.7em;
+}
+
+.edge-arch .subtitle {
+  color: #555;
+  margin-top: 0;
+  max-width: 780px;
+}
+
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: #eef0f3;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+/* Use-case tabs */
+.usecase-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 24px 0 8px;
+}
+
+.usecase-tab {
+  flex: 1;
+  text-align: left;
+  border: 2px solid #d3d3d3;
+  border-radius: 10px;
+  background: #fafafa;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.usecase-tab:hover {
+  border-color: #a0a0a0;
+}
+
+.usecase-tab.active {
+  border-color: #1473e6;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(20, 115, 230, 0.15);
+}
+
+.usecase-tab .tab-title {
+  font-weight: 700;
+  font-size: 1.05em;
+  display: block;
+}
+
+.usecase-tab .tab-sub {
+  color: #666;
+  font-size: 0.85em;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+  min-height: 40px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: #1473e6;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #0d66d0;
+}
+
+.btn:disabled {
+  background: #9bc2f0;
+  cursor: default;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: #1473e6;
+  border: 1.5px solid #b9d4f5;
+}
+
+.btn.ghost:hover {
+  background: #eef4ff;
+}
+
+.run-hint {
+  color: #777;
+  font-size: 0.9em;
+}
+
+/* Blocker toggle switch */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #cfcfcf;
+  border-radius: 24px;
+  transition: background 0.2s;
+  flex: none;
+}
+
+.switch .slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.switch input:checked + .slider {
+  background: #d64545;
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+/* Diagram */
+.diagram {
+  position: relative;
+  /* Fixed width so the absolutely-positioned boxes (px coords) line up 1:1
+     with the SVG overlay's viewBox (0 0 960 470). */
+  width: 960px;
+  max-width: 100%;
+  height: 470px;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.lane-label {
+  position: absolute;
+  left: 16px;
+  font-size: 0.76em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #9a9a9a;
+}
+
+.lane-label.web {
+  top: 14px;
+}
+
+.lane-label.node {
+  top: 238px;
+  color: #1473e6;
+}
+
+.diagram::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 235px;
+  border-top: 1px dashed #ececec;
+}
+
+.node-box {
+  position: absolute;
+  width: 160px;
+  height: 96px;
+  border-radius: 12px;
+  border: 2px solid #cfcfcf;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px;
+  z-index: 2;
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
+}
+
+.node-box .nb-icon {
+  font-size: 1.5em;
+  line-height: 1.1;
+}
+
+.node-box .nb-title {
+  font-weight: 700;
+  margin-top: 5px;
+  line-height: 1.15;
+}
+
+.node-box .nb-sub {
+  font-size: 0.78em;
+  color: #777;
+  margin-top: 2px;
+  line-height: 1.15;
+}
+
+.node-box.highlight {
+  border-color: #1473e6;
+  box-shadow: 0 3px 14px rgba(20, 115, 230, 0.18);
+}
+
+.node-box.edge {
+  border-color: #b98900;
+}
+
+.node-box.edge.highlight {
+  border-color: #e0a500;
+  box-shadow: 0 3px 14px rgba(224, 165, 0, 0.22);
+}
+
+.node-box.ping {
+  animation: ping 0.5s ease-out;
+}
+
+@keyframes ping {
+  0% {
+    box-shadow: 0 0 0 0 rgba(58, 163, 90, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(58, 163, 90, 0);
+  }
+}
+
+/* connectors + packets */
+.wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.arrow {
+  fill: none;
+  stroke-width: 2.5;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.arrow.show {
+  opacity: 1;
+}
+
+.arrow.dashed {
+  stroke-dasharray: 6 5;
+}
+
+.dot {
+  opacity: 0;
+}
+
+.dot.show {
+  opacity: 1;
+}
+
+.block-x {
+  font-size: 20px;
+}
+
+.shield {
+  position: absolute;
+  left: 468px;
+  top: 40px;
+  font-size: 22px;
+  z-index: 3;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* Tooltips (personalization step-through) */
+.tip {
+  position: absolute;
+  width: 232px;
+  background: #1f2430;
+  color: #f4f5f7;
+  font-size: 0.82em;
+  line-height: 1.35;
+  border-radius: 8px;
+  padding: 9px 11px;
+  z-index: 6;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.tip .tip-step {
+  font-weight: 700;
+  color: #7fb4ff;
+  margin-bottom: 2px;
+}
+
+/* Live per-lane captions */
+.lane-caption {
+  position: absolute;
+  left: 30px;
+  width: 900px;
+  font-size: 0.88em;
+  min-height: 22px;
+  color: #444;
+}
+
+.lane-caption.web {
+  top: 190px;
+}
+
+.lane-caption.node {
+  top: 414px;
+}
+
+.lane-caption .done {
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 3px 10px;
+}
+
+.lane-caption .done.good {
+  background: #e8f6ec;
+  color: #1f6b38;
+}
+
+.lane-caption .done.warn {
+  background: #fdf1e3;
+  color: #8a5a1a;
+}
+
+/* Send Event panel */
+.se-panel {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.se-log {
+  border: 1px solid #e2e2e2;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.se-log-head {
+  background: #f2f3f5;
+  padding: 9px 14px;
+  font-weight: 600;
+  font-size: 0.9em;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+.se-log-head .se-sub {
+  color: #888;
+  font-weight: 400;
+}
+
+.se-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.82em;
+}
+
+.se-log-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.se-log-list li .req-url {
+  color: #333;
+  word-break: break-all;
+}
+
+.se-log-list li .req-status {
+  flex: none;
+  font-weight: 700;
+}
+
+.se-log-list li.ok .req-status {
+  color: #1f8a4c;
+}
+
+.se-log-list li.blocked .req-url {
+  color: #9a9a9a;
+  text-decoration: line-through;
+}
+
+.se-log-list li.blocked .req-status {
+  color: #d64545;
+}
+
+.se-log-list li.se-empty {
+  color: #aaa;
+  font-family: inherit;
+  justify-content: flex-start;
+}
+
+.se-reached {
+  border: 1px solid #e2e2e2;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px 16px;
+}
+
+.se-reached-head {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.se-count {
+  font-size: 0.95em;
+  margin-bottom: 4px;
+}
+
+.se-count b {
+  font-size: 1.15em;
+}
+
+.se-note {
+  margin-top: 12px;
+  font-size: 0.85em;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* Value props panel */
+.value-props {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.vp-card {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px 18px;
+}
+
+.vp-card h3 {
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.02em;
+}
+
+.vp-card.node h3 {
+  color: #1473e6;
+}
+
+.vp-card .vp-tag {
+  font-size: 0.68em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #eef4ff;
+  color: #1473e6;
+}
+
+.vp-card.web .vp-tag {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.vp-card ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.vp-card li {
+  margin-bottom: 7px;
+  line-height: 1.4;
+}
+
+.vp-card li .em {
+  font-weight: 600;
+}
+
+.code-hint {
+  margin-top: 22px;
+  background: #1e1e1e;
+  color: #e6e6e6;
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.85em;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.code-hint .c-comment {
+  color: #7ca668;
+}
+
+.code-hint .c-key {
+  color: #569cd6;
+}
+
+.footnote {
+  margin-top: 26px;
+  color: #888;
+  font-size: 0.85em;
+  max-width: 820px;
+}

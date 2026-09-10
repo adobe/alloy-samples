@@ -1,0 +1,24 @@
+{
+  "name": "alloy-node-personalization-server-side-sample",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Server-side personalization powered by @adobe/alloy-node: the server fetches decisions and renders the fully personalized HTML itself — no client-side alloy.js at all.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:adobe/alloy-samples.git"
+  },
+  "author": "Adobe Systems Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@adobe/alloy-node": "^1.0.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "handlebars": "^4.7.8"
+  }
+}

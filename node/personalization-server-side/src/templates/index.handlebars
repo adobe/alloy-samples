@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{pageTitle}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container py-5">
+    <h1>Node Server-side Personalization Sample</h1>
+    <p class="lead">
+      Powered by <a href="https://github.com/adobe/alloy/tree/main/packages/node"><code>@adobe/alloy-node</code></a>.
+      The server already called <code>sendEvent()</code> requesting decisions
+      for decision scope <code>{{decisionScope}}</code>, and rendered the
+      result directly into this HTML. There is no client-side
+      <code>alloy.js</code> on this page at all — nothing left for the
+      browser to fetch or render.
+    </p>
+
+    {{#if error}}
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading">&#128565; There was an error</h4>
+      {{error}}
+    </div>
+    {{else}}
+      {{#if usedMock}}
+      <div class="alert alert-warning" role="alert">
+        No live activity is configured for decision scope
+        <code>{{decisionScope}}</code>, so the server fell back to mock
+        content (see <code>src/server.js</code>). The request/response round
+        trip to the Edge Network was still real.
+      </div>
+      {{else}}
+      <div class="alert alert-success" role="alert">
+        This is genuine content returned by a live personalization activity,
+        rendered entirely server-side.
+      </div>
+      {{/if}}
+
+      <div class="card p-4">
+        <img src="img/{{heroImageName}}" class="img-fluid rounded mb-3" alt="Personalized offer" />
+        <div id="offer-buttons">
+          {{#each buttonActions}}
+          <button
+            type="button"
+            class="btn btn-outline-primary me-2"
+            data-content="{{content}}"
+          >{{text}}</button>
+          {{/each}}
+        </div>
+      </div>
+    {{/if}}
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
