@@ -17,14 +17,19 @@ governing permissions and limitations under the License.
 //     script-load before it can even call the Edge.
 //   • Send Event: fire events with a mock "browser Network tab" log and a
 //     tracker-blocker toggle — with the blocker on, the browser's request to
-//     the Edge is intercepted, while the server-to-server request sails
-//     through (and never shows up in the browser at all).
+//     the Edge is intercepted at the shield, while the server-to-server
+//     request sails through (and never shows up in the browser at all).
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 // Box-edge attach points (SVG viewBox coords); the lane supplies y.
 const X = { browserR: 190, browserC: 110, serverL: 400, serverR: 560, edgeL: 772 };
 const LANE_Y = { web: 124, node: 348 };
+
+// The browser→Edge send arc, and where along it the blocker sits (t ≈ just
+// outside the browser). Arc height clears the server box.
+const SEND_WEB_ARC = 100;
+const BLOCK_T = 0.12;
 
 const KIND = {
   req: { color: "#1473e6", marker: "mk-blue" },
@@ -35,15 +40,13 @@ const KIND = {
   blocked: { color: "#d64545", marker: "mk-red" },
 };
 
-// Personalization flow, hop by hop. `cap` is the one-line caption; `tip` is
-// the richer tooltip shown at that step.
 const PERS = {
   web: [
     { from: "browserR", to: "serverL", kind: "req", ms: 500, cap: "① Browser → server: request the page", tip: "The browser asks your server for the page. Nothing personalized yet." },
     { from: "serverL", to: "browserR", kind: "res", ms: 500, cap: "② Server → browser: page HTML loads", tip: "Your server returns HTML. The page starts to paint — still generic." },
     { from: "browserC", to: "browserC", kind: "load", ms: 700, cap: "③ Browser downloads &amp; runs the Web SDK (alloy.js)", tip: "The browser now downloads and executes alloy.js. Only after this can any Edge request happen." },
-    { from: "browserR", to: "edgeL", kind: "edge", ms: 650, arc: 70, cap: "④ Web SDK → Edge: personalization request", tip: "Finally — several steps in — the Web SDK calls the Edge for personalization." },
-    { from: "edgeL", to: "browserR", kind: "res", ms: 650, arc: 104, cap: "⑤ Edge → browser: offers render after paint (flicker)", tip: "Offers come back and get applied, but the page already painted → visible flicker." },
+    { from: "browserR", to: "edgeL", kind: "edge", ms: 650, arc: 100, cap: "④ Web SDK → Edge: personalization request", tip: "Finally — several steps in — the Web SDK calls the Edge for personalization." },
+    { from: "edgeL", to: "browserR", kind: "res", ms: 650, arc: 140, cap: "⑤ Edge → browser: offers render after paint (flicker)", tip: "Offers come back and get applied, but the page already painted → visible flicker." },
   ],
   webDone: { tone: "warn", text: "Personalized content appears late — after the page already painted (flicker)." },
   node: [
@@ -75,8 +78,8 @@ const COPY = {
       "Great for rich client-side rendering, click tracking, SPA views.",
     ],
     node: [
-      "Request leaves <span class='em'>your server</span>, never the browser — nothing for a client-side blocker to see or drop.",
-      "Data collection is <span class='em'>obfuscated from the end user</span>: no third-party request in their network tab.",
+      "The visitor's action hits <span class='em'>your server</span>, which sends the event to the Edge — the request never leaves the browser.",
+      "Data collection is <span class='em'>obfuscated from the end user</span>: no third-party request in their network tab, nothing for a blocker to drop.",
       "Authenticated server-to-server call (OAuth) straight to the Edge Server API.",
     ],
   },
@@ -93,7 +96,7 @@ const CODE = {
     { comment: "// → serialize `propositions` into the HTML you send back" },
   ],
   sendEvent: [
-    { comment: "// On your server, per request — collect data the browser never sees:" },
+    { comment: "// On your server, when the visitor's action arrives — collect it server-side:" },
     { key: "const", rest: " request = alloy.forRequest({ cookie });" },
     { key: "await", rest: " request.sendEvent({" },
     { rest: '  xdm: { eventType: "commerce.purchases", /* … */ },' },
@@ -108,36 +111,58 @@ const wp = (name, lane) => [X[name], LANE_Y[lane]];
 let currentUseCase = "personalization";
 let runToken = 0;
 let busy = false;
-// personalization
-let stepIndex = 0;
-// send event
-let blockerOn = false;
+let stepIndex = 0; // personalization
+let blockerOn = false; // send event
 let reachedWeb = 0;
 let reachedNode = 0;
 
 /* ---------- geometry ---------- */
 
+const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+
+const quadPoint = (p0, pc, p2, t) => {
+  const u = 1 - t;
+  return [
+    u * u * p0[0] + 2 * u * t * pc[0] + t * t * p2[0],
+    u * u * p0[1] + 2 * u * t * pc[1] + t * t * p2[1],
+  ];
+};
+
+// de Casteljau split of a quadratic at t: returns the shared point S and the
+// two sub-curve controls (A for p0→S, B for S→p2).
+const splitQuad = (p0, pc, p2, t) => {
+  const a = lerp(p0, pc, t);
+  const b = lerp(pc, p2, t);
+  const s = lerp(a, b, t);
+  return { a, b, s };
+};
+
 const pointAt = (hop, lane, t) => {
-  const [ax, ay] = wp(hop.from, lane);
-  const [bx, by] = wp(hop.to, lane);
+  const p0 = wp(hop.from, lane);
+  const p2 = wp(hop.to, lane);
   if (hop.arc) {
-    const cx = (ax + bx) / 2;
-    const cy = Math.min(ay, by) - hop.arc;
-    const u = 1 - t;
-    return [u * u * ax + 2 * u * t * cx + t * t * bx, u * u * ay + 2 * u * t * cy + t * t * by];
+    const pc = [(p0[0] + p2[0]) / 2, Math.min(p0[1], p2[1]) - hop.arc];
+    return quadPoint(p0, pc, p2, t);
   }
-  return [ax + (bx - ax) * t, ay + (by - ay) * t];
+  return lerp(p0, p2, t);
 };
 
 const hopPathD = (hop, lane) => {
-  const [ax, ay] = wp(hop.from, lane);
-  const [bx, by] = wp(hop.to, lane);
+  const p0 = wp(hop.from, lane);
+  const p2 = wp(hop.to, lane);
   if (hop.arc) {
-    const cx = (ax + bx) / 2;
-    const cy = Math.min(ay, by) - hop.arc;
-    return `M ${ax} ${ay} Q ${cx} ${cy} ${bx} ${by}`;
+    const pc = [(p0[0] + p2[0]) / 2, Math.min(p0[1], p2[1]) - hop.arc];
+    return `M ${p0[0]} ${p0[1]} Q ${pc[0]} ${pc[1]} ${p2[0]} ${p2[1]}`;
   }
-  return `M ${ax} ${ay} L ${bx} ${by}`;
+  return `M ${p0[0]} ${p0[1]} L ${p2[0]} ${p2[1]}`;
+};
+
+// The point on the web send arc where the blocker intercepts it.
+const blockPoint = () => {
+  const p0 = wp("browserR", "web");
+  const p2 = wp("edgeL", "web");
+  const pc = [(p0[0] + p2[0]) / 2, Math.min(p0[1], p2[1]) - SEND_WEB_ARC];
+  return splitQuad(p0, pc, p2, BLOCK_T);
 };
 
 /* ---------- primitives ---------- */
@@ -145,7 +170,6 @@ const hopPathD = (hop, lane) => {
 const pulse = (boxId) => {
   const box = el(boxId);
   box.classList.remove("ping");
-  // reflow to restart the animation
   void box.offsetWidth;
   box.classList.add("ping");
 };
@@ -157,69 +181,97 @@ const clearLane = (lane) => {
   el(`tip-${lane}`).hidden = true;
 };
 
-// Animates the dot along one hop, drawing its arrow. Resolves when done (or at
-// stopAt for a blocked hop). Bails out early if a newer run supersedes it.
-const animateHop = (hop, lane, token) =>
+const drawArrow = (lane, d, color, { dashed = false, marker = null } = {}) => {
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("d", d);
+  path.setAttribute("class", `arrow${dashed ? " dashed" : ""}`);
+  path.setAttribute("stroke", color);
+  path.setAttribute("stroke-linecap", "round");
+  if (marker) path.setAttribute("marker-end", `url(#${marker})`);
+  el(`arrows-${lane}`).appendChild(path);
+  requestAnimationFrame(() => path.classList.add("show"));
+  return path;
+};
+
+const drawMark = (lane, [x, y], text, color) => {
+  const t = document.createElementNS(SVG_NS, "text");
+  t.setAttribute("x", x);
+  t.setAttribute("y", y + 7);
+  t.setAttribute("text-anchor", "middle");
+  t.setAttribute("class", "block-x");
+  if (color) t.setAttribute("fill", color);
+  t.textContent = text;
+  el(`arrows-${lane}`).appendChild(t);
+};
+
+// Animates the dot along `pointFn(t)` over `ms`, resolving when done. Bails
+// early if a newer run supersedes it.
+const animateAlong = (lane, color, ms, pointFn, token) =>
   new Promise((resolve) => {
-    const kind = KIND[hop.kind];
     const dot = el(`dot-${lane}`);
-    dot.setAttribute("fill", kind.color);
+    dot.setAttribute("fill", color);
     dot.classList.add("show");
-
-    if (hop.kind !== "load") {
-      const arrow = document.createElementNS(SVG_NS, "path");
-      arrow.setAttribute("d", hopPathD(hop, lane));
-      arrow.setAttribute("class", `arrow${hop.stopAt ? " dashed" : ""}`);
-      arrow.setAttribute("stroke", kind.color);
-      if (kind.marker && !hop.stopAt) {
-        arrow.setAttribute("marker-end", `url(#${kind.marker})`);
-      }
-      el(`arrows-${lane}`).appendChild(arrow);
-      requestAnimationFrame(() => arrow.classList.add("show"));
-    }
-
-    const end = hop.stopAt ?? 1;
     const start = performance.now();
     const tick = (now) => {
       if (token !== runToken) {
         resolve();
         return;
       }
-      const t = Math.min(end, (now - start) / hop.ms);
-      const [x, y] = pointAt(hop, lane, t);
+      const t = Math.min(1, (now - start) / ms);
+      const [x, y] = pointFn(t);
       dot.setAttribute("transform", `translate(${x} ${y})`);
-      if (t < end) {
-        requestAnimationFrame(tick);
-        return;
-      }
-      if (hop.stopAt) {
-        const [bx, by] = pointAt(hop, lane, hop.stopAt);
-        const block = document.createElementNS(SVG_NS, "text");
-        block.setAttribute("x", bx);
-        block.setAttribute("y", by + 7);
-        block.setAttribute("text-anchor", "middle");
-        block.setAttribute("class", "block-x");
-        block.textContent = "🛑";
-        el(`arrows-${lane}`).appendChild(block);
-        dot.classList.remove("show");
-      } else if (hop.to === "edgeL") {
-        pulse(`box-edge-${lane}`);
-      }
-      resolve();
+      if (t < 1) requestAnimationFrame(tick);
+      else resolve();
     };
     requestAnimationFrame(tick);
   });
+
+// A standard hop (straight or arc), with an arrowhead; pulses the Edge box on
+// arrival there.
+const animateHop = async (hop, lane, token) => {
+  const kind = KIND[hop.kind];
+  if (hop.kind !== "load") {
+    drawArrow(lane, hopPathD(hop, lane), kind.color, { marker: kind.marker });
+  }
+  await animateAlong(lane, kind.color, hop.ms, (t) => pointAt(hop, lane, t), token);
+  if (token !== runToken) return;
+  if (hop.to === "edgeL") pulse(`box-edge-${lane}`);
+};
+
+// The blocked browser→Edge send: solid blue up to the shield, then grey
+// dashed the rest of the way, ending in an ✖ at the Edge (never delivered).
+const animateBlockedSend = async (token) => {
+  const p0 = wp("browserR", "web");
+  const p2 = wp("edgeL", "web");
+  const { a, b, s } = blockPoint();
+  drawArrow(
+    "web",
+    `M ${p0[0]} ${p0[1]} Q ${a[0]} ${a[1]} ${s[0]} ${s[1]}`,
+    KIND.req.color,
+  );
+  await animateAlong("web", KIND.req.color, 420, (t) => quadPoint(p0, a, s, t), token);
+  if (token !== runToken) return;
+  el(`dot-web`).classList.remove("show");
+  drawArrow(
+    "web",
+    `M ${s[0]} ${s[1]} Q ${b[0]} ${b[1]} ${p2[0]} ${p2[1]}`,
+    KIND.res.color,
+    { dashed: true },
+  );
+  drawMark("web", p2, "✖", KIND.blocked.color);
+};
 
 const showTip = (lane, hop, index) => {
   const tip = el(`tip-${lane}`);
   tip.innerHTML = `<div class="tip-step">Step ${index + 1}</div>${hop.tip}`;
   tip.hidden = false;
-  // Anchor near the hop midpoint; web lane above the arrow, node below.
   const [mx, my] = pointAt(hop, lane, 0.5);
   const width = 232;
-  const left = Math.max(6, Math.min(960 - width - 6, mx - width / 2));
-  tip.style.left = `${left}px`;
-  tip.style.top = lane === "web" ? `${my - 92}px` : `${my + 16}px`;
+  tip.style.left = `${Math.max(4, Math.min(960 - width - 4, mx - width / 2))}px`;
+  // Web lane above the hop, node lane below — measured height keeps the
+  // pointer end near the arc even though the diagram no longer clips.
+  const h = tip.offsetHeight;
+  tip.style.top = lane === "web" ? `${my - h - 12}px` : `${my + 14}px`;
 };
 
 const showDone = (lane, done) => {
@@ -277,9 +329,9 @@ const autoPlay = async () => {
     const token = runToken;
     // eslint-disable-next-line no-await-in-loop
     await nextStep();
-    if (token !== runToken) return; // reset/tab-switch cancelled us
+    if (token !== runToken) return;
     // eslint-disable-next-line no-await-in-loop
-    await new Promise((r) => setTimeout(r, 220));
+    await new Promise((r) => setTimeout(r, 240));
   }
 };
 
@@ -300,7 +352,7 @@ const updateReached = () => {
   el("reached-web").textContent = reachedWeb;
   el("reached-node").textContent = reachedNode;
   el("se-note").innerHTML = blockerOn
-    ? "Blocker is <b>on</b>: the Web SDK count stops climbing (every browser request is dropped), but the Node SDK count keeps going — those requests never even appear here."
+    ? "Blocker is <b>on</b>: the Web SDK count stops climbing (every browser request is dropped), but the Node SDK count keeps going — those requests never even appear in this log."
     : "The Node SDK requests never show up in this log — they're sent server-to-server, so neither the visitor nor their blocker can see them. Try turning the blocker on.";
 };
 
@@ -314,46 +366,49 @@ const logRequest = (ok) => {
   list.prepend(li);
 };
 
+const runWebSend = async (token) => {
+  if (blockerOn) {
+    el("cap-web").innerHTML =
+      "Web SDK → Edge: request intercepted by the tracker blocker 🛡️";
+    await animateBlockedSend(token);
+    if (token !== runToken) return;
+    logRequest(false);
+    showDone("web", { tone: "warn", text: "Dropped — the browser request never reached the Edge." });
+  } else {
+    el("cap-web").innerHTML =
+      "Web SDK → Edge: event sent from the browser (visible in the network tab)";
+    await animateHop({ from: "browserR", to: "edgeL", arc: SEND_WEB_ARC, ms: 720, kind: "req" }, "web", token);
+    if (token !== runToken) return;
+    logRequest(true);
+    reachedWeb += 1;
+  }
+};
+
+const runNodeSend = async (token) => {
+  el("cap-node").innerHTML = "① Browser → your server: the visitor's action";
+  await animateHop({ from: "browserR", to: "serverL", ms: 500, kind: "req" }, "node", token);
+  if (token !== runToken) return;
+  el("cap-node").innerHTML =
+    "② Server (Node SDK) → Edge: sendEvent, server-to-server";
+  await animateHop({ from: "serverR", to: "edgeL", ms: 650, kind: "edge" }, "node", token);
+  if (token !== runToken) return;
+  reachedNode += 1;
+};
+
 const sendEvent = async () => {
   if (busy) return;
   busy = true;
   const token = runToken;
   el("btn-send").disabled = true;
+  // Fresh arrows/captions each send; keep the log + tallies.
+  el("arrows-web").replaceChildren();
+  el("arrows-node").replaceChildren();
+  el("dot-web").classList.remove("show");
+  el("dot-node").classList.remove("show");
 
-  const webHop = {
-    from: "browserR",
-    to: "edgeL",
-    arc: 70,
-    ms: 700,
-    kind: blockerOn ? "blocked" : "req",
-    stopAt: blockerOn ? 0.45 : undefined,
-  };
-  const nodeHop = { from: "serverR", to: "edgeL", ms: 650, kind: "edge" };
+  await Promise.all([runWebSend(token), runNodeSend(token)]);
 
-  el("cap-web").innerHTML = blockerOn
-    ? "Web SDK → Edge: request cancelled by the tracker blocker 🛑"
-    : "Web SDK → Edge: event sent from the browser (visible in the network tab)";
-  el("cap-node").innerHTML =
-    "Node SDK → Edge: event sent server-to-server (invisible to the browser)";
-
-  await Promise.all([
-    animateHop(webHop, "web", token).then(() => {
-      if (token !== runToken) return;
-      logRequest(!blockerOn);
-      if (!blockerOn) reachedWeb += 1;
-    }),
-    animateHop(nodeHop, "node", token).then(() => {
-      if (token !== runToken) return;
-      reachedNode += 1;
-    }),
-  ]);
-
-  if (token === runToken) {
-    updateReached();
-    if (blockerOn) {
-      showDone("web", { tone: "warn", text: "Dropped — the browser request never reached the Edge." });
-    }
-  }
+  if (token === runToken) updateReached();
   busy = false;
   el("btn-send").disabled = false;
 };
@@ -373,7 +428,15 @@ const clearLog = () => {
 
 const setBlocker = (on) => {
   blockerOn = on;
-  el("shield-web").hidden = !on;
+  const shield = el("shield-web");
+  if (on) {
+    const { s } = blockPoint();
+    shield.style.left = `${s[0] - 11}px`;
+    shield.style.top = `${s[1] - 13}px`;
+    shield.hidden = false;
+  } else {
+    shield.hidden = true;
+  }
   updateReached();
 };
 
@@ -446,7 +509,10 @@ const selectUseCase = (key) => {
 
   renderControls();
   renderSidePanels();
-  if (key === "sendEvent") clearLog();
+  if (key === "sendEvent") {
+    clearLog();
+    setBlocker(blockerOn); // reflect toggle state + place the shield
+  }
 };
 
 document.querySelectorAll(".usecase-tab").forEach((tab) => {
