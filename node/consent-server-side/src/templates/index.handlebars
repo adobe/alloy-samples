@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{pageTitle}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container py-5">
+    <h1>Node Server-side Consent Sample</h1>
+    <p class="lead">
+      Powered by <a href="https://github.com/adobe/alloy/tree/main/packages/node"><code>@adobe/alloy-node</code></a>.
+      This server was configured with <code>defaultConsent: "out"</code>, so
+      this visitor starts opted out — <code>POST /track</code> below calls
+      <code>sendEvent()</code> and <code>getIdentity()</code>, both gated on
+      consent the same way they would be in the browser SDK. Consent lives
+      in this visitor's cookies, so a decision made here is honored by
+      every later request, not just this page load.
+    </p>
+
+    <div id="consent-status" class="alert alert-secondary" role="alert">
+      No consent decision recorded yet for this visitor.
+    </div>
+
+    <div class="mb-4">
+      <button type="button" id="accept-consent" class="btn btn-success me-2">Accept</button>
+      <button type="button" id="decline-consent" class="btn btn-outline-danger">Decline</button>
+    </div>
+
+    <div id="event-log" class="mb-3"></div>
+
+    <button type="button" id="record-pageview" class="btn btn-primary">Record Pageview</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

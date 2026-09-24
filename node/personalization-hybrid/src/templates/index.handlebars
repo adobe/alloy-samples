@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{pageTitle}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container py-5">
+    <h1>Node Hybrid Personalization Sample</h1>
+    <p class="lead">
+      Powered by <a href="https://github.com/adobe/alloy/tree/main/packages/node"><code>@adobe/alloy-node</code></a>.
+      Clicking the button below calls <code>/personalize</code>, which asks
+      the server to run <code>sendEvent()</code> requesting decisions for
+      decision scope <code>{{decisionScope}}</code> right then — the client
+      only renders whatever propositions come back, via
+      <code>applyPropositions</code>.
+    </p>
+
+    <button id="personalize-button" type="button" class="btn btn-primary mb-3">
+      Get personalized content
+    </button>
+
+    <div id="personalization-status"></div>
+
+    <div id="personalization-target" class="card p-4">
+      <p class="text-muted mb-0">Click the button above to fetch personalization content&hellip;</p>
+    </div>
+  </div>
+
+  <script>
+    // Standard Alloy base-code stub: lets alloy(...) calls queue safely
+    // before the async-loaded library below finishes loading.
+    !function(n,o){o.forEach(function(o){n[o]||((n.__alloyNS=n.__alloyNS||
+      []).push(o),n[o]=function(){var u=arguments;return new Promise(
+      function(i,l){n[o].q.push([i,l,u])})},n[o].q=[])})}
+    (window,["alloy"]);
+
+    alloy("configure", {
+      "orgId": "{{orgId}}",
+      "datastreamId": "{{datastreamId}}",
+      "debugEnabled": true
+    });
+  </script>
+  <script src="https://cdn1.adoberesources.net/alloy/2.29.0/alloy.min.js" async></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "alloy-node-web-sdk-vs-node-sdk-sample",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive explainer: how an Edge Network request differs when it originates from the browser Web SDK vs. the server-side @adobe/alloy-node SDK, focused on the personalization and data-collection use cases.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:adobe/alloy-samples.git"
+  },
+  "author": "Adobe Systems Inc.",
+  "license": "Apache-2.0"
+}
